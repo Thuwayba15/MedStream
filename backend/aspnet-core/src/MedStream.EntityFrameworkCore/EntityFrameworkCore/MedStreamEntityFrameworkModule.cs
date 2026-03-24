@@ -1,4 +1,5 @@
-﻿using Abp.EntityFrameworkCore.Configuration;
+﻿using System;
+using Abp.EntityFrameworkCore.Configuration;
 using Abp.Modules;
 using Abp.Reflection.Extensions;
 using Abp.Zero.EntityFrameworkCore;
@@ -18,6 +19,7 @@ public class MedStreamEntityFrameworkModule : AbpModule
 
     public override void PreInitialize()
     {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         if (!SkipDbContextRegistration)
         {
             Configuration.Modules.AbpEfCore().AddDbContext<MedStreamDbContext>(options =>
@@ -36,6 +38,7 @@ public class MedStreamEntityFrameworkModule : AbpModule
 
     public override void Initialize()
     {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         IocManager.RegisterAssemblyByConvention(typeof(MedStreamEntityFrameworkModule).GetAssembly());
     }
 

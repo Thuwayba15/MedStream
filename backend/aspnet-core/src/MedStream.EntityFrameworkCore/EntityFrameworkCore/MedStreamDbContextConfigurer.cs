@@ -1,3 +1,4 @@
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 
@@ -7,11 +8,11 @@ public static class MedStreamDbContextConfigurer
 {
     public static void Configure(DbContextOptionsBuilder<MedStreamDbContext> builder, string connectionString)
     {
-        builder.UseSqlServer(connectionString);
+        builder.UseNpgsql(connectionString);
     }
 
     public static void Configure(DbContextOptionsBuilder<MedStreamDbContext> builder, DbConnection connection)
     {
-        builder.UseSqlServer(connection);
+        builder.UseNpgsql(connection);
     }
 }

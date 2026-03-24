@@ -254,3 +254,5 @@ paket-files/
 src/MedStream.Web.Mvc/secrets.json
 src/MedStream.Web.Host/secrets.json
 src/MedStream.Migrator/secrets.json
+
+*.env
