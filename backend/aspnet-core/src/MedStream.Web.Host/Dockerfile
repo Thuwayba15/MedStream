@@ -18,7 +18,7 @@ COPY ["src/MedStream.EntityFrameworkCore", "src/MedStream.EntityFrameworkCore"]
 WORKDIR "/src/src/MedStream.Web.Host"
 RUN dotnet publish -c Release -o /publish --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
 EXPOSE 80
 WORKDIR /app
 COPY --from=build /publish .
