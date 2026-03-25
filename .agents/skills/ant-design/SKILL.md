@@ -1,5 +1,5 @@
 ---
-name: frontend-next-antd-design
+name: ant-design
 description: Use this skill for any frontend page, layout, component, form, table, modal, navigation, stateful UI, responsive behavior, accessibility, or visual polish work in the Next.js App Router app that uses Ant Design and antd-style. Applies to both new implementation and refactors. Prefer this skill whenever the task affects the user interface or frontend UX.
 ---
 
@@ -255,6 +255,8 @@ Before considering the task complete, verify:
 - User feedback states exist.
 - Accessibility basics are covered.
 - The result looks production-ready, not just technically functional.
+- The UI is robust and looks production-ready, with attention to spacing, alignment, and visual polish, as well as extras like highlights and animations where appropriate.
+
 
 ## Collaboration behavior
 
