@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main, initialSetup]
+  pull_request:
+    branches: [dev, main, initialSetup]
+
+jobs:
+  backend:
+    name: Backend Build and Test
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/aspnet-core
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore MedStream.sln
+
+      - name: Build
+        run: dotnet build MedStream.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test MedStream.sln --configuration Release --no-build
+
+  frontend:
+    name: Frontend Lint and Format
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier Check
+        run: npx prettier . --check
