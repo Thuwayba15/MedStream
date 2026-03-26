@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("landing page", () => {
+    test.beforeEach(async ({ context }) => {
+        await context.clearCookies();
+    });
+
     test("renders hero content and feature spotlight", async ({ page }) => {
         await page.goto("/");
 
@@ -13,25 +17,27 @@ test.describe("landing page", () => {
     test("switches feature spotlight content", async ({ page }) => {
         await page.goto("/");
 
-        await page.getByRole("tab", { name: "Show Rule-Based Smart Triage" }).click();
-        await expect(page.getByRole("heading", { level: 3, name: "Rule-Based Smart Triage" })).toBeVisible();
-        await expect(page.getByText(/System applies rules, red flags, and urgency scoring/i)).toBeVisible();
+        const triageTab = page.getByRole("tab", { name: "Show Rule-Based Smart Triage" });
+        await triageTab.click();
+        await expect(triageTab).toHaveAttribute("aria-selected", "true");
+        await expect(page.getByText(/sickest patients are surfaced first/i)).toBeVisible();
 
-        await page.getByRole("tab", { name: "Show Consultation" }).click();
-        await expect(page.getByRole("heading", { level: 3, name: "Consultation" })).toBeVisible();
-        await expect(page.getByText(/MedStream helps clinicians draft structured SOAP documentation/i)).toBeVisible();
+        const consultationTab = page.getByRole("tab", { name: "Show Consultation" });
+        await consultationTab.click();
+        await expect(consultationTab).toHaveAttribute("aria-selected", "true");
+        await expect(page.getByText(/structured SOAP documentation during care/i)).toBeVisible();
     });
 
-    test("routes from landing page to auth placeholders", async ({ page }) => {
+    test("routes from landing page to auth screens", async ({ page }) => {
         await page.goto("/");
 
         await page.getByRole("link", { name: "Login" }).click();
         await expect(page).toHaveURL(/\/login$/);
-        await expect(page.getByText("Login")).toBeVisible();
+        await expect(page.getByRole("heading", { level: 1, name: "Login" })).toBeVisible();
 
         await page.goto("/");
         await page.getByRole("link", { name: "Sign Up" }).click();
         await expect(page).toHaveURL(/\/registration$/);
-        await expect(page.getByText("Registration")).toBeVisible();
+        await expect(page.getByRole("heading", { level: 1, name: "Registration" })).toBeVisible();
     });
 });

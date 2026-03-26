@@ -40,6 +40,20 @@ export function FeatureSpotlight(): React.JSX.Element {
         }, FEATURE_TRANSITION_MS / 2);
     }, [isTransitioning]);
 
+    const selectFeatureFromUserInput = useCallback((nextIndex: number) => {
+        if (nextIndex === displayIndexRef.current) {
+            return;
+        }
+
+        if (transitionTimeoutRef.current) {
+            window.clearTimeout(transitionTimeoutRef.current);
+            transitionTimeoutRef.current = null;
+        }
+
+        setIsTransitioning(false);
+        setDisplayIndex(nextIndex);
+    }, []);
+
     useEffect(() => {
         const intervalId = window.setInterval(() => {
             const nextIndex = (displayIndexRef.current + 1) % landingFeatures.length;
@@ -105,7 +119,7 @@ export function FeatureSpotlight(): React.JSX.Element {
                 data-active={isActive}
                 className={cx(styles.timelineStep, isActive && styles.timelineStepActive)}
                 onClick={() => {
-                    changeFeature(index);
+                    selectFeatureFromUserInput(index);
                 }}
             >
                 <span className={cx(styles.timelineIconWrap, isActive && styles.timelineIconWrapActive)}>
