@@ -1467,6 +1467,23 @@ namespace MedStream.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("AccountType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ApprovalStatus")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("ClinicianApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ClinicianApprovedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("ClinicianSubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasMaxLength(128)
@@ -1484,6 +1501,9 @@ namespace MedStream.Migrations
                     b.Property<DateTime?>("DeletionTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("EmailAddress")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -1496,8 +1516,15 @@ namespace MedStream.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsClinicianApprovalPending")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("IdNumber")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.Property<bool>("IsEmailConfirmed")
                         .HasColumnType("boolean");
@@ -1545,6 +1572,26 @@ namespace MedStream.Migrations
                         .HasColumnType("character varying(328)");
 
                     b.Property<string>("PhoneNumber")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ProfessionType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RegulatoryBody")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("RequestedFacility")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("RequestedRegistrationRole")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 

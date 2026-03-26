@@ -15,6 +15,10 @@ namespace MedStream.Models.TokenAuth
         [DisableAuditing]
         public string Password { get; set; }
 
+        [Required]
+        [StringLength(64)]
+        public string TenantId { get; set; } = "1";
+
         public bool RememberClient { get; set; }
     }
 }

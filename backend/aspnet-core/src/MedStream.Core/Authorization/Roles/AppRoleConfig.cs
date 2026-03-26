@@ -24,5 +24,19 @@ public static class AppRoleConfig
                 MultiTenancySides.Tenant
             )
         );
+
+        roleManagementConfig.StaticRoles.Add(
+            new StaticRoleDefinition(
+                StaticRoleNames.Tenants.Patient,
+                MultiTenancySides.Tenant
+            )
+        );
+
+        roleManagementConfig.StaticRoles.Add(
+            new StaticRoleDefinition(
+                StaticRoleNames.Tenants.Clinician,
+                MultiTenancySides.Tenant
+            )
+        );
     }
 }
