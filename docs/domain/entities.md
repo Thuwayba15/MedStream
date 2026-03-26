@@ -21,6 +21,35 @@ Recommended implementation rule:
 - ABP `IdentityUser` should hold authorization concerns.
 - `Clinician` may store a domain-facing `Role` string if the team wants it for workflow display, filtering, or staffing context.
 
+Current MedStream ABP permission keys for user administration and approval workflow:
+- `Pages.Users`
+- `Pages.Users.View`
+- `Pages.Users.Activation`
+- `Pages.Users.Approvals`
+- `Pages.Users.Approvals.View`
+- `Pages.Users.Approvals.Approve`
+
+Current MedStream auth onboarding fields on ABP `IdentityUser`:
+- `AccountType` (controlled values: `Patient`, `Clinician`)
+- `RequestedRegistrationRole` (expected values: `Patient`, `Clinician`)
+- `IsClinicianApprovalPending`
+- `ClinicianApprovedAt`
+- `ClinicianApprovedByUserId`
+- `ApprovalStatus` (controlled values: `PendingApproval`, `Approved`, `Rejected`)
+- `IdNumber`
+- `DateOfBirth`
+- `PhoneNumber`
+- `ProfessionType` (controlled values: `Doctor`, `Nurse`, `AlliedHealth`, `Other`)
+- `RegulatoryBody` (controlled values: `HPCSA`, `SANC`, `Other`)
+- `RegistrationNumber`
+- `RequestedFacility`
+- `ClinicianSubmittedAt`
+
+Behavioral notes:
+- Patient self-registration assigns the `Patient` ABP role immediately.
+- Clinician self-registration keeps the user pending without `Clinician` role.
+- Admin approval assigns `Clinician` role and clears pending status.
+
 ---
 
 ## 1. Person

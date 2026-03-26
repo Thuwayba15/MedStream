@@ -117,6 +117,41 @@ F1.1 Login
 1.1 A user must be able to log in using credentials
  1.2 Authentication must use secure session (HttpOnly cookies)
  1.3 User roles must be resolved via ABP Identity
+ 1.4 Login requests must target tenant id `1` (single-tenant runtime behavior)
+
+F1.2 Self-Registration
+2.1 A registrant must choose either Patient or Clinician at registration time
+ 2.2 Patient registration must grant immediate patient access after successful registration
+ 2.3 Clinician registration must create a pending clinician applicant state
+ 2.4 Pending clinician applicants must not receive Clinician role until admin approval
+ 2.5 Patient registration form fields:
+First name, Last name, Email, Phone number, Password, Confirm password
+Optional: ID number, Date of birth
+ 2.6 Clinician registration form fields:
+First name, Last name, Email, Phone number, Password, Confirm password
+Required: ID number, Profession type, Regulatory body, Registration number, Requested facility
+ 2.7 Registration controlled values:
+accountType = Patient | Clinician
+professionType = Doctor | Nurse | AlliedHealth | Other
+regulatoryBody = HPCSA | SANC | Other
+approvalStatus = PendingApproval | Approved | Rejected
+
+F1.3 Approval-Gated Clinician Access
+3.1 Pending clinicians must only access an awaiting approval screen
+ 3.2 Admin must approve pending clinicians before clinician workspace access is allowed
+ 3.3 Clinician role assignment must occur only at approval time
+ 3.4 Admin review view must include:
+Full name, Email, Phone number, ID number, Profession type, Regulatory body, Registration number, Requested facility, Submitted date, Approval status
+ 3.5 Backend approval endpoints must be protected by explicit ABP permissions:
+`Pages.Users.Approvals.View` for applicant listing and `Pages.Users.Approvals.Approve` for approval action
+
+F1.4 Auth State Routing
+4.1 Route guards must handle:
+Not authenticated
+Authenticated patient
+Authenticated approved clinician
+Authenticated admin
+Authenticated clinician pending approval
 
 F2. Patient Management
 F2.1 Create Patient
@@ -222,6 +257,10 @@ F12.2 Audit Access
 
 F12.3 Restrict Search
 3.1 Clinicians must only search accessible patients
+
+F12.4 RBAC Enforcement for Admin User Approval
+4.1 The backend must enforce ABP permission checks on clinician applicant listing and approval endpoints
+ 4.2 Frontend admin proxy routes must reject non-admin tokens before calling backend endpoints
 
 5. 🔄 System Flow Summary
 
