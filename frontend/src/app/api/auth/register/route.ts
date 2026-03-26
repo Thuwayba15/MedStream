@@ -18,6 +18,7 @@ interface RegisterRequestBody {
     regulatoryBody?: "HPCSA" | "SANC" | "Other";
     registrationNumber?: string;
     requestedFacility?: string;
+    requestedFacilityId?: number;
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -41,6 +42,7 @@ export async function POST(request: Request): Promise<Response> {
             regulatoryBody: body.regulatoryBody || null,
             registrationNumber: body.registrationNumber || null,
             requestedFacility: body.requestedFacility || null,
+            requestedFacilityId: body.requestedFacilityId || null,
         });
 
         if (!registerResult.canLogin) {

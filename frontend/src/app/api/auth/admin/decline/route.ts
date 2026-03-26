@@ -3,7 +3,7 @@ import { requireAdminAccessToken } from "@/lib/server/adminAuthGuard";
 import { adminAuthService } from "@/services/auth/adminAuthService";
 import { NextResponse } from "next/server";
 
-interface ApproveRequestBody {
+interface DeclineRequestBody {
     userId: number;
     decisionReason: string;
 }
@@ -15,15 +15,15 @@ export async function POST(request: Request): Promise<Response> {
             return guardResult.errorResponse ?? NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
         }
 
-        const body = (await request.json()) as ApproveRequestBody;
+        const body = (await request.json()) as DeclineRequestBody;
         if (!body.userId || body.userId <= 0 || !body.decisionReason?.trim()) {
             return NextResponse.json({ message: "Valid userId and decisionReason are required." }, { status: 400 });
         }
 
-        const approvedUser = await adminAuthService.decideClinician(body.userId, body.decisionReason, true, guardResult.accessToken);
+        const declinedUser = await adminAuthService.decideClinician(body.userId, body.decisionReason, false, guardResult.accessToken);
 
-        return NextResponse.json({ user: approvedUser });
+        return NextResponse.json({ user: declinedUser });
     } catch (error) {
-        return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to approve clinician.") }, { status: 400 });
+        return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to decline clinician.") }, { status: 400 });
     }
 }

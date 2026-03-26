@@ -25,6 +25,7 @@ export interface IAuthActionContext {
         regulatoryBody?: "HPCSA" | "SANC" | "Other";
         registrationNumber?: string;
         requestedFacility?: string;
+        requestedFacilityId?: number;
     }) => Promise<{ homePath: string }>;
     logout: () => Promise<void>;
     clearError: () => void;

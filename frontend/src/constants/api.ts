@@ -19,4 +19,25 @@ export const API = {
 
     /** ABP clinician approval endpoint (admin). */
     USERS_APPROVE_CLINICIAN_ENDPOINT: "/api/services/app/User/ApproveClinician",
+
+    /** ABP clinician decline endpoint (admin). */
+    USERS_DECLINE_CLINICIAN_ENDPOINT: "/api/services/app/User/DeclineClinician",
+
+    /** ABP facility pagination endpoint (admin). */
+    FACILITIES_GET_ALL_ENDPOINT: "/api/services/app/Facility/GetAll",
+
+    /** ABP facility create endpoint (admin). */
+    FACILITIES_CREATE_ENDPOINT: "/api/services/app/Facility/Create",
+
+    /** ABP facility update endpoint (admin). */
+    FACILITIES_UPDATE_ENDPOINT: "/api/services/app/Facility/Update",
+
+    /** ABP facility activation endpoint (admin). */
+    FACILITIES_SET_ACTIVATION_ENDPOINT: "/api/services/app/Facility/SetActivation",
+
+    /** ABP facility-clinician assignment endpoint (admin). */
+    FACILITIES_ASSIGN_CLINICIAN_ENDPOINT: "/api/services/app/Facility/AssignClinician",
+
+    /** ABP active facilities endpoint for registration dropdowns. */
+    ACCOUNT_ACTIVE_FACILITIES_ENDPOINT: "/api/services/app/Account/GetActiveFacilities",
 } as const;

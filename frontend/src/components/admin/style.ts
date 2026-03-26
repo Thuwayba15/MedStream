@@ -34,6 +34,37 @@ export const useAdminStyles = createStyles(({ css }) => ({
         overflow-x: auto;
     `,
 
+    fullWidth: css`
+        width: 100%;
+    `,
+
+    searchInput: css`
+        min-width: 320px;
+    `,
+
+    filterSelect: css`
+        min-width: 180px;
+    `,
+
+    assignSelect: css`
+        min-width: 180px;
+    `,
+
+    facilityFormGrid: css`
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px 16px;
+        width: 100%;
+
+        @media (max-width: 1200px) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+        }
+    `,
+
     secondaryTextStack: css`
         .ant-typography {
             line-height: 1.4;
