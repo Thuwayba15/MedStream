@@ -5,16 +5,12 @@ import { useAuthStyles } from "@/components/auth/style";
 import { Alert, Button, Card, Space, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-interface MeResponse {
-    user?: {
-        homePath: string;
-    };
-}
+import { useAuthActions } from "@/providers/auth";
 
 export default function AwaitingApprovalPage(): React.JSX.Element {
     const { styles } = useAuthStyles();
     const router = useRouter();
+    const { getCurrentHomePath } = useAuthActions();
     const [isChecking, setIsChecking] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -23,13 +19,8 @@ export default function AwaitingApprovalPage(): React.JSX.Element {
         setErrorMessage(null);
 
         try {
-            const response = await fetch("/api/auth/me");
-            const payload = (await response.json()) as { message?: string } & MeResponse;
-            if (!response.ok || !payload.user?.homePath) {
-                throw new Error(payload.message ?? "Unable to check current approval status.");
-            }
-
-            router.replace(payload.user.homePath);
+            const homePath = await getCurrentHomePath();
+            router.replace(homePath);
             router.refresh();
         } catch (error) {
             setErrorMessage(error instanceof Error ? error.message : "Unable to check current approval status.");

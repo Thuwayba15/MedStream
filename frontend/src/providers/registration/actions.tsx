@@ -1,3 +1,4 @@
+import { createAction } from "redux-actions";
 import { IRegistrationFacilityOption, IRegistrationStateContext } from "./context";
 
 export enum RegistrationActionEnums {
@@ -9,37 +10,30 @@ export enum RegistrationActionEnums {
 
 export interface IRegistrationStateAction {
     type: RegistrationActionEnums;
-    payload: Partial<IRegistrationStateContext>;
+    payload: IRegistrationStatePayload;
 }
 
-export const loadStarted = (): IRegistrationStateAction => ({
-    type: RegistrationActionEnums.loadStarted,
-    payload: {
-        isLoading: true,
-        errorMessage: undefined,
-    },
-});
+export type IRegistrationStatePayload = Partial<IRegistrationStateContext>;
 
-export const loadSucceeded = (facilities: IRegistrationFacilityOption[]): IRegistrationStateAction => ({
-    type: RegistrationActionEnums.loadSucceeded,
-    payload: {
+export const loadStarted = createAction<IRegistrationStatePayload>(RegistrationActionEnums.loadStarted, () => ({
+    isLoading: true,
+    errorMessage: undefined,
+}));
+
+export const loadSucceeded = createAction<IRegistrationStatePayload, IRegistrationFacilityOption[]>(
+    RegistrationActionEnums.loadSucceeded,
+    (facilities: IRegistrationFacilityOption[]) => ({
         isLoading: false,
         facilities,
         errorMessage: undefined,
-    },
-});
+    })
+);
 
-export const loadFailed = (errorMessage: string): IRegistrationStateAction => ({
-    type: RegistrationActionEnums.loadFailed,
-    payload: {
-        isLoading: false,
-        errorMessage,
-    },
-});
+export const loadFailed = createAction<IRegistrationStatePayload, string>(RegistrationActionEnums.loadFailed, (errorMessage: string) => ({
+    isLoading: false,
+    errorMessage,
+}));
 
-export const clearError = (): IRegistrationStateAction => ({
-    type: RegistrationActionEnums.clearError,
-    payload: {
-        errorMessage: undefined,
-    },
-});
+export const clearError = createAction<IRegistrationStatePayload>(RegistrationActionEnums.clearError, () => ({
+    errorMessage: undefined,
+}));

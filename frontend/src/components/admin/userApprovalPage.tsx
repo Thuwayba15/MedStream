@@ -7,8 +7,7 @@ import { LogoutButton } from "@/components/auth/logoutButton";
 import { useAuthStyles } from "@/components/auth/style";
 import { useAdminStyles } from "@/components/admin/style";
 import { useAdminGovernanceActions, useAdminGovernanceState } from "@/providers/admin-governance";
-import { ApprovalFilter } from "@/providers/admin-governance/context";
-import { IClinicianApplicant, IFacility } from "@/services/admin-governance/types";
+import { ApprovalFilter, IClinicianApplicant, IFacility } from "@/providers/admin-governance/context";
 
 const FACILITY_TYPE_OPTIONS = [
     { label: "Clinic", value: "Clinic" },

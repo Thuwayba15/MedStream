@@ -1,25 +1,45 @@
-import { AdminGovernanceActionEnums, IAdminGovernanceStateAction } from "./actions";
-import { IAdminGovernanceStateContext } from "./context";
+import { handleActions } from "redux-actions";
+import { AdminGovernanceActionEnums, IAdminGovernanceStatePayload } from "./actions";
+import { IAdminGovernanceStateContext, INITIAL_STATE } from "./context";
 
-export function adminGovernanceReducer(
-    state: IAdminGovernanceStateContext,
-    action: IAdminGovernanceStateAction
-): IAdminGovernanceStateContext {
-    switch (action.type) {
-        case AdminGovernanceActionEnums.loadStarted:
-        case AdminGovernanceActionEnums.loadSucceeded:
-        case AdminGovernanceActionEnums.loadFailed:
-        case AdminGovernanceActionEnums.mutationStarted:
-        case AdminGovernanceActionEnums.mutationSucceeded:
-        case AdminGovernanceActionEnums.mutationFailed:
-        case AdminGovernanceActionEnums.setSearchText:
-        case AdminGovernanceActionEnums.setApprovalFilter:
-        case AdminGovernanceActionEnums.clearMessages:
-            return {
-                ...state,
-                ...action.payload,
-            };
-        default:
-            return state;
-    }
-}
+export const adminGovernanceReducer = handleActions<IAdminGovernanceStateContext, IAdminGovernanceStatePayload>(
+    {
+        [AdminGovernanceActionEnums.loadStarted]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.loadSucceeded]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.loadFailed]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.mutationStarted]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.mutationSucceeded]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.mutationFailed]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.setSearchText]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.setApprovalFilter]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AdminGovernanceActionEnums.clearMessages]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+    },
+    INITIAL_STATE
+);

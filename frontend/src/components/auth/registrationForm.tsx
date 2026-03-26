@@ -4,7 +4,7 @@ import { Alert, Button, Card, Form, Input, Radio, Select, Typography } from "ant
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthActions, useAuthState } from "@/providers/auth";
 import { useRegistrationActions, useRegistrationState } from "@/providers/registration";
 import { useAuthStyles } from "./style";
@@ -37,16 +37,26 @@ interface RegistrationFormValues {
 export function RegistrationForm(): React.JSX.Element {
     const router = useRouter();
     const { styles } = useAuthStyles();
+    const [form] = Form.useForm<RegistrationFormValues>();
     const { register, clearError } = useAuthActions();
     const { isPending, errorMessage } = useAuthState();
     const { facilities: activeFacilities, isLoading: isLoadingFacilities, errorMessage: facilityLoadError } = useRegistrationState();
     const { loadFacilities } = useRegistrationActions();
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const hasRequestedFacilitiesRef = useRef(false);
+    const accountType = Form.useWatch("accountType", form) as AccountType | undefined;
 
     useEffect(() => {
+        const shouldLoadFacilities =
+            accountType === "Clinician" && activeFacilities.length === 0 && !isLoadingFacilities && !hasRequestedFacilitiesRef.current;
+
+        if (!shouldLoadFacilities) {
+            return;
+        }
+
+        hasRequestedFacilitiesRef.current = true;
         void loadFacilities();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [accountType, activeFacilities.length, isLoadingFacilities, loadFacilities]);
 
     const onFinish = async (values: RegistrationFormValues): Promise<void> => {
         clearError();
@@ -99,7 +109,7 @@ export function RegistrationForm(): React.JSX.Element {
                         {errorMessage ? <Alert type="error" title={errorMessage} showIcon className={styles.alertBlock} /> : null}
                         {successMessage ? <Alert type="success" title={successMessage} showIcon className={styles.alertBlock} /> : null}
 
-                        <Form<RegistrationFormValues> layout="vertical" className={styles.form} onFinish={onFinish} initialValues={{ accountType: "Patient" }}>
+                        <Form<RegistrationFormValues> form={form} layout="vertical" className={styles.form} onFinish={onFinish} initialValues={{ accountType: "Patient" }}>
                             <Form.Item label="Account Type" name="accountType" rules={[{ required: true, message: "Select your role." }]}>
                                 <Radio.Group>
                                     <Radio value="Patient">Patient</Radio>

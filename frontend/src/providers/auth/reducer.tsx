@@ -1,17 +1,25 @@
-import { AuthActionEnums, type IAuthStateAction } from "./actions";
-import type { IAuthStateContext } from "./context";
+import { handleActions } from "redux-actions";
+import { AuthActionEnums, type IAuthStatePayload } from "./actions";
+import { INITIAL_STATE, type IAuthStateContext } from "./context";
 
-export function authReducer(state: IAuthStateContext, action: IAuthStateAction): IAuthStateContext {
-    switch (action.type) {
-        case AuthActionEnums.requestPending:
-        case AuthActionEnums.requestSuccess:
-        case AuthActionEnums.requestError:
-        case AuthActionEnums.clearError:
-            return {
-                ...state,
-                ...action.payload,
-            };
-        default:
-            return state;
-    }
-}
+export const authReducer = handleActions<IAuthStateContext, IAuthStatePayload>(
+    {
+        [AuthActionEnums.requestPending]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AuthActionEnums.requestSuccess]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AuthActionEnums.requestError]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [AuthActionEnums.clearError]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+    },
+    INITIAL_STATE
+);

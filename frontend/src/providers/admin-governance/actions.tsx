@@ -1,5 +1,5 @@
-import type { IAdminGovernanceStateContext, ApprovalFilter } from "./context";
-import { IClinicianApplicant, IFacility } from "@/services/admin-governance/types";
+import { createAction } from "redux-actions";
+import type { IAdminGovernanceStateContext, ApprovalFilter, IClinicianApplicant, IFacility } from "./context";
 
 export enum AdminGovernanceActionEnums {
     loadStarted = "ADMIN_GOVERNANCE_LOAD_STARTED",
@@ -15,82 +15,63 @@ export enum AdminGovernanceActionEnums {
 
 export interface IAdminGovernanceStateAction {
     type: AdminGovernanceActionEnums;
-    payload: Partial<IAdminGovernanceStateContext>;
+    payload: IAdminGovernanceStatePayload;
 }
 
-export const loadStarted = (): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.loadStarted,
-    payload: {
-        isLoadingUsers: true,
-        isLoadingFacilities: true,
-        errorMessage: undefined,
-    },
-});
+export type IAdminGovernanceStatePayload = Partial<IAdminGovernanceStateContext>;
 
-export const loadSucceeded = (users: IClinicianApplicant[], facilities: IFacility[]): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.loadSucceeded,
-    payload: {
+export const loadStarted = createAction<IAdminGovernanceStatePayload>(AdminGovernanceActionEnums.loadStarted, () => ({
+    isLoadingUsers: true,
+    isLoadingFacilities: true,
+    errorMessage: undefined,
+}));
+
+export const loadSucceeded = createAction<IAdminGovernanceStatePayload, IClinicianApplicant[], IFacility[]>(
+    AdminGovernanceActionEnums.loadSucceeded,
+    (users: IClinicianApplicant[], facilities: IFacility[]) => ({
         users,
         facilities,
         isLoadingUsers: false,
         isLoadingFacilities: false,
         errorMessage: undefined,
-    },
-});
+    })
+);
 
-export const loadFailed = (errorMessage: string): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.loadFailed,
-    payload: {
-        isLoadingUsers: false,
-        isLoadingFacilities: false,
-        errorMessage,
-    },
-});
+export const loadFailed = createAction<IAdminGovernanceStatePayload, string>(AdminGovernanceActionEnums.loadFailed, (errorMessage: string) => ({
+    isLoadingUsers: false,
+    isLoadingFacilities: false,
+    errorMessage,
+}));
 
-export const mutationStarted = (): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.mutationStarted,
-    payload: {
-        isMutating: true,
-        errorMessage: undefined,
-        successMessage: undefined,
-    },
-});
+export const mutationStarted = createAction<IAdminGovernanceStatePayload>(AdminGovernanceActionEnums.mutationStarted, () => ({
+    isMutating: true,
+    errorMessage: undefined,
+    successMessage: undefined,
+}));
 
-export const mutationSucceeded = (message: string): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.mutationSucceeded,
-    payload: {
+export const mutationSucceeded = createAction<IAdminGovernanceStatePayload, string>(
+    AdminGovernanceActionEnums.mutationSucceeded,
+    (message: string) => ({
         isMutating: false,
         successMessage: message,
         errorMessage: undefined,
-    },
-});
+    })
+);
 
-export const mutationFailed = (message: string): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.mutationFailed,
-    payload: {
-        isMutating: false,
-        errorMessage: message,
-    },
-});
+export const mutationFailed = createAction<IAdminGovernanceStatePayload, string>(AdminGovernanceActionEnums.mutationFailed, (message: string) => ({
+    isMutating: false,
+    errorMessage: message,
+}));
 
-export const setSearchText = (value: string): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.setSearchText,
-    payload: {
-        searchText: value,
-    },
-});
+export const setSearchText = createAction<IAdminGovernanceStatePayload, string>(AdminGovernanceActionEnums.setSearchText, (value: string) => ({
+    searchText: value,
+}));
 
-export const setApprovalFilter = (value: ApprovalFilter): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.setApprovalFilter,
-    payload: {
-        approvalFilter: value,
-    },
-});
+export const setApprovalFilter = createAction<IAdminGovernanceStatePayload, ApprovalFilter>(AdminGovernanceActionEnums.setApprovalFilter, (value: ApprovalFilter) => ({
+    approvalFilter: value,
+}));
 
-export const clearMessages = (): IAdminGovernanceStateAction => ({
-    type: AdminGovernanceActionEnums.clearMessages,
-    payload: {
-        errorMessage: undefined,
-        successMessage: undefined,
-    },
-});
+export const clearMessages = createAction<IAdminGovernanceStatePayload>(AdminGovernanceActionEnums.clearMessages, () => ({
+    errorMessage: undefined,
+    successMessage: undefined,
+}));
