@@ -1,12 +1,13 @@
-﻿using Abp.Authorization.Users;
+using Abp.Authorization.Users;
+using Abp.Domain.Repositories;
 using Abp.Domain.Services;
 using Abp.IdentityFramework;
 using Abp.Runtime.Session;
 using Abp.UI;
 using MedStream.Authorization.Roles;
 using MedStream.MultiTenancy;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,30 +19,31 @@ public class UserRegistrationManager : DomainService
 {
     public IAbpSession AbpSession { get; set; }
 
-    private readonly TenantManager _tenantManager;
+    private readonly IRepository<Tenant, int> _tenantRepository;
     private readonly UserManager _userManager;
     private readonly RoleManager _roleManager;
-    private readonly IPasswordHasher<User> _passwordHasher;
 
     public UserRegistrationManager(
-        TenantManager tenantManager,
+        IRepository<Tenant, int> tenantRepository,
         UserManager userManager,
-        RoleManager roleManager,
-        IPasswordHasher<User> passwordHasher)
+        RoleManager roleManager)
     {
-        _tenantManager = tenantManager;
+        _tenantRepository = tenantRepository;
         _userManager = userManager;
         _roleManager = roleManager;
-        _passwordHasher = passwordHasher;
 
         AbpSession = NullAbpSession.Instance;
     }
 
     public async Task<User> RegisterAsync(string name, string surname, string emailAddress, string userName, string plainPassword, bool isEmailConfirmed)
     {
-        CheckForTenant();
+        return await RegisterAsync(name, surname, emailAddress, userName, plainPassword, isEmailConfirmed, null);
+    }
 
-        var tenant = await GetActiveTenantAsync();
+    public async Task<User> RegisterAsync(string name, string surname, string emailAddress, string userName, string plainPassword, bool isEmailConfirmed, int? tenantId)
+    {
+        var resolvedTenantId = ResolveTenantId(tenantId);
+        var tenant = await GetActiveTenantAsync(resolvedTenantId);
 
         var user = new User
         {
@@ -57,7 +59,7 @@ public class UserRegistrationManager : DomainService
 
         user.SetNormalizedNames();
 
-        foreach (var defaultRole in await _roleManager.Roles.Where(r => r.IsDefault).ToListAsync())
+        foreach (var defaultRole in await _roleManager.Roles.Where(role => role.IsDefault).ToListAsync())
         {
             user.Roles.Add(new UserRole(tenant.Id, user.Id, defaultRole.Id));
         }
@@ -70,27 +72,25 @@ public class UserRegistrationManager : DomainService
         return user;
     }
 
-    private void CheckForTenant()
+    private int ResolveTenantId(int? tenantId)
     {
-        if (!AbpSession.TenantId.HasValue)
+        if (tenantId.HasValue)
         {
-            throw new InvalidOperationException("Can not register host users!");
-        }
-    }
-
-    private async Task<Tenant> GetActiveTenantAsync()
-    {
-        if (!AbpSession.TenantId.HasValue)
-        {
-            return null;
+            return tenantId.Value;
         }
 
-        return await GetActiveTenantAsync(AbpSession.TenantId.Value);
+        if (AbpSession.TenantId.HasValue)
+        {
+            return AbpSession.TenantId.Value;
+        }
+
+        throw new InvalidOperationException("Can not register host users!");
     }
 
     private async Task<Tenant> GetActiveTenantAsync(int tenantId)
     {
-        var tenant = await _tenantManager.FindByIdAsync(tenantId);
+        // Query tenant directly to avoid failures caused by stale audit user references.
+        var tenant = await _tenantRepository.FirstOrDefaultAsync(tenantId);
         if (tenant == null)
         {
             throw new UserFriendlyException(L("UnknownTenantId{0}", tenantId));

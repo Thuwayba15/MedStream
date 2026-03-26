@@ -1,13 +1,21 @@
 :root {
-    --background: #ffffff;
-    --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
+    --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+    --navy: #0d1b2e;
+    --navy-mid: #162540;
+    --navy-light: #1e3150;
+    --amber: #e07b2a;
+    --amber-light: #f09040;
+    --amber-pale: #fdf0e4;
+    --amber-muted: #f5d9be;
+    --white: #ffffff;
+    --off-white: #f8f6f2;
+    --slate: #8a9ab5;
+    --slate-light: #c4cfde;
+    --border-light: rgba(224, 123, 42, 0.18);
+    --border-navy: rgba(255, 255, 255, 0.08);
+    --urgent: #c94040;
+    --priority: #e07b2a;
+    --routine: #2a7be0;
 }
 
 html {
@@ -24,9 +32,9 @@ body {
     min-height: 100%;
     display: flex;
     flex-direction: column;
-    color: var(--foreground);
-    background: var(--background);
-    font-family: Arial, Helvetica, sans-serif;
+    color: var(--navy);
+    background: var(--off-white);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -40,10 +48,4 @@ body {
 a {
     color: inherit;
     text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-    html {
-        color-scheme: dark;
-    }
 }

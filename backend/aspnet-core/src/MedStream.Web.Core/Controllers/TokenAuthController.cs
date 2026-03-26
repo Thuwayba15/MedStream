@@ -1,5 +1,6 @@
-﻿using Abp.Authorization;
+using Abp.Authorization;
 using Abp.Authorization.Users;
+using Abp.Extensions;
 using Abp.MultiTenancy;
 using Abp.Runtime.Security;
 using MedStream.Authentication.JwtBearer;
@@ -43,10 +44,10 @@ namespace MedStream.Controllers
             var loginResult = await GetLoginResultAsync(
                 model.UserNameOrEmailAddress,
                 model.Password,
-                GetTenancyNameOrNull()
+                ResolveTenancyName(model.TenantId)
             );
 
-            var accessToken = CreateAccessToken(CreateJwtClaims(loginResult.Identity));
+            var accessToken = CreateAccessToken(CreateJwtClaims(loginResult.Identity, loginResult.User));
 
             return new AuthenticateResultModel
             {
@@ -55,6 +56,21 @@ namespace MedStream.Controllers
                 ExpireInSeconds = (int)_configuration.Expiration.TotalSeconds,
                 UserId = loginResult.User.Id
             };
+        }
+
+        private string ResolveTenancyName(string tenantId)
+        {
+            if (!tenantId.IsNullOrWhiteSpace() && int.TryParse(tenantId, out var parsedTenantId))
+            {
+                return _tenantCache.GetOrNull(parsedTenantId)?.TenancyName;
+            }
+
+            if (!tenantId.IsNullOrWhiteSpace())
+            {
+                return tenantId;
+            }
+
+            return GetTenancyNameOrNull();
         }
 
         private string GetTenancyNameOrNull()
@@ -96,17 +112,18 @@ namespace MedStream.Controllers
             return new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
         }
 
-        private static List<Claim> CreateJwtClaims(ClaimsIdentity identity)
+        private static List<Claim> CreateJwtClaims(ClaimsIdentity identity, User user)
         {
             var claims = identity.Claims.ToList();
             var nameIdClaim = claims.First(c => c.Type == ClaimTypes.NameIdentifier);
 
-            // Specifically add the jti (random nonce), iat (issued timestamp), and sub (subject/user) claims.
             claims.AddRange(new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, nameIdClaim.Value),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.Now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.Now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                new Claim(UserClaimTypes.ApprovalState, user.IsClinicianApprovalPending ? "pending" : "approved"),
+                new Claim(UserClaimTypes.RequestedRegistrationRole, user.RequestedRegistrationRole ?? string.Empty)
             });
 
             return claims;
