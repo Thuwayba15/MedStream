@@ -1,4 +1,6 @@
 using Abp.Application.Services.Dto;
+using Abp.Authorization;
+using Abp.MultiTenancy;
 using MedStream.Authorization.Accounts;
 using MedStream.Authorization.Accounts.Dto;
 using MedStream.Authorization.Roles;
@@ -119,5 +121,50 @@ public class AccountAppService_Tests : MedStreamTestBase
             roles.ShouldContain(StaticRoleNames.Tenants.Clinician);
             roles.ShouldNotContain(StaticRoleNames.Tenants.Patient);
         });
+    }
+
+    [Fact]
+    public async Task Approve_Clinician_Should_Require_Approval_Permission()
+    {
+        var clinicianEmailAddress = $"approval-target-{Guid.NewGuid():N}@medstream.test";
+        await _accountAppService.Register(new RegisterInput
+        {
+            FirstName = "Pending",
+            LastName = "Clinician",
+            EmailAddress = clinicianEmailAddress,
+            PhoneNumber = "0634113456",
+            Password = "Password1",
+            ConfirmPassword = "Password1",
+            AccountType = "Clinician",
+            IdNumber = "9001015009087",
+            ProfessionType = "Doctor",
+            RegulatoryBody = "HPCSA",
+            RegistrationNumber = "HPCSA-7777",
+            RequestedFacility = "Pretoria Clinic"
+        });
+
+        var patientEmailAddress = $"patient-non-admin-{Guid.NewGuid():N}@medstream.test";
+        await _accountAppService.Register(new RegisterInput
+        {
+            FirstName = "Patient",
+            LastName = "User",
+            EmailAddress = patientEmailAddress,
+            PhoneNumber = "0634113456",
+            Password = "Password1",
+            ConfirmPassword = "Password1",
+            AccountType = "Patient"
+        });
+
+        var clinicianUserId = await UsingDbContextAsync(async context =>
+        {
+            var user = await context.Users.FirstAsync(entity => entity.EmailAddress == clinicianEmailAddress);
+            return user.Id;
+        });
+
+        LoginAsTenant(AbpTenantBase.DefaultTenantName, patientEmailAddress);
+        await Should.ThrowAsync<AbpAuthorizationException>(async () =>
+            await _userAppService.ApproveClinician(new EntityDto<long>(clinicianUserId)));
+
+        LoginAsDefaultTenantAdmin();
     }
 }

@@ -1,13 +1,13 @@
-import { DEFAULT_TENANT_ID, REGISTER_ENDPOINT, TOKEN_AUTH_ENDPOINT } from "@/constants/api";
+import { API } from "@/constants/api";
 import { unwrapAbpResponse } from "@/lib/api/abp";
 import { apiClient } from "@/lib/api/client";
 import { IAuthenticateResponse, ILoginRequest, IRegisterRequest, IRegisterResponse } from "./types";
 
 async function login(request: ILoginRequest): Promise<IAuthenticateResponse> {
-    const response = await apiClient.post(TOKEN_AUTH_ENDPOINT, {
+    const response = await apiClient.post(API.TOKEN_AUTH_ENDPOINT, {
         userNameOrEmailAddress: request.userNameOrEmailAddress.trim(),
         password: request.password,
-        tenantId: DEFAULT_TENANT_ID,
+        tenantId: API.DEFAULT_TENANT_ID,
         rememberClient: true,
     });
 
@@ -15,7 +15,7 @@ async function login(request: ILoginRequest): Promise<IAuthenticateResponse> {
 }
 
 async function register(request: IRegisterRequest): Promise<IRegisterResponse> {
-    const response = await apiClient.post(REGISTER_ENDPOINT, {
+    const response = await apiClient.post(API.REGISTER_ENDPOINT, {
         firstName: request.firstName.trim(),
         lastName: request.lastName.trim(),
         emailAddress: request.emailAddress.trim(),

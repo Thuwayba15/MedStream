@@ -125,6 +125,18 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
         return new ListResultDto<RoleDto>(ObjectMapper.Map<List<RoleDto>>(roles));
     }
 
+    [AbpAuthorize(PermissionNames.Pages_Users_Approvals_View)]
+    public async Task<ListResultDto<UserDto>> GetClinicianApplicants()
+    {
+        var clinicianApplicants = await Repository.GetAllIncluding(entity => entity.Roles)
+            .Where(entity => entity.RequestedRegistrationRole == StaticRoleNames.Tenants.Clinician)
+            .OrderByDescending(entity => entity.ClinicianSubmittedAt ?? entity.CreationTime)
+            .ToListAsync();
+
+        var userDtos = clinicianApplicants.Select(MapToEntityDto).ToList();
+        return new ListResultDto<UserDto>(userDtos);
+    }
+
     public async Task ChangeLanguage(ChangeUserLanguageDto input)
     {
         await SettingManager.ChangeSettingForUserAsync(
@@ -248,7 +260,7 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
         return true;
     }
 
-    [AbpAuthorize(PermissionNames.Pages_Users)]
+    [AbpAuthorize(PermissionNames.Pages_Users_Approvals_Approve)]
     public async Task<UserDto> ApproveClinician(EntityDto<long> input)
     {
         var user = await Repository.GetAllIncluding(entity => entity.Roles).FirstOrDefaultAsync(entity => entity.Id == input.Id);

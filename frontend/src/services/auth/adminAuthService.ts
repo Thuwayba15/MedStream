@@ -1,4 +1,4 @@
-import { USERS_APPROVE_CLINICIAN_ENDPOINT, USERS_GET_ALL_ENDPOINT } from "@/constants/api";
+import { API } from "@/constants/api";
 import { unwrapAbpResponse } from "@/lib/api/abp";
 import { apiClient } from "@/lib/api/client";
 import { IBackendPagedUsers, IBackendUserListItem } from "./types";
@@ -8,24 +8,19 @@ function getAuthorizationHeader(accessToken: string): { Authorization: string } 
 }
 
 async function getUsers(accessToken: string): Promise<IBackendPagedUsers> {
-    const response = await apiClient.post(
-        USERS_GET_ALL_ENDPOINT,
-        {
-            keyword: "",
-            maxResultCount: 500,
-            skipCount: 0,
-        },
-        {
-            headers: getAuthorizationHeader(accessToken),
-        },
-    );
+    const response = await apiClient.get(API.USERS_GET_CLINICIAN_APPLICANTS_ENDPOINT, {
+        headers: getAuthorizationHeader(accessToken),
+    });
+    const listResult = unwrapAbpResponse<{ items: IBackendUserListItem[] }>(response.data);
 
-    return unwrapAbpResponse<IBackendPagedUsers>(response.data);
+    return {
+        items: listResult.items ?? [],
+    };
 }
 
 async function approveClinician(userId: number, accessToken: string): Promise<IBackendUserListItem> {
     const response = await apiClient.post(
-        USERS_APPROVE_CLINICIAN_ENDPOINT,
+        API.USERS_APPROVE_CLINICIAN_ENDPOINT,
         { id: userId },
         {
             headers: getAuthorizationHeader(accessToken),

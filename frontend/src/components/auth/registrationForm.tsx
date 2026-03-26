@@ -141,7 +141,7 @@ export function RegistrationForm(): React.JSX.Element {
                                         return Promise.resolve();
                                     }
 
-                                    return Promise.reject(new Error("Use a valid South African mobile number, for example 0634113456."));
+                                    return Promise.reject(new Error("Use a valid South African mobile number."));
                                 },
                             },
                         ]}

@@ -105,7 +105,10 @@ test.describe("auth state routing", () => {
         await page.getByRole("radio", { name: "HPCSA" }).check();
         await page.getByLabel("Registration number").fill("HPCSA-1234");
         await page.getByLabel("Requested facility").fill("Johannesburg Clinic");
-        await page.getByRole("button", { name: "Create Account" }).click();
+        await Promise.all([
+            page.waitForResponse((response) => response.url().includes("/api/auth/register") && response.status() === 200),
+            page.getByRole("button", { name: "Create Account" }).click(),
+        ]);
 
         await expect(page).toHaveURL(/\/awaiting-approval$/);
         await expect(page.getByRole("heading", { level: 1, name: "Awaiting Approval" })).toBeVisible();

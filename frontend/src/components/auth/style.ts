@@ -147,7 +147,7 @@ export const useAuthStyles = createStyles(({ css }) => ({
     subtitle: css`
         margin: 8px 0 22px;
         text-align: center;
-        color: ${colors.bodyText};
+        color: ${colors.slate};
         font-size: 0.92rem;
         line-height: 1.6;
     `,

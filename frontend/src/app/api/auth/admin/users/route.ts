@@ -1,19 +1,17 @@
-import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/auth/constants";
 import { getAbpErrorMessage } from "@/lib/api/abp";
 import { deriveAuthState } from "@/lib/server/authProfile";
+import { requireAdminAccessToken } from "@/lib/server/adminAuthGuard";
 import { adminAuthService } from "@/services/auth/adminAuthService";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(): Promise<Response> {
     try {
-        const cookieStore = await cookies();
-        const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
-        if (!accessToken) {
-            return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
+        const guardResult = await requireAdminAccessToken();
+        if (guardResult.errorResponse || !guardResult.accessToken) {
+            return guardResult.errorResponse ?? NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
         }
 
-        const pagedUsers = await adminAuthService.getUsers(accessToken);
+        const pagedUsers = await adminAuthService.getUsers(guardResult.accessToken);
 
         const users = pagedUsers.items.map((user) => ({
             ...user,

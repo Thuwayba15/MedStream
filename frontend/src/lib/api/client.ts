@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import { DEFAULT_TENANT_ID, TENANT_HEADER } from "@/constants/api";
+import { API } from "@/constants/api";
 
 function getApiBaseUrl(): string {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -19,11 +19,11 @@ export const apiClient: AxiosInstance = axios.create({
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",
-        [TENANT_HEADER]: DEFAULT_TENANT_ID,
+        [API.TENANT_HEADER]: API.DEFAULT_TENANT_ID,
     },
 });
 
 apiClient.interceptors.request.use((config) => {
-    config.headers[TENANT_HEADER] = DEFAULT_TENANT_ID;
+    config.headers[API.TENANT_HEADER] = API.DEFAULT_TENANT_ID;
     return config;
 });
