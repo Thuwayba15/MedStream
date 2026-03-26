@@ -1,11 +1,12 @@
 "use client";
 
-import { Alert, Button, Card, Form, Input, Radio, Typography } from "antd";
+import { Alert, Button, Card, Form, Input, Radio, Select, Typography } from "antd";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthActions, useAuthState } from "@/providers/auth";
+import { useRegistrationActions, useRegistrationState } from "@/providers/registration";
 import { useAuthStyles } from "./style";
 
 type AccountType = "Patient" | "Clinician";
@@ -13,6 +14,7 @@ type ProfessionType = "Doctor" | "Nurse" | "AlliedHealth" | "Other";
 type RegulatoryBody = "HPCSA" | "SANC" | "Other";
 const SOUTH_AFRICAN_PHONE_PATTERN = /^(\+27|0)[6-8][0-9]{8}$/;
 const SOUTH_AFRICAN_ID_PATTERN = /^[0-9]{13}$/;
+const SOUTH_AFRICAN_REGISTRATION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9\-\/]{2,31}$/;
 const STRONG_PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 interface RegistrationFormValues {
@@ -29,14 +31,31 @@ interface RegistrationFormValues {
     regulatoryBody?: RegulatoryBody;
     registrationNumber?: string;
     requestedFacility?: string;
+    requestedFacilityId?: number;
 }
 
 export function RegistrationForm(): React.JSX.Element {
     const router = useRouter();
     const { styles } = useAuthStyles();
+    const [form] = Form.useForm<RegistrationFormValues>();
     const { register, clearError } = useAuthActions();
     const { isPending, errorMessage } = useAuthState();
+    const { facilities: activeFacilities, isLoading: isLoadingFacilities, errorMessage: facilityLoadError } = useRegistrationState();
+    const { loadFacilities } = useRegistrationActions();
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const hasRequestedFacilitiesRef = useRef(false);
+    const accountType = Form.useWatch("accountType", form) as AccountType | undefined;
+
+    useEffect(() => {
+        const shouldLoadFacilities = accountType === "Clinician" && activeFacilities.length === 0 && !isLoadingFacilities && !hasRequestedFacilitiesRef.current;
+
+        if (!shouldLoadFacilities) {
+            return;
+        }
+
+        hasRequestedFacilitiesRef.current = true;
+        void loadFacilities();
+    }, [accountType, activeFacilities.length, isLoadingFacilities, loadFacilities]);
 
     const onFinish = async (values: RegistrationFormValues): Promise<void> => {
         clearError();
@@ -89,7 +108,7 @@ export function RegistrationForm(): React.JSX.Element {
                         {errorMessage ? <Alert type="error" title={errorMessage} showIcon className={styles.alertBlock} /> : null}
                         {successMessage ? <Alert type="success" title={successMessage} showIcon className={styles.alertBlock} /> : null}
 
-                        <Form<RegistrationFormValues> layout="vertical" className={styles.form} onFinish={onFinish} initialValues={{ accountType: "Patient" }}>
+                        <Form<RegistrationFormValues> form={form} layout="vertical" className={styles.form} onFinish={onFinish} initialValues={{ accountType: "Patient" }}>
                             <Form.Item label="Account Type" name="accountType" rules={[{ required: true, message: "Select your role." }]}>
                                 <Radio.Group>
                                     <Radio value="Patient">Patient</Radio>
@@ -243,13 +262,37 @@ export function RegistrationForm(): React.JSX.Element {
                                                 </Radio.Group>
                                             </Form.Item>
 
-                                            <Form.Item label="Registration number" name="registrationNumber" rules={[{ required: true, message: "Enter registration number." }]}>
+                                            <Form.Item
+                                                label="Registration number"
+                                                name="registrationNumber"
+                                                rules={[
+                                                    { required: true, message: "Enter registration number." },
+                                                    {
+                                                        validator(_, value: string) {
+                                                            if (!value || SOUTH_AFRICAN_REGISTRATION_PATTERN.test(value)) {
+                                                                return Promise.resolve();
+                                                            }
+
+                                                            return Promise.reject(new Error("Use a valid SA registration number format."));
+                                                        },
+                                                    },
+                                                ]}
+                                            >
                                                 <Input placeholder="Registration number" />
                                             </Form.Item>
 
-                                            <Form.Item label="Requested facility" name="requestedFacility" rules={[{ required: true, message: "Enter requested facility." }]}>
-                                                <Input placeholder="Requested facility" />
+                                            <Form.Item label="Requested facility" name="requestedFacilityId" rules={[{ required: true, message: "Select requested facility." }]}>
+                                                <Select
+                                                    placeholder="Select requested facility"
+                                                    loading={isLoadingFacilities}
+                                                    options={activeFacilities.map((facility) => ({
+                                                        label: facility.name,
+                                                        value: facility.id,
+                                                    }))}
+                                                />
                                             </Form.Item>
+
+                                            {facilityLoadError ? <Alert type="warning" title={facilityLoadError} showIcon className={styles.alertBlock} /> : null}
                                         </>
                                     ) : null
                                 }

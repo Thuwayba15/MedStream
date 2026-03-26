@@ -5,7 +5,9 @@ using MedStream.Authorization.Accounts;
 using MedStream.Authorization.Accounts.Dto;
 using MedStream.Authorization.Roles;
 using MedStream.Authorization.Users;
+using MedStream.Facilities;
 using MedStream.Users;
+using MedStream.Users.Dto;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using System;
@@ -57,6 +59,7 @@ public class AccountAppService_Tests : MedStreamTestBase
     public async Task Register_Clinician_Should_Be_Pending_Without_Clinician_Role()
     {
         var emailAddress = $"clinician-{Guid.NewGuid():N}@medstream.test";
+        var facilityId = await GetFacilityIdAsync("Thembisa Hospital");
         await _accountAppService.Register(new RegisterInput
         {
             FirstName = "Test",
@@ -70,7 +73,7 @@ public class AccountAppService_Tests : MedStreamTestBase
             ProfessionType = "Doctor",
             RegulatoryBody = "HPCSA",
             RegistrationNumber = "HPCSA-1234",
-            RequestedFacility = "Johannesburg Clinic"
+            RequestedFacilityId = facilityId
         });
 
         await UsingDbContextAsync(async context =>
@@ -87,6 +90,7 @@ public class AccountAppService_Tests : MedStreamTestBase
     public async Task Approve_Clinician_Should_Assign_Clinician_Role_And_Clear_Pending()
     {
         var emailAddress = $"approve-{Guid.NewGuid():N}@medstream.test";
+        var facilityId = await GetFacilityIdAsync("Soweto Community Health Centre");
         await _accountAppService.Register(new RegisterInput
         {
             FirstName = "Approve",
@@ -100,7 +104,7 @@ public class AccountAppService_Tests : MedStreamTestBase
             ProfessionType = "Doctor",
             RegulatoryBody = "HPCSA",
             RegistrationNumber = "HPCSA-5678",
-            RequestedFacility = "Soweto Clinic"
+            RequestedFacilityId = facilityId
         });
 
         var userId = await UsingDbContextAsync(async context =>
@@ -109,7 +113,11 @@ public class AccountAppService_Tests : MedStreamTestBase
             return user.Id;
         });
 
-        await _userAppService.ApproveClinician(new EntityDto<long>(userId));
+        await _userAppService.ApproveClinician(new ClinicianApprovalDecisionInput
+        {
+            Id = userId,
+            DecisionReason = "Credentials verified."
+        });
 
         await UsingDbContextAsync(async context =>
         {
@@ -118,6 +126,7 @@ public class AccountAppService_Tests : MedStreamTestBase
 
             user.IsClinicianApprovalPending.ShouldBeFalse();
             user.ClinicianApprovedAt.ShouldNotBeNull();
+            user.ApprovalDecisionReason.ShouldBe("Credentials verified.");
             roles.ShouldContain(StaticRoleNames.Tenants.Clinician);
             roles.ShouldNotContain(StaticRoleNames.Tenants.Patient);
         });
@@ -127,6 +136,7 @@ public class AccountAppService_Tests : MedStreamTestBase
     public async Task Approve_Clinician_Should_Require_Approval_Permission()
     {
         var clinicianEmailAddress = $"approval-target-{Guid.NewGuid():N}@medstream.test";
+        var facilityId = await GetFacilityIdAsync("Steve Biko Academic Hospital");
         await _accountAppService.Register(new RegisterInput
         {
             FirstName = "Pending",
@@ -140,7 +150,7 @@ public class AccountAppService_Tests : MedStreamTestBase
             ProfessionType = "Doctor",
             RegulatoryBody = "HPCSA",
             RegistrationNumber = "HPCSA-7777",
-            RequestedFacility = "Pretoria Clinic"
+            RequestedFacilityId = facilityId
         });
 
         var patientEmailAddress = $"patient-non-admin-{Guid.NewGuid():N}@medstream.test";
@@ -163,8 +173,68 @@ public class AccountAppService_Tests : MedStreamTestBase
 
         LoginAsTenant(AbpTenantBase.DefaultTenantName, patientEmailAddress);
         await Should.ThrowAsync<AbpAuthorizationException>(async () =>
-            await _userAppService.ApproveClinician(new EntityDto<long>(clinicianUserId)));
+            await _userAppService.ApproveClinician(new ClinicianApprovalDecisionInput
+            {
+                Id = clinicianUserId,
+                DecisionReason = "Permission test"
+            }));
 
         LoginAsDefaultTenantAdmin();
+    }
+
+    [Fact]
+    public async Task Decline_Clinician_Should_Mark_Rejected_And_Deactivate()
+    {
+        var emailAddress = $"decline-{Guid.NewGuid():N}@medstream.test";
+        var facilityId = await GetFacilityIdAsync("Soweto Community Health Centre");
+        await _accountAppService.Register(new RegisterInput
+        {
+            FirstName = "Decline",
+            LastName = "Target",
+            EmailAddress = emailAddress,
+            PhoneNumber = "0634113456",
+            Password = "Password1",
+            ConfirmPassword = "Password1",
+            AccountType = "Clinician",
+            IdNumber = "9001015009087",
+            ProfessionType = "Doctor",
+            RegulatoryBody = "HPCSA",
+            RegistrationNumber = "HPCSA-9999",
+            RequestedFacilityId = facilityId
+        });
+
+        var userId = await UsingDbContextAsync(async context =>
+        {
+            var user = await context.Users.FirstAsync(x => x.EmailAddress == emailAddress);
+            return user.Id;
+        });
+
+        await _userAppService.DeclineClinician(new ClinicianApprovalDecisionInput
+        {
+            Id = userId,
+            DecisionReason = "Registration details could not be verified."
+        });
+
+        await UsingDbContextAsync(async context =>
+        {
+            var user = await context.Users.FirstAsync(x => x.Id == userId);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            user.IsClinicianApprovalPending.ShouldBeFalse();
+            user.IsActive.ShouldBeFalse();
+            user.ApprovalStatus.ShouldBe(UserRegistrationConstants.ApprovalStatusRejected);
+            user.ApprovalDecisionReason.ShouldBe("Registration details could not be verified.");
+            user.ClinicianDeclinedAt.ShouldNotBeNull();
+            roles.ShouldNotContain(StaticRoleNames.Tenants.Clinician);
+        });
+    }
+
+    private async Task<int> GetFacilityIdAsync(string name)
+    {
+        return await UsingDbContextAsync(async context =>
+        {
+            var facility = await context.Set<Facility>().FirstAsync(item => item.Name == name);
+            return facility.Id;
+        });
     }
 }

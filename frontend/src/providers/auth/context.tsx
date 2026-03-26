@@ -25,8 +25,10 @@ export interface IAuthActionContext {
         regulatoryBody?: "HPCSA" | "SANC" | "Other";
         registrationNumber?: string;
         requestedFacility?: string;
+        requestedFacilityId?: number;
     }) => Promise<{ homePath: string }>;
     logout: () => Promise<void>;
+    getCurrentHomePath: () => Promise<string>;
     clearError: () => void;
 }
 
@@ -41,6 +43,7 @@ export const INITIAL_ACTION_STATE: IAuthActionContext = {
     login: async () => ({ homePath: "/login" }),
     register: async () => ({ homePath: "/registration" }),
     logout: async () => Promise.resolve(),
+    getCurrentHomePath: async () => "/login",
     clearError: () => undefined,
 };
 

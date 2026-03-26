@@ -29,6 +29,7 @@ async function register(request: IRegisterRequest): Promise<IRegisterResponse> {
         regulatoryBody: request.regulatoryBody || null,
         registrationNumber: request.registrationNumber?.trim() || null,
         requestedFacility: request.requestedFacility?.trim() || null,
+        requestedFacilityId: request.requestedFacilityId ?? null,
     });
 
     return unwrapAbpResponse<IRegisterResponse>(response.data);

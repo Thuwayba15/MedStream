@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 interface ApproveRequestBody {
     userId: number;
+    decisionReason: string;
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -15,11 +16,11 @@ export async function POST(request: Request): Promise<Response> {
         }
 
         const body = (await request.json()) as ApproveRequestBody;
-        if (!body.userId || body.userId <= 0) {
-            return NextResponse.json({ message: "Valid userId is required." }, { status: 400 });
+        if (!body.userId || body.userId <= 0 || !body.decisionReason?.trim()) {
+            return NextResponse.json({ message: "Valid userId and decisionReason are required." }, { status: 400 });
         }
 
-        const approvedUser = await adminAuthService.approveClinician(body.userId, guardResult.accessToken);
+        const approvedUser = await adminAuthService.decideClinician(body.userId, body.decisionReason, true, guardResult.accessToken);
 
         return NextResponse.json({ user: approvedUser });
     } catch (error) {

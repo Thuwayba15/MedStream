@@ -15,6 +15,14 @@ public class MedStreamAuthorizationProvider : AuthorizationProvider
         var userApprovals = users.CreateChildPermission(PermissionNames.Pages_Users_Approvals, L("UsersApprovals"));
         userApprovals.CreateChildPermission(PermissionNames.Pages_Users_Approvals_View, L("UsersApprovalsView"));
         userApprovals.CreateChildPermission(PermissionNames.Pages_Users_Approvals_Approve, L("UsersApprovalsApprove"));
+        userApprovals.CreateChildPermission(PermissionNames.Pages_Users_Approvals_Decline, L("UsersApprovalsDecline"));
+
+        var facilities = context.CreatePermission(PermissionNames.Pages_Facilities, L("Facilities"));
+        facilities.CreateChildPermission(PermissionNames.Pages_Facilities_View, L("FacilitiesView"));
+        facilities.CreateChildPermission(PermissionNames.Pages_Facilities_Create, L("FacilitiesCreate"));
+        facilities.CreateChildPermission(PermissionNames.Pages_Facilities_Edit, L("FacilitiesEdit"));
+        facilities.CreateChildPermission(PermissionNames.Pages_Facilities_Activation, L("FacilitiesActivation"));
+        facilities.CreateChildPermission(PermissionNames.Pages_Facilities_AssignClinician, L("FacilitiesAssignClinician"));
 
         context.CreatePermission(PermissionNames.Pages_Roles, L("Roles"));
         context.CreatePermission(PermissionNames.Pages_Tenants, L("Tenants"), multiTenancySides: MultiTenancySides.Host);

@@ -1,56 +1,98 @@
 "use client";
 
 import { useContext, useReducer } from "react";
+import { API } from "@/constants/api";
 import { clearError, requestError, requestPending, requestSuccess } from "./actions";
 import { AuthActionContext, AuthStateContext, INITIAL_STATE, type IAuthActionContext, type IAuthStateContext } from "./context";
 import { authReducer } from "./reducer";
 
-interface IApiSuccessResponse {
+interface IMessageResponse {
+    message?: string;
+}
+
+interface IAuthRouteResponse {
     homePath?: string;
 }
 
-interface IApiErrorResponse {
-    message?: string;
+interface ICurrentUserResponse {
+    user?: {
+        homePath?: string;
+    };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
     const [state, dispatch] = useReducer(authReducer, INITIAL_STATE);
 
-    const executeAuthRequest = async <TRequest extends object>(path: "/api/auth/login" | "/api/auth/register", payload: TRequest): Promise<{ homePath: string }> => {
-        dispatch(requestPending());
-
-        try {
-            const response = await fetch(path, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            const responseBody = (await response.json()) as IApiSuccessResponse & IApiErrorResponse;
-            if (!response.ok || !responseBody.homePath) {
-                throw new Error(responseBody.message ?? "Authentication request failed.");
-            }
-
-            dispatch(requestSuccess());
-            return { homePath: responseBody.homePath };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Authentication request failed.";
-            dispatch(requestError(errorMessage));
-            throw new Error(errorMessage);
+    async function parseResponse<TResponse>(response: Response, fallbackMessage: string): Promise<TResponse> {
+        const body = (await response.json()) as TResponse & IMessageResponse;
+        if (!response.ok) {
+            throw new Error(body.message ?? fallbackMessage);
         }
-    };
+
+        return body;
+    }
 
     const actions: IAuthActionContext = {
-        login: async (payload) => executeAuthRequest("/api/auth/login", payload),
-        register: async (payload) => executeAuthRequest("/api/auth/register", payload),
+        login: async (payload) => {
+            dispatch(requestPending());
+            try {
+                const response = await fetch(API.AUTH_LOGIN_ROUTE, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                const body = await parseResponse<IAuthRouteResponse>(response, "Authentication request failed.");
+                if (!body.homePath) {
+                    throw new Error("Authentication request failed.");
+                }
+                dispatch(requestSuccess());
+                return { homePath: body.homePath };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Authentication request failed.";
+                dispatch(requestError(errorMessage));
+                throw new Error(errorMessage);
+            }
+        },
+        register: async (payload) => {
+            dispatch(requestPending());
+            try {
+                const response = await fetch(API.AUTH_REGISTER_ROUTE, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                const body = await parseResponse<IAuthRouteResponse>(response, "Authentication request failed.");
+                if (!body.homePath) {
+                    throw new Error("Authentication request failed.");
+                }
+                dispatch(requestSuccess());
+                return { homePath: body.homePath };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Authentication request failed.";
+                dispatch(requestError(errorMessage));
+                throw new Error(errorMessage);
+            }
+        },
         logout: async () => {
             dispatch(requestPending());
             try {
-                await fetch("/api/auth/logout", { method: "POST" });
+                const response = await fetch(API.AUTH_LOGOUT_ROUTE, { method: "POST" });
+                await parseResponse<Record<string, unknown>>(response, "Unable to log out.");
                 dispatch(requestSuccess());
-            } catch {
-                dispatch(requestError("Unable to log out."));
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Unable to log out.";
+                dispatch(requestError(errorMessage));
+                throw new Error(errorMessage);
             }
+        },
+        getCurrentHomePath: async () => {
+            const response = await fetch(API.AUTH_ME_ROUTE);
+            const body = await parseResponse<ICurrentUserResponse>(response, "Unable to check current approval status.");
+            if (!body.user?.homePath) {
+                throw new Error("Unable to check current approval status.");
+            }
+
+            return body.user.homePath;
         },
         clearError: () => dispatch(clearError()),
     };

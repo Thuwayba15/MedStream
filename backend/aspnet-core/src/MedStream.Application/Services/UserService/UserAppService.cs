@@ -261,8 +261,13 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
     }
 
     [AbpAuthorize(PermissionNames.Pages_Users_Approvals_Approve)]
-    public async Task<UserDto> ApproveClinician(EntityDto<long> input)
+    public async Task<UserDto> ApproveClinician(ClinicianApprovalDecisionInput input)
     {
+        if (input.DecisionReason.IsNullOrWhiteSpace())
+        {
+            throw new UserFriendlyException("Approval reason is required.");
+        }
+
         var user = await Repository.GetAllIncluding(entity => entity.Roles).FirstOrDefaultAsync(entity => entity.Id == input.Id);
         if (user == null)
         {
@@ -297,8 +302,50 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
         user.IsClinicianApprovalPending = false;
         user.ClinicianApprovedAt = DateTime.UtcNow;
         user.ClinicianApprovedByUserId = AbpSession.UserId;
+        user.ClinicianDeclinedAt = null;
+        user.ClinicianDeclinedByUserId = null;
         user.ApprovalStatus = UserRegistrationConstants.ApprovalStatusApproved;
+        user.ApprovalDecisionReason = input.DecisionReason.Trim();
         user.AccountType = UserRegistrationConstants.AccountTypeClinician;
+
+        CheckErrors(await _userManager.UpdateAsync(user));
+        await CurrentUnitOfWork.SaveChangesAsync();
+
+        return await GetAsync(new EntityDto<long>(input.Id));
+    }
+
+    [AbpAuthorize(PermissionNames.Pages_Users_Approvals_Decline)]
+    public async Task<UserDto> DeclineClinician(ClinicianApprovalDecisionInput input)
+    {
+        if (input.DecisionReason.IsNullOrWhiteSpace())
+        {
+            throw new UserFriendlyException("Decline reason is required.");
+        }
+
+        var user = await Repository.GetAllIncluding(entity => entity.Roles).FirstOrDefaultAsync(entity => entity.Id == input.Id);
+        if (user == null)
+        {
+            throw new EntityNotFoundException(typeof(User), input.Id);
+        }
+
+        if (!string.Equals(user.RequestedRegistrationRole, StaticRoleNames.Tenants.Clinician, StringComparison.Ordinal))
+        {
+            throw new UserFriendlyException("Only clinician applicants can be declined.");
+        }
+
+        if (!user.IsClinicianApprovalPending)
+        {
+            throw new UserFriendlyException("Clinician approval is not pending for this user.");
+        }
+
+        user.IsClinicianApprovalPending = false;
+        user.IsActive = false;
+        user.ClinicianApprovedAt = null;
+        user.ClinicianApprovedByUserId = null;
+        user.ClinicianDeclinedAt = DateTime.UtcNow;
+        user.ClinicianDeclinedByUserId = AbpSession.UserId;
+        user.ApprovalStatus = UserRegistrationConstants.ApprovalStatusRejected;
+        user.ApprovalDecisionReason = input.DecisionReason.Trim();
 
         CheckErrors(await _userManager.UpdateAsync(user));
         await CurrentUnitOfWork.SaveChangesAsync();

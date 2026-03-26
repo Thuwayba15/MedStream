@@ -146,6 +146,20 @@ Every frontend change should consider:
 - Handle loading, empty, success, and error states explicitly.
 - Never assume data exists; guard null and undefined states properly.
 
+## MedStream API and provider layering rules
+
+For this repository, enforce these architecture rules on every frontend task:
+- Keep all API path constants centralized in `src/constants/api.ts` (both backend ABP endpoints and internal Next route endpoints).
+- Do not hardcode `"/api/..."` strings in components, providers, or services when a constant exists.
+- Provider state must follow the exact 4-file pattern per feature: `actions.tsx`, `context.tsx`, `reducer.tsx`, `index.tsx`.
+- Provider actions must use `redux-actions` (`createAction`) and reducers must use `redux-actions` (`handleActions`) to mirror the standard provider structure.
+- Provider `index.tsx` files own the client-side API workflow for that provider feature (pending/success/error dispatch around network operations).
+- Components and pages must call provider actions; they must not perform business API calls directly.
+- Server route handlers under `src/app/api/**` stay thin and delegate backend calls to server-side services under `src/services/auth/**`.
+- Components and route pages should not call `fetch` directly for business flows; they should use provider actions.
+- Remove dead frontend artifacts (unused components, helpers, exports, and constants) as part of refactors.
+- Avoid eager loading for role-specific data: load clinician-only data only when clinician flows are active.
+
 ## Frontend behavior rules
 
 When implementing or changing frontend behavior:
