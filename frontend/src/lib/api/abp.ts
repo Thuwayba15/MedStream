@@ -32,8 +32,9 @@ export function unwrapAbpResponse<T>(payload: IAbpResponseEnvelope<T> | T): T {
 
 export function getAbpErrorMessage(error: unknown, fallbackMessage: string): string {
     if (error instanceof AxiosError) {
-        const responseData = error.response?.data as IAbpResponseEnvelope<unknown> | undefined;
-        if (responseData?.error) {
+        const responseData: unknown = error.response?.data;
+
+        if (isAbpEnvelope(responseData) && responseData.error) {
             return buildAbpErrorMessage(responseData.error, fallbackMessage);
         }
 
