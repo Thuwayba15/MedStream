@@ -1,5 +1,5 @@
-import { AuthPlaceholder } from "@/components/landing/authPlaceholder";
+import { LoginForm } from "@/components/auth/loginForm";
 
 export default function LoginPage() {
-    return <AuthPlaceholder label="Login" />;
+    return <LoginForm />;
 }

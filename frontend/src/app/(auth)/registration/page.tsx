@@ -1,5 +1,5 @@
-import { AuthPlaceholder } from "@/components/landing/authPlaceholder";
+import { RegistrationForm } from "@/components/auth/registrationForm";
 
 export default function RegistrationPage() {
-    return <AuthPlaceholder label="Registration" />;
+    return <RegistrationForm />;
 }
