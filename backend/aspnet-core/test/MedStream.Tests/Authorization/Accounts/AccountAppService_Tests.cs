@@ -28,20 +28,21 @@ public class AccountAppService_Tests : MedStreamTestBase
     [Fact]
     public async Task Register_Patient_Should_Assign_Patient_Role_Immediately()
     {
-        var username = $"patient-{Guid.NewGuid():N}".Substring(0, 20);
+        var emailAddress = $"patient-{Guid.NewGuid():N}@medstream.test";
         await _accountAppService.Register(new RegisterInput
         {
-            Name = "Test",
-            Surname = "Patient",
-            EmailAddress = $"{username}@medstream.test",
-            UserName = username,
+            FirstName = "Test",
+            LastName = "Patient",
+            EmailAddress = emailAddress,
+            PhoneNumber = "0634113456",
             Password = "Password1",
-            RegistrationRole = StaticRoleNames.Tenants.Patient
+            ConfirmPassword = "Password1",
+            AccountType = "Patient"
         });
 
         await UsingDbContextAsync(async context =>
         {
-            var user = await context.Users.FirstAsync(x => x.UserName == username);
+            var user = await context.Users.FirstAsync(x => x.EmailAddress == emailAddress);
             var roles = await _userManager.GetRolesAsync(user);
 
             user.IsClinicianApprovalPending.ShouldBeFalse();
@@ -53,20 +54,26 @@ public class AccountAppService_Tests : MedStreamTestBase
     [Fact]
     public async Task Register_Clinician_Should_Be_Pending_Without_Clinician_Role()
     {
-        var username = $"clinician-{Guid.NewGuid():N}".Substring(0, 22);
+        var emailAddress = $"clinician-{Guid.NewGuid():N}@medstream.test";
         await _accountAppService.Register(new RegisterInput
         {
-            Name = "Test",
-            Surname = "Clinician",
-            EmailAddress = $"{username}@medstream.test",
-            UserName = username,
+            FirstName = "Test",
+            LastName = "Clinician",
+            EmailAddress = emailAddress,
+            PhoneNumber = "0634113456",
             Password = "Password1",
-            RegistrationRole = StaticRoleNames.Tenants.Clinician
+            ConfirmPassword = "Password1",
+            AccountType = "Clinician",
+            IdNumber = "9001015009087",
+            ProfessionType = "Doctor",
+            RegulatoryBody = "HPCSA",
+            RegistrationNumber = "HPCSA-1234",
+            RequestedFacility = "Johannesburg Clinic"
         });
 
         await UsingDbContextAsync(async context =>
         {
-            var user = await context.Users.FirstAsync(x => x.UserName == username);
+            var user = await context.Users.FirstAsync(x => x.EmailAddress == emailAddress);
             var roles = await _userManager.GetRolesAsync(user);
 
             user.IsClinicianApprovalPending.ShouldBeTrue();
@@ -77,20 +84,26 @@ public class AccountAppService_Tests : MedStreamTestBase
     [Fact]
     public async Task Approve_Clinician_Should_Assign_Clinician_Role_And_Clear_Pending()
     {
-        var username = $"approve-{Guid.NewGuid():N}".Substring(0, 20);
+        var emailAddress = $"approve-{Guid.NewGuid():N}@medstream.test";
         await _accountAppService.Register(new RegisterInput
         {
-            Name = "Approve",
-            Surname = "Flow",
-            EmailAddress = $"{username}@medstream.test",
-            UserName = username,
+            FirstName = "Approve",
+            LastName = "Flow",
+            EmailAddress = emailAddress,
+            PhoneNumber = "0634113456",
             Password = "Password1",
-            RegistrationRole = StaticRoleNames.Tenants.Clinician
+            ConfirmPassword = "Password1",
+            AccountType = "Clinician",
+            IdNumber = "9001015009087",
+            ProfessionType = "Doctor",
+            RegulatoryBody = "HPCSA",
+            RegistrationNumber = "HPCSA-5678",
+            RequestedFacility = "Soweto Clinic"
         });
 
         var userId = await UsingDbContextAsync(async context =>
         {
-            var user = await context.Users.FirstAsync(x => x.UserName == username);
+            var user = await context.Users.FirstAsync(x => x.EmailAddress == emailAddress);
             return user.Id;
         });
 

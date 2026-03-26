@@ -16,16 +16,22 @@ export function FeatureSpotlight(): React.JSX.Element {
 
     const transitionTimeoutRef = useRef<number | null>(null);
     const displayIndexRef = useRef<number>(0);
+    const isTransitioningRef = useRef<boolean>(false);
 
     useEffect(() => {
         displayIndexRef.current = displayIndex;
     }, [displayIndex]);
 
+    useEffect(() => {
+        isTransitioningRef.current = isTransitioning;
+    }, [isTransitioning]);
+
     const changeFeature = useCallback((nextIndex: number) => {
-        if (nextIndex === displayIndexRef.current || isTransitioning) {
+        if (nextIndex === displayIndexRef.current || isTransitioningRef.current) {
             return;
         }
 
+        isTransitioningRef.current = true;
         setIsTransitioning(true);
 
         if (transitionTimeoutRef.current) {
@@ -37,8 +43,10 @@ export function FeatureSpotlight(): React.JSX.Element {
                 setDisplayIndex(nextIndex);
                 setIsTransitioning(false);
             });
+            isTransitioningRef.current = false;
+            transitionTimeoutRef.current = null;
         }, FEATURE_TRANSITION_MS / 2);
-    }, [isTransitioning]);
+    }, []);
 
     const selectFeatureFromUserInput = useCallback((nextIndex: number) => {
         if (nextIndex === displayIndexRef.current) {
@@ -50,6 +58,7 @@ export function FeatureSpotlight(): React.JSX.Element {
             transitionTimeoutRef.current = null;
         }
 
+        isTransitioningRef.current = false;
         setIsTransitioning(false);
         setDisplayIndex(nextIndex);
     }, []);

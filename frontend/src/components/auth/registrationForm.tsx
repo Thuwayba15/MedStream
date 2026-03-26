@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, Card, Form, Input, Radio, Typography } from "antd";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -56,27 +57,49 @@ export function RegistrationForm(): React.JSX.Element {
 
     return (
         <main className={styles.page}>
-            <Card className={styles.card}>
-                <Typography.Title level={1} className={styles.title}>
-                    Registration
-                </Typography.Title>
-                <Typography.Paragraph className={styles.subtitle}>
-                    Patients get immediate access. Clinicians stay pending until admin approval.
-                </Typography.Paragraph>
+            <div className={styles.layout}>
+                <section className={styles.panelLeft}>
+                    <Link href="/" className={styles.brandLink} aria-label="Go to landing page">
+                        <div className={styles.brand}>
+                            <div className={styles.brandMark}>
+                                <Image src="/logo_inverted.png" alt="" width={54} height={54} />
+                            </div>
+                            <div className={styles.brandText}>
+                                Med<span className={styles.brandTextAccent}>Stream</span>
+                            </div>
+                        </div>
+                    </Link>
 
-                {errorMessage ? (
-                    <Alert type="error" title={errorMessage} showIcon style={{ marginBottom: 16 }} />
-                ) : null}
-                {successMessage ? (
-                    <Alert type="success" title={successMessage} showIcon style={{ marginBottom: 16 }} />
-                ) : null}
+                    <div>
+                        <p className={styles.eyebrow}>South African Public Healthcare</p>
+                        <h2 className={styles.leftTitle}>
+                            Join the <span className={styles.leftTitleAccent}>care flow.</span>
+                        </h2>
+                        <p className={styles.leftText}>
+                            Patients get immediate access. Clinician accounts are reviewed by admins before clinical
+                            access is granted.
+                        </p>
+                    </div>
+                </section>
 
-                <Form<RegistrationFormValues>
-                    layout="vertical"
-                    className={styles.form}
-                    onFinish={onFinish}
-                    initialValues={{ accountType: "Patient" }}
-                >
+                <section className={styles.panelRight}>
+                    <Card className={styles.card}>
+                        <Typography.Title level={1} className={styles.title}>
+                            Registration
+                        </Typography.Title>
+                        <Typography.Paragraph className={styles.subtitle}>
+                            Create your account to access MedStream.
+                        </Typography.Paragraph>
+
+                        {errorMessage ? <Alert type="error" title={errorMessage} showIcon className={styles.alertBlock} /> : null}
+                        {successMessage ? <Alert type="success" title={successMessage} showIcon className={styles.alertBlock} /> : null}
+
+                        <Form<RegistrationFormValues>
+                            layout="vertical"
+                            className={styles.form}
+                            onFinish={onFinish}
+                            initialValues={{ accountType: "Patient" }}
+                        >
                     <Form.Item
                         label="Account Type"
                         name="accountType"
@@ -262,15 +285,17 @@ export function RegistrationForm(): React.JSX.Element {
                         }
                     </Form.Item>
 
-                    <Button type="primary" htmlType="submit" loading={isPending} block>
-                        Create Account
-                    </Button>
-                </Form>
+                            <Button type="primary" htmlType="submit" loading={isPending} block className={styles.submitButton}>
+                                Create Account
+                            </Button>
+                        </Form>
 
-                <Typography.Paragraph className={styles.footerText}>
-                    Already registered? <Link href="/login">Sign in</Link>
-                </Typography.Paragraph>
-            </Card>
+                        <Typography.Paragraph className={styles.footerText}>
+                            Already registered? <Link href="/login">Sign in</Link>
+                        </Typography.Paragraph>
+                    </Card>
+                </section>
+            </div>
         </main>
     );
 }
