@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { AppProviders } from "@/theme/appProviders";
+import { AppProviders } from "@/providers/appProviders";
 import "./globals.css";
 
 const playfair = localFont({
