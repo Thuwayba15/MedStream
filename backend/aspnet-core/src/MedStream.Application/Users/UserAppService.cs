@@ -1,6 +1,8 @@
 ﻿using Abp.Application.Services;
 using Abp.Application.Services.Dto;
 using Abp.Authorization;
+using Abp.Authorization.Roles;
+using Abp.Authorization.Users;
 using Abp.Domain.Entities;
 using Abp.Domain.Repositories;
 using Abp.Extensions;
@@ -149,7 +151,7 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
     {
         var roleIds = user.Roles.Select(x => x.RoleId).ToArray();
 
-        var roles = _roleManager.Roles.Where(r => roleIds.Contains(r.Id)).Select(r => r.NormalizedName);
+        var roles = _roleManager.Roles.Where(r => roleIds.Contains(r.Id)).Select(r => r.Name);
 
         var userDto = base.MapToEntityDto(user);
         userDto.RoleNames = roles.ToArray();
@@ -244,6 +246,73 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
         }
 
         return true;
+    }
+
+    [AbpAuthorize(PermissionNames.Pages_Users)]
+    public async Task<UserDto> ApproveClinician(EntityDto<long> input)
+    {
+        var user = await Repository.GetAllIncluding(entity => entity.Roles).FirstOrDefaultAsync(entity => entity.Id == input.Id);
+        if (user == null)
+        {
+            throw new EntityNotFoundException(typeof(User), input.Id);
+        }
+
+        if (!string.Equals(user.RequestedRegistrationRole, StaticRoleNames.Tenants.Clinician, StringComparison.Ordinal))
+        {
+            throw new UserFriendlyException("Only clinician applicants can be approved.");
+        }
+
+        if (!user.IsClinicianApprovalPending)
+        {
+            throw new UserFriendlyException("Clinician approval is not pending for this user.");
+        }
+
+        var tenantId = user.TenantId ?? 1;
+        var patientRole = await GetOrCreateTenantRoleAsync(tenantId, StaticRoleNames.Tenants.Patient);
+        var clinicianRole = await GetOrCreateTenantRoleAsync(tenantId, StaticRoleNames.Tenants.Clinician);
+
+        var patientMapping = user.Roles.FirstOrDefault(role => role.RoleId == patientRole.Id);
+        if (patientMapping != null)
+        {
+            user.Roles.Remove(patientMapping);
+        }
+
+        if (!user.Roles.Any(role => role.RoleId == clinicianRole.Id))
+        {
+            user.Roles.Add(new UserRole(tenantId, user.Id, clinicianRole.Id));
+        }
+
+        user.IsClinicianApprovalPending = false;
+        user.ClinicianApprovedAt = DateTime.UtcNow;
+        user.ClinicianApprovedByUserId = AbpSession.UserId;
+        user.ApprovalStatus = UserRegistrationConstants.ApprovalStatusApproved;
+        user.AccountType = UserRegistrationConstants.AccountTypeClinician;
+
+        CheckErrors(await _userManager.UpdateAsync(user));
+        await CurrentUnitOfWork.SaveChangesAsync();
+
+        return await GetAsync(new EntityDto<long>(input.Id));
+    }
+
+    private async Task<Role> GetOrCreateTenantRoleAsync(int tenantId, string roleName)
+    {
+        var normalizedRoleName = roleName.ToUpperInvariant();
+        var existingRole = await _roleRepository.FirstOrDefaultAsync(role =>
+            role.TenantId == tenantId && role.NormalizedName == normalizedRoleName);
+        if (existingRole != null)
+        {
+            return existingRole;
+        }
+
+        var role = new Role(tenantId, roleName, roleName)
+        {
+            IsStatic = true,
+            IsDefault = false
+        };
+        role.NormalizedName = normalizedRoleName;
+
+        CheckErrors(await _roleManager.CreateAsync(role));
+        return role;
     }
 }
 

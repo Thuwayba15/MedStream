@@ -30,14 +30,9 @@ public class TenantRoleAndUserBuilder
 
     private void CreateRolesAndUsers()
     {
-        // Admin role
-
-        var adminRole = _context.Roles.IgnoreQueryFilters().FirstOrDefault(r => r.TenantId == _tenantId && r.Name == StaticRoleNames.Tenants.Admin);
-        if (adminRole == null)
-        {
-            adminRole = _context.Roles.Add(new Role(_tenantId, StaticRoleNames.Tenants.Admin, StaticRoleNames.Tenants.Admin) { IsStatic = true }).Entity;
-            _context.SaveChanges();
-        }
+        var adminRole = EnsureTenantRole(StaticRoleNames.Tenants.Admin);
+        EnsureTenantRole(StaticRoleNames.Tenants.Patient);
+        EnsureTenantRole(StaticRoleNames.Tenants.Clinician);
 
         // Grant all permissions to admin role
 
@@ -84,5 +79,18 @@ public class TenantRoleAndUserBuilder
             _context.UserRoles.Add(new UserRole(_tenantId, adminUser.Id, adminRole.Id));
             _context.SaveChanges();
         }
+    }
+
+    private Role EnsureTenantRole(string roleName)
+    {
+        var role = _context.Roles.IgnoreQueryFilters().FirstOrDefault(r => r.TenantId == _tenantId && r.Name == roleName);
+        if (role != null)
+        {
+            return role;
+        }
+
+        role = _context.Roles.Add(new Role(_tenantId, roleName, roleName) { IsStatic = true }).Entity;
+        _context.SaveChanges();
+        return role;
     }
 }

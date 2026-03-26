@@ -14,4 +14,6 @@ public interface IUserAppService : IAsyncCrudAppService<UserDto, long, PagedUser
     Task ChangeLanguage(ChangeUserLanguageDto input);
 
     Task<bool> ChangePassword(ChangePasswordDto input);
+
+    Task<UserDto> ApproveClinician(EntityDto<long> input);
 }

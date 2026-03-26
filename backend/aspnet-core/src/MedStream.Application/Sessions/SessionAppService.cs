@@ -1,12 +1,21 @@
-﻿using Abp.Auditing;
+using Abp.Auditing;
+using MedStream.Authorization.Users;
 using MedStream.Sessions.Dto;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MedStream.Sessions;
 
 public class SessionAppService : MedStreamAppServiceBase, ISessionAppService
 {
+    private readonly UserManager _userManager;
+
+    public SessionAppService(UserManager userManager)
+    {
+        _userManager = userManager;
+    }
+
     [DisableAuditing]
     public async Task<GetCurrentLoginInformationsOutput> GetCurrentLoginInformations()
     {
@@ -27,7 +36,9 @@ public class SessionAppService : MedStreamAppServiceBase, ISessionAppService
 
         if (AbpSession.UserId.HasValue)
         {
-            output.User = ObjectMapper.Map<UserLoginInfoDto>(await GetCurrentUserAsync());
+            var currentUser = await GetCurrentUserAsync();
+            output.User = ObjectMapper.Map<UserLoginInfoDto>(currentUser);
+            output.User.RoleNames = (await _userManager.GetRolesAsync(currentUser)).ToArray();
         }
 
         return output;
