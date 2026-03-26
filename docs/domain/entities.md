@@ -7,6 +7,7 @@
 - If `Clinician.Role` is kept, it should be treated as a **domain or operational role label** (for example doctor, nurse practitioner, triage nurse, medical officer), **not** as the source of authorization. Authorization should come from ABP roles/permissions.
 - For implementation, it is recommended that `Patient` and `Clinician` profiles each support linkage to an ABP user account, even if that link is optional for some onboarding flows. The current domain diagram focuses on the clinical model, not the ABP tables.
 - Most workflow data is facility-scoped.
+- For current MVP, SOAP documentation is manual and `MedicalReport` upload is deferred.
 - For MVP, multilingual support is not a core workflow requirement, but some language-related fields still exist on `Person`, `SymptomIntake`, and `ConsultationTranscript` because they are already part of the current model. fileciteturn4file10turn4file7
 
 ## ABP Identity / authorization mapping
@@ -28,6 +29,17 @@ Current MedStream ABP permission keys for user administration and approval workf
 - `Pages.Users.Approvals`
 - `Pages.Users.Approvals.View`
 - `Pages.Users.Approvals.Approve`
+- `Pages.Users.Approvals.Decline`
+- `Pages.Facilities`
+- `Pages.Facilities.View`
+- `Pages.Facilities.Create`
+- `Pages.Facilities.Edit`
+- `Pages.Facilities.Activation`
+- `Pages.Facilities.AssignClinician`
+
+Facility management note:
+- `Facility` should be treated as a managed reference list.
+- Patient and clinician flows should use active facilities from this list for facility selection.
 
 Current MedStream auth onboarding fields on ABP `IdentityUser`:
 - `AccountType` (controlled values: `Patient`, `Clinician`)
@@ -36,6 +48,7 @@ Current MedStream auth onboarding fields on ABP `IdentityUser`:
 - `ClinicianApprovedAt`
 - `ClinicianApprovedByUserId`
 - `ApprovalStatus` (controlled values: `PendingApproval`, `Approved`, `Rejected`)
+- `ApprovalDecisionReason`
 - `IdNumber`
 - `DateOfBirth`
 - `PhoneNumber`
@@ -43,7 +56,10 @@ Current MedStream auth onboarding fields on ABP `IdentityUser`:
 - `RegulatoryBody` (controlled values: `HPCSA`, `SANC`, `Other`)
 - `RegistrationNumber`
 - `RequestedFacility`
+- `ClinicianFacilityId`
 - `ClinicianSubmittedAt`
+- `ClinicianDeclinedAt`
+- `ClinicianDeclinedByUserId`
 
 Behavioral notes:
 - Patient self-registration assigns the `Patient` ABP role immediately.
@@ -526,23 +542,12 @@ Behavioral notes:
 
 ---
 
-## 21. MedicalReport
+## 21. MedicalReport (Deferred)
 **Purpose:** Uploaded report linked to a visit.
 
-**Key fields**
-- Id
-- VisitId
-- UploadedByClinicianId
-- ReportType
-- FileName
-- StorageUrl
-- ExtractedText
-- AiSummary
-- CreatedAt
-
-**Relationships**
-- belongs to Visit
-- uploaded by Clinician
+**Status**
+- Deferred from MVP.
+- Keep as a future/stretch entity if upload workflow is later enabled.
 
 ---
 
@@ -609,6 +614,7 @@ Behavioral notes:
 - A **Clinician** extends that shared identity with staff-specific clinical and operational fields.
 - A **Visit** is the center of the MVP workflow.
 - **SymptomIntake -> TriageAssessment -> QueueTicket -> EncounterNote** forms the main encounter path.
-- **VitalSigns**, **MedicalReports**, and **Referrals** attach to the visit.
+- **VitalSigns** and **Referrals** attach to the visit in MVP.
+- **MedicalReport** is deferred from MVP.
 - **PatientCondition**, **Allergy**, and **Medication** attach to the patient as longitudinal records with provenance.
 - **PatientAccessGrant** and **PatientAccessAudit** enforce and record patient-profile access for POPIA-sensitive workflows.
