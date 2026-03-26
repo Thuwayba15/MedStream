@@ -69,6 +69,8 @@ test.describe("auth state routing", () => {
 
         await expect(page).toHaveURL(/\/patient$/);
         await expect(page.getByRole("heading", { level: 1, name: "Patient Portal" })).toBeVisible();
+        await expect(page.getByRole("link", { name: "Portal" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
     });
 
     test("registration redirects clinician to awaiting approval", async ({ page }) => {
@@ -149,5 +151,26 @@ test.describe("auth state routing", () => {
         await page.goto("/clinician");
         await expect(page).toHaveURL(/\/awaiting-approval$/);
         await expect(page.getByRole("heading", { level: 1, name: "Awaiting Approval" })).toBeVisible();
+    });
+
+    test("approved clinician sees workspace sidebar", async ({ page, context }) => {
+        const approvedClinicianToken = createJwt({
+            [roleClaimKey]: "Clinician",
+            "medstream:approval_state": "approved",
+            "medstream:requested_registration_role": "Clinician",
+        });
+
+        await context.addCookies([
+            {
+                name: "medstream_access_token",
+                value: approvedClinicianToken,
+                url: "http://localhost:3000",
+            },
+        ]);
+
+        await page.goto("/clinician");
+        await expect(page.getByRole("heading", { level: 1, name: "Clinician Workspace" })).toBeVisible();
+        await expect(page.getByRole("link", { name: "Workspace" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
     });
 });
