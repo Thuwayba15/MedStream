@@ -58,6 +58,8 @@ public class RegisterInput : IValidatableObject
     [StringLength(128)]
     public string RequestedFacility { get; set; }
 
+    public int? RequestedFacilityId { get; set; }
+
     [DisableAuditing]
     public string CaptchaResponse { get; set; }
 
@@ -108,7 +110,10 @@ public class RegisterInput : IValidatableObject
 
             if (RequestedFacility.IsNullOrWhiteSpace())
             {
-                yield return new ValidationResult("Requested facility is required for clinician registration.", new[] { nameof(RequestedFacility) });
+                if (!RequestedFacilityId.HasValue || RequestedFacilityId.Value <= 0)
+                {
+                    yield return new ValidationResult("Requested facility is required for clinician registration.", new[] { nameof(RequestedFacilityId) });
+                }
             }
         }
     }
