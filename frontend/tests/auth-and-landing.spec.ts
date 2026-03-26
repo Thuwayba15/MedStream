@@ -7,11 +7,7 @@ function encodeBase64Url(value: string): string {
 }
 
 function createJwt(payload: Record<string, unknown>): string {
-    return [
-        encodeBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" })),
-        encodeBase64Url(JSON.stringify(payload)),
-        "signature",
-    ].join(".");
+    return [encodeBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" })), encodeBase64Url(JSON.stringify(payload)), "signature"].join(".");
 }
 
 test.describe("landing page", () => {

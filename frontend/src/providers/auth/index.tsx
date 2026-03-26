@@ -16,10 +16,7 @@ interface IApiErrorResponse {
 export function AuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
     const [state, dispatch] = useReducer(authReducer, INITIAL_STATE);
 
-    const executeAuthRequest = async <TRequest extends object>(
-        path: "/api/auth/login" | "/api/auth/register",
-        payload: TRequest,
-    ): Promise<{ homePath: string }> => {
+    const executeAuthRequest = async <TRequest extends object>(path: "/api/auth/login" | "/api/auth/register", payload: TRequest): Promise<{ homePath: string }> => {
         dispatch(requestPending());
 
         try {
@@ -60,9 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
     return (
         <AuthStateContext.Provider value={state}>
-            <AuthActionContext.Provider value={actions}>
-                {children}
-            </AuthActionContext.Provider>
+            <AuthActionContext.Provider value={actions}>{children}</AuthActionContext.Provider>
         </AuthStateContext.Provider>
     );
 }

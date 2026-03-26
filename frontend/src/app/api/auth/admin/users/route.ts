@@ -15,18 +15,11 @@ export async function GET(): Promise<Response> {
 
         const users = pagedUsers.items.map((user) => ({
             ...user,
-            authState: deriveAuthState(
-                user.roleNames ?? [],
-                user.requestedRegistrationRole ?? null,
-                user.isClinicianApprovalPending ?? false,
-            ),
+            authState: deriveAuthState(user.roleNames ?? [], user.requestedRegistrationRole ?? null, user.isClinicianApprovalPending ?? false),
         }));
 
         return NextResponse.json({ users });
     } catch (error) {
-        return NextResponse.json(
-            { message: getAbpErrorMessage(error, "Failed to load users.") },
-            { status: 400 },
-        );
+        return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to load users.") }, { status: 400 });
     }
 }

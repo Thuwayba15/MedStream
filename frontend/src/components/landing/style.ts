@@ -8,10 +8,8 @@ export const useLandingStyles = createStyles(({ css }) => ({
         min-height: 100vh;
         overflow: hidden;
         background:
-            radial-gradient(circle at 14% 16%, rgba(240, 144, 64, 0.16) 0%, rgba(240, 144, 64, 0) 26%),
-            radial-gradient(circle at 82% 22%, rgba(13, 27, 46, 0.08) 0%, rgba(13, 27, 46, 0) 18%),
-            radial-gradient(circle at 70% 78%, rgba(30, 49, 80, 0.08) 0%, rgba(30, 49, 80, 0) 24%),
-            linear-gradient(135deg, #fffdfa 0%, ${colors.offWhite} 44%, #f3eee7 100%);
+            radial-gradient(circle at 14% 16%, rgba(240, 144, 64, 0.16) 0%, rgba(240, 144, 64, 0) 26%), radial-gradient(circle at 82% 22%, rgba(13, 27, 46, 0.08) 0%, rgba(13, 27, 46, 0) 18%),
+            radial-gradient(circle at 70% 78%, rgba(30, 49, 80, 0.08) 0%, rgba(30, 49, 80, 0) 24%), linear-gradient(135deg, #fffdfa 0%, ${colors.offWhite} 44%, #f3eee7 100%);
 
         &::before,
         &::after {
@@ -194,7 +192,7 @@ export const useLandingStyles = createStyles(({ css }) => ({
         }
     `,
 
-     primaryButton: css`
+    primaryButton: css`
         position: relative;
         background: linear-gradient(180deg, ${colors.amberLight} 0%, ${colors.amber} 100%);
         color: ${colors.white};
@@ -276,16 +274,14 @@ export const useLandingStyles = createStyles(({ css }) => ({
         }
     `,
 
-     panel: css`
+    panel: css`
         position: relative;
         width: 100%;
         max-width: ${layout.panelMaxWidth}px;
         min-height: 220px;
         overflow: hidden;
         border-radius: ${radius.lg}px;
-        background:
-            radial-gradient(circle at top right, rgba(224, 123, 42, 0.16), rgba(224, 123, 42, 0) 30%),
-            linear-gradient(180deg, ${colors.navyMid} 0%, ${colors.navy} 100%);
+        background: radial-gradient(circle at top right, rgba(224, 123, 42, 0.16), rgba(224, 123, 42, 0) 30%), linear-gradient(180deg, ${colors.navyMid} 0%, ${colors.navy} 100%);
         color: ${colors.white};
         border: 1px solid ${colors.borderNavy};
         padding: 30px 28px 26px;
@@ -302,7 +298,6 @@ export const useLandingStyles = createStyles(({ css }) => ({
             padding: 24px 20px 22px;
         }
     `,
-
 
     panelGlow: css`
         position: absolute;
@@ -350,56 +345,51 @@ export const useLandingStyles = createStyles(({ css }) => ({
     `,
 
     timelineRail: css`
-    position: absolute;
-    top: 31px;
-    left: 32px;
-    right: 32px;
-    height: 3px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
-    pointer-events: none;
-    overflow: hidden;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04);
-
-    @media (max-width: 768px) {
-        left: 24px;
-        right: 24px;
-    }
-`,
-
-timelineRailProgress: css`
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(
-        90deg,
-        rgba(224, 123, 42, 0.95) 0%,
-        rgba(240, 144, 64, 0.92) 55%,
-        rgba(255, 196, 120, 0.88) 100%
-    );
-    transform: scaleX(0);
-    transform-origin: left center;
-    transition:
-        transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 320ms ease;
-    box-shadow:
-        0 0 18px rgba(224, 123, 42, 0.28),
-        0 0 6px rgba(240, 144, 64, 0.2);
-
-    &::after {
-        content: "";
         position: absolute;
-        top: 50%;
-        right: -10px;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 214, 163, 0.9) 0%, rgba(224, 123, 42, 0.55) 45%, rgba(224, 123, 42, 0) 78%);
-        transform: translateY(-50%);
-        filter: blur(1px);
-        opacity: 0.95;
-    }
-`,
+        top: 31px;
+        left: 32px;
+        right: 32px;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        pointer-events: none;
+        overflow: hidden;
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04);
+
+        @media (max-width: 768px) {
+            left: 24px;
+            right: 24px;
+        }
+    `,
+
+    timelineRailProgress: css`
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, rgba(224, 123, 42, 0.95) 0%, rgba(240, 144, 64, 0.92) 55%, rgba(255, 196, 120, 0.88) 100%);
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition:
+            transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 320ms ease;
+        box-shadow:
+            0 0 18px rgba(224, 123, 42, 0.28),
+            0 0 6px rgba(240, 144, 64, 0.2);
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: -10px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 214, 163, 0.9) 0%, rgba(224, 123, 42, 0.55) 45%, rgba(224, 123, 42, 0) 78%);
+            transform: translateY(-50%);
+            filter: blur(1px);
+            opacity: 0.95;
+        }
+    `,
 
     timelineStep: css`
         position: relative;
@@ -551,25 +541,25 @@ timelineRailProgress: css`
     `,
 
     featureCard: css`
-    height: 100%;
-    will-change: opacity, transform, filter;
-    transition:
-        opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-        transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-        filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
-`,
+        height: 100%;
+        will-change: opacity, transform, filter;
+        transition:
+            opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+            transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+            filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    `,
 
-featureCardEntering: css`
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-    filter: blur(0);
-`,
+    featureCardEntering: css`
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        filter: blur(0);
+    `,
 
-featureCardLeaving: css`
-    opacity: 0.18;
-    transform: translate3d(18px, 0, 0);
-    filter: blur(4px);
-`,
+    featureCardLeaving: css`
+        opacity: 0.18;
+        transform: translate3d(18px, 0, 0);
+        filter: blur(4px);
+    `,
 
     featureHeadingRow: css`
         display: flex;
@@ -629,9 +619,7 @@ featureCardLeaving: css`
         display: grid;
         place-items: center;
         padding: 24px;
-        background:
-            radial-gradient(circle at top left, ${colors.amberPale} 0%, rgba(253, 240, 228, 0) 32%),
-            linear-gradient(180deg, ${colors.white} 0%, ${colors.offWhite} 100%);
+        background: radial-gradient(circle at top left, ${colors.amberPale} 0%, rgba(253, 240, 228, 0) 32%), linear-gradient(180deg, ${colors.white} 0%, ${colors.offWhite} 100%);
         color: ${colors.navy};
         font-size: 1.2rem;
         font-weight: 700;

@@ -1,9 +1,4 @@
-import {
-    APPROVAL_STATE_CLAIM_KEY,
-    AuthState,
-    REQUESTED_ROLE_CLAIM_KEY,
-    ROLE_CLAIM_KEY,
-} from "./constants";
+import { APPROVAL_STATE_CLAIM_KEY, AuthState, REQUESTED_ROLE_CLAIM_KEY, ROLE_CLAIM_KEY } from "./constants";
 
 interface JwtPayload {
     [key: string]: unknown;

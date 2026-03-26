@@ -24,7 +24,7 @@ async function approveClinician(userId: number, accessToken: string): Promise<IB
         { id: userId },
         {
             headers: getAuthorizationHeader(accessToken),
-        },
+        }
     );
 
     return unwrapAbpResponse<IBackendUserListItem>(response.data);

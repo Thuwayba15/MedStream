@@ -23,9 +23,6 @@ export async function POST(request: Request): Promise<Response> {
 
         return NextResponse.json({ user: approvedUser });
     } catch (error) {
-        return NextResponse.json(
-            { message: getAbpErrorMessage(error, "Failed to approve clinician.") },
-            { status: 400 },
-        );
+        return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to approve clinician.") }, { status: 400 });
     }
 }

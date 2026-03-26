@@ -45,11 +45,7 @@ export function mapSessionToAuthUserProfile(session: SessionResult): AuthUserPro
     };
 }
 
-export function deriveAuthState(
-    roleNames: string[],
-    requestedRegistrationRole: string | null,
-    isClinicianApprovalPending: boolean,
-): AuthState {
+export function deriveAuthState(roleNames: string[], requestedRegistrationRole: string | null, isClinicianApprovalPending: boolean): AuthState {
     if (roleNames.includes("Admin")) {
         return "admin";
     }

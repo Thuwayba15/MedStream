@@ -47,9 +47,6 @@ export async function POST(request: Request): Promise<Response> {
 
         return response;
     } catch (error) {
-        return NextResponse.json(
-            { message: getAbpErrorMessage(error, "Login failed.") },
-            { status: 401 },
-        );
+        return NextResponse.json({ message: getAbpErrorMessage(error, "Login failed.") }, { status: 401 });
     }
 }

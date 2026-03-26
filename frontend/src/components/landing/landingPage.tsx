@@ -14,14 +14,7 @@ export function LandingPage(): React.JSX.Element {
                 <section className={styles.hero}>
                     <div className={styles.brandRow}>
                         <div className={styles.brandImageWrap}>
-                            <Image
-                                src="/logo_ms.png"
-                                alt="MedStream brand mark"
-                                width={54}
-                                height={54}
-                                priority
-                                className={styles.brandImage}
-                            />
+                            <Image src="/logo_ms.png" alt="MedStream brand mark" width={54} height={54} priority className={styles.brandImage} />
                         </div>
                         <div className={styles.logoText} aria-label="MedStream">
                             <span className={styles.logoMed}>Med</span>
@@ -34,8 +27,8 @@ export function LandingPage(): React.JSX.Element {
                             Better care starts with <span className={styles.titleAccent}>better workflow</span>
                         </h1>
                         <p className={styles.description}>
-                            MedStream brings intelligent patient intake, real-time queue management, and AI-assisted
-                            documentation to South African public clinics. Streamlining care where it matters most.
+                            MedStream brings intelligent patient intake, real-time queue management, and AI-assisted documentation to South African public clinics. Streamlining care where it matters
+                            most.
                         </p>
                     </div>
 

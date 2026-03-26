@@ -50,11 +50,7 @@ function getApiBaseUrl(): string {
     return baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
 }
 
-export async function callBackendApi<TResponse>(
-    path: string,
-    init?: RequestInit,
-    accessToken?: string,
-): Promise<TResponse> {
+export async function callBackendApi<TResponse>(path: string, init?: RequestInit, accessToken?: string): Promise<TResponse> {
     const headers = new Headers(init?.headers);
     headers.set("Content-Type", "application/json");
 
@@ -62,8 +58,7 @@ export async function callBackendApi<TResponse>(
         headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    try
-    {
+    try {
         const response = await fetch(`${getApiBaseUrl()}${path}`, {
             ...init,
             headers,
@@ -71,19 +66,15 @@ export async function callBackendApi<TResponse>(
         });
 
         const responseText = await response.text();
-        const payload = (parseJson(responseText) as AbpErrorPayload | null);
+        const payload = parseJson(responseText) as AbpErrorPayload | null;
 
         if (!response.ok || payload?.success === false) {
-            const message = buildBackendErrorMessage(payload, responseText, response.status)
-                ?? extractMessageFromText(responseText)
-                ?? `Request to backend failed (HTTP ${response.status}).`;
+            const message = buildBackendErrorMessage(payload, responseText, response.status) ?? extractMessageFromText(responseText) ?? `Request to backend failed (HTTP ${response.status}).`;
             throw new Error(message);
         }
 
         return (payload?.result ?? payload) as TResponse;
-    }
-    catch (error)
-    {
+    } catch (error) {
         if (error instanceof Error) {
             throw error;
         }

@@ -46,9 +46,7 @@ export default function AwaitingApprovalPage(): React.JSX.Element {
                         <Typography.Title level={1} className={styles.dashboardHeading}>
                             Awaiting Approval
                         </Typography.Title>
-                        <Typography.Paragraph className={styles.dashboardText}>
-                            Your clinician application is pending admin approval. You can refresh status anytime.
-                        </Typography.Paragraph>
+                        <Typography.Paragraph className={styles.dashboardText}>Your clinician application is pending admin approval. You can refresh status anytime.</Typography.Paragraph>
 
                         {errorMessage ? <Alert type="error" title={errorMessage} showIcon /> : null}
 

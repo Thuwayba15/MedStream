@@ -20,9 +20,7 @@ export const useAuthStyles = createStyles(({ css }) => ({
         grid-template-columns: 1.1fr 0.9fr;
         border: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 24px 70px rgba(3, 10, 22, 0.45);
-        background:
-            radial-gradient(circle at 16% 18%, rgba(240, 144, 64, 0.18) 0%, rgba(240, 144, 64, 0) 30%),
-            linear-gradient(165deg, #0e1e34 0%, #0a1729 100%);
+        background: radial-gradient(circle at 16% 18%, rgba(240, 144, 64, 0.18) 0%, rgba(240, 144, 64, 0) 30%), linear-gradient(165deg, #0e1e34 0%, #0a1729 100%);
 
         @media (max-width: 980px) {
             grid-template-columns: 1fr;
@@ -117,9 +115,7 @@ export const useAuthStyles = createStyles(({ css }) => ({
         align-items: center;
         justify-content: center;
         padding: 46px 42px;
-        background:
-            radial-gradient(circle at top right, rgba(240, 144, 64, 0.12) 0%, rgba(240, 144, 64, 0) 38%),
-            ${colors.offWhite};
+        background: radial-gradient(circle at top right, rgba(240, 144, 64, 0.12) 0%, rgba(240, 144, 64, 0) 38%), ${colors.offWhite};
 
         @media (max-width: 980px) {
             padding: 22px;
@@ -247,9 +243,7 @@ export const useAuthStyles = createStyles(({ css }) => ({
 
     dashboardPage: css`
         min-height: 100vh;
-        background:
-            radial-gradient(circle at 84% 10%, rgba(30, 49, 80, 0.11) 0%, rgba(30, 49, 80, 0) 30%),
-            linear-gradient(180deg, #ffffff 0%, ${colors.offWhite} 100%);
+        background: radial-gradient(circle at 84% 10%, rgba(30, 49, 80, 0.11) 0%, rgba(30, 49, 80, 0) 30%), linear-gradient(180deg, #ffffff 0%, ${colors.offWhite} 100%);
         padding: 28px 16px;
     `,
 

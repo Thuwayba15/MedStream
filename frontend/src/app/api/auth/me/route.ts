@@ -30,9 +30,6 @@ export async function GET(): Promise<Response> {
 
         return response;
     } catch (error) {
-        return NextResponse.json(
-            { message: error instanceof Error ? error.message : "Failed to load current user." },
-            { status: 401 },
-        );
+        return NextResponse.json({ message: error instanceof Error ? error.message : "Failed to load current user." }, { status: 401 });
     }
 }

@@ -128,11 +128,7 @@ export function UserApprovalPage(): React.JSX.Element {
         {
             title: "Submitted",
             key: "submitted",
-            render: (_, row) => (
-                <Typography.Text type="secondary">
-                    {row.clinicianSubmittedAt ? new Date(row.clinicianSubmittedAt).toLocaleString() : "-"}
-                </Typography.Text>
-            ),
+            render: (_, row) => <Typography.Text type="secondary">{row.clinicianSubmittedAt ? new Date(row.clinicianSubmittedAt).toLocaleString() : "-"}</Typography.Text>,
         },
         {
             title: "Status",
@@ -151,11 +147,7 @@ export function UserApprovalPage(): React.JSX.Element {
         {
             title: "Roles",
             key: "roles",
-            render: (_, row) => (
-                <Space wrap>
-                    {row.roleNames.length === 0 ? <Tag>None</Tag> : row.roleNames.map((role) => <Tag key={role}>{role}</Tag>)}
-                </Space>
-            ),
+            render: (_, row) => <Space wrap>{row.roleNames.length === 0 ? <Tag>None</Tag> : row.roleNames.map((role) => <Tag key={role}>{role}</Tag>)}</Space>,
         },
         {
             title: "Action",
@@ -188,12 +180,8 @@ export function UserApprovalPage(): React.JSX.Element {
                             <Typography.Title level={1} className={styles.dashboardHeading}>
                                 Admin User Management
                             </Typography.Title>
-                            <Typography.Paragraph className={styles.dashboardText}>
-                                Review user states and approve clinician applicants.
-                            </Typography.Paragraph>
-                            <Typography.Text className={adminStyles.headingHint}>
-                                Approve clinician applicants to activate clinician access.
-                            </Typography.Text>
+                            <Typography.Paragraph className={styles.dashboardText}>Review user states and approve clinician applicants.</Typography.Paragraph>
+                            <Typography.Text className={adminStyles.headingHint}>Approve clinician applicants to activate clinician access.</Typography.Text>
                         </div>
                         <div className={adminStyles.headerActions}>
                             <Tag className={adminStyles.pendingBadge} color={pendingCount > 0 ? "gold" : "green"}>

@@ -87,14 +87,7 @@ export function FeatureSpotlight(): React.JSX.Element {
 
             <div className={styles.panelHeaderStack}>
                 <div className={styles.panelBrand}>
-                    <Image
-                        src="/logo_inverted.png"
-                        alt=""
-                        width={34}
-                        height={44}
-                        className={styles.panelBrandImage}
-                        aria-hidden="true"
-                    />
+                    <Image src="/logo_inverted.png" alt="" width={34} height={44} className={styles.panelBrandImage} aria-hidden="true" />
                     <h2 id="medstream-way-heading" className={styles.panelTitle}>
                         <span className={styles.panelTitleMed}>The Med</span>
                         <span className={styles.panelTitleStream}>Stream</span>
@@ -105,53 +98,46 @@ export function FeatureSpotlight(): React.JSX.Element {
             </div>
 
             <div className={styles.timeline} role="tablist" aria-label="MedStream workflow phases">
-    <div className={styles.timelineRail} aria-hidden="true">
-        <span
-            className={styles.timelineRailProgress}
-            style={{
-                transform: `scaleX(${landingFeatures.length > 1 ? displayIndex / (landingFeatures.length - 1) : 1})`,
-            }}
-        />
-    </div>
+                <div className={styles.timelineRail} aria-hidden="true">
+                    <span
+                        className={styles.timelineRailProgress}
+                        style={{
+                            transform: `scaleX(${landingFeatures.length > 1 ? displayIndex / (landingFeatures.length - 1) : 1})`,
+                        }}
+                    />
+                </div>
 
-    {landingFeatures.map((feature, index) => {
-        const Icon = feature.icon;
-        const isActive = displayIndex === index;
+                {landingFeatures.map((feature, index) => {
+                    const Icon = feature.icon;
+                    const isActive = displayIndex === index;
 
-        return (
-            <button
-                key={feature.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={`Show ${feature.title}`}
-                data-active={isActive}
-                className={cx(styles.timelineStep, isActive && styles.timelineStepActive)}
-                onClick={() => {
-                    selectFeatureFromUserInput(index);
-                }}
-            >
-                <span className={cx(styles.timelineIconWrap, isActive && styles.timelineIconWrapActive)}>
-                    <span className={cx(styles.timelineNumber, isActive && styles.timelineNumberActive)}>
-                        {feature.stepNumber}
-                    </span>
-                    <span className={styles.timelineIcon} aria-hidden="true">
-                        <Icon />
-                    </span>
-                </span>
-                <span className={styles.timelineTitle}>{feature.title}</span>
-            </button>
-        );
-    })}
-</div>
+                    return (
+                        <button
+                            key={feature.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            aria-label={`Show ${feature.title}`}
+                            data-active={isActive}
+                            className={cx(styles.timelineStep, isActive && styles.timelineStepActive)}
+                            onClick={() => {
+                                selectFeatureFromUserInput(index);
+                            }}
+                        >
+                            <span className={cx(styles.timelineIconWrap, isActive && styles.timelineIconWrapActive)}>
+                                <span className={cx(styles.timelineNumber, isActive && styles.timelineNumberActive)}>{feature.stepNumber}</span>
+                                <span className={styles.timelineIcon} aria-hidden="true">
+                                    <Icon />
+                                </span>
+                            </span>
+                            <span className={styles.timelineTitle}>{feature.title}</span>
+                        </button>
+                    );
+                })}
+            </div>
 
             <div className={styles.featureViewport}>
-                <article
-                    className={cx(
-                        styles.featureCard,
-                        isTransitioning ? styles.featureCardLeaving : styles.featureCardEntering,
-                    )}
-                >
+                <article className={cx(styles.featureCard, isTransitioning ? styles.featureCardLeaving : styles.featureCardEntering)}>
                     <div className={styles.featureHeadingRow}>
                         <div className={styles.featureIcon} aria-hidden="true">
                             <ActiveIcon />

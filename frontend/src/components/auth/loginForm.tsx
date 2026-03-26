@@ -47,10 +47,7 @@ export function LoginForm(): React.JSX.Element {
                         <h2 className={styles.leftTitle}>
                             Care that flows <span className={styles.leftTitleAccent}>forward.</span>
                         </h2>
-                        <p className={styles.leftText}>
-                            Your clinic&apos;s live queue, patient timelines, and AI-assisted documentation all in one
-                            place.
-                        </p>
+                        <p className={styles.leftText}>Your clinic&apos;s live queue, patient timelines, and AI-assisted documentation all in one place.</p>
                     </div>
                 </section>
 
@@ -59,26 +56,16 @@ export function LoginForm(): React.JSX.Element {
                         <Typography.Title level={1} className={styles.title}>
                             Login
                         </Typography.Title>
-                        <Typography.Paragraph className={styles.subtitle}>
-                            Sign in to your clinic account.
-                        </Typography.Paragraph>
+                        <Typography.Paragraph className={styles.subtitle}>Sign in to your clinic account.</Typography.Paragraph>
 
                         {errorMessage ? <Alert type="error" title={errorMessage} showIcon className={styles.alertBlock} /> : null}
 
                         <Form<LoginFormValues> layout="vertical" className={styles.form} onFinish={onFinish}>
-                            <Form.Item
-                                label="Username or Email"
-                                name="userNameOrEmailAddress"
-                                rules={[{ required: true, message: "Enter your username or email." }]}
-                            >
+                            <Form.Item label="Username or Email" name="userNameOrEmailAddress" rules={[{ required: true, message: "Enter your username or email." }]}>
                                 <Input placeholder="admin or admin@defaulttenant.com" autoComplete="username" />
                             </Form.Item>
 
-                            <Form.Item
-                                label="Password"
-                                name="password"
-                                rules={[{ required: true, message: "Enter your password." }]}
-                            >
+                            <Form.Item label="Password" name="password" rules={[{ required: true, message: "Enter your password." }]}>
                                 <Input.Password placeholder="Enter password" autoComplete="current-password" />
                             </Form.Item>
 

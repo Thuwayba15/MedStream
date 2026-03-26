@@ -23,15 +23,7 @@ interface RegisterRequestBody {
 export async function POST(request: Request): Promise<Response> {
     try {
         const body = (await request.json()) as RegisterRequestBody;
-        if (
-            !body.firstName
-            || !body.lastName
-            || !body.emailAddress
-            || !body.phoneNumber
-            || !body.password
-            || !body.confirmPassword
-            || !body.accountType
-        ) {
+        if (!body.firstName || !body.lastName || !body.emailAddress || !body.phoneNumber || !body.password || !body.confirmPassword || !body.accountType) {
             return NextResponse.json({ message: "All registration fields are required." }, { status: 400 });
         }
 
@@ -52,10 +44,7 @@ export async function POST(request: Request): Promise<Response> {
         });
 
         if (!registerResult.canLogin) {
-            return NextResponse.json(
-                { message: "Registration succeeded but automatic login is unavailable." },
-                { status: 400 },
-            );
+            return NextResponse.json({ message: "Registration succeeded but automatic login is unavailable." }, { status: 400 });
         }
 
         const authResult = await authService.login({
@@ -99,7 +88,7 @@ export async function POST(request: Request): Promise<Response> {
                 debugCode,
                 rawMessage: process.env.NODE_ENV !== "production" ? rawMessage : undefined,
             },
-            { status: 400 },
+            { status: 400 }
         );
     }
 }

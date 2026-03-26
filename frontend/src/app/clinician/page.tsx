@@ -15,9 +15,7 @@ export default function ClinicianHomePage(): React.JSX.Element {
                         <Typography.Title level={1} className={styles.dashboardHeading}>
                             Clinician Workspace
                         </Typography.Title>
-                        <Typography.Paragraph className={styles.dashboardText}>
-                            Your clinician account is approved. Clinical workflows are now accessible.
-                        </Typography.Paragraph>
+                        <Typography.Paragraph className={styles.dashboardText}>Your clinician account is approved. Clinical workflows are now accessible.</Typography.Paragraph>
                         <LogoutButton />
                     </Space>
                 </Card>

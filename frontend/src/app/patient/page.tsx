@@ -15,9 +15,7 @@ export default function PatientHomePage(): React.JSX.Element {
                         <Typography.Title level={1} className={styles.dashboardHeading}>
                             Patient Portal
                         </Typography.Title>
-                        <Typography.Paragraph className={styles.dashboardText}>
-                            You are authenticated as a patient and have immediate access.
-                        </Typography.Paragraph>
+                        <Typography.Paragraph className={styles.dashboardText}>You are authenticated as a patient and have immediate access.</Typography.Paragraph>
                         <LogoutButton />
                     </Space>
                 </Card>
