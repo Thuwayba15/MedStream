@@ -19,6 +19,10 @@ public class User : AbpUser<User>
 
     public long? ClinicianApprovedByUserId { get; set; }
 
+    public DateTime? ClinicianDeclinedAt { get; set; }
+
+    public long? ClinicianDeclinedByUserId { get; set; }
+
     [StringLength(32)]
     public string AccountType { get; set; }
 
@@ -34,8 +38,16 @@ public class User : AbpUser<User>
     [StringLength(128)]
     public string RequestedFacility { get; set; }
 
+    /// <summary>
+    /// Gets or sets the assigned clinician facility identifier.
+    /// </summary>
+    public int? ClinicianFacilityId { get; set; }
+
     [StringLength(32)]
     public string ApprovalStatus { get; set; }
+
+    [StringLength(512)]
+    public string ApprovalDecisionReason { get; set; }
 
     [StringLength(32)]
     public string IdNumber { get; set; }

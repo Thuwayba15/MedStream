@@ -58,6 +58,34 @@ Respect one-way dependencies:
 
 Do not place business logic in the wrong layer.
 
+## MedStream canonical folder structure (mandatory)
+For this repository, use this concrete structure as the default target:
+
+- `aspnet-core/src/MedStream.Core`
+  - `Domains/<Module Name>/...` for domain entities, enums, domain services, and domain constants
+- `aspnet-core/src/MedStream.Application`
+  - `Services/<EntityOrFeature>Service/`
+    - `I<EntityOrFeature>AppService.cs`
+    - `<EntityOrFeature>AppService.cs`
+    - `DTO/` for service DTOs
+- `aspnet-core/src/MedStream.EntityFrameworkCore`
+  - `EntityFrameworkCore/` for DbContext, configurer, factory, repositories, seed
+  - `Migrations/` for EF migrations
+- `aspnet-core/src/MedStream.Web.Core`
+  - auth/web plumbing only
+- `aspnet-core/src/MedStream.Web.Host`
+  - startup/host wiring only
+- `aspnet-core/test/MedStream.Tests`
+  - unit/integration tests aligned by feature area
+- `aspnet-core/test/MedStream.Web.Tests`
+  - web/API behavior tests
+
+Additional MedStream application structure rules:
+- Prefer `Application/Services/...` for feature app services instead of placing new feature folders directly under `Application/`.
+- Existing feature areas such as `Users`, `Roles`, and `Sessions` should live under `Application/Services/` with their `DTO/` subfolders.
+- New domain entities should be created under `Core/Domains/<Module Name>/`, not directly under `Core/`.
+- If you touch a feature that is not in this structure, include structural normalization in the same task when safe.
+
 ## Layer responsibilities
 
 ### Core

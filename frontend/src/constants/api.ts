@@ -11,12 +11,63 @@ export const API = {
     /** ABP account registration endpoint. */
     REGISTER_ENDPOINT: "/api/services/app/Account/Register",
 
-    /** ABP users pagination endpoint (admin). */
-    USERS_GET_ALL_ENDPOINT: "/api/services/app/User/GetAll",
-
     /** ABP clinician applicant listing endpoint (admin). */
     USERS_GET_CLINICIAN_APPLICANTS_ENDPOINT: "/api/services/app/User/GetClinicianApplicants",
 
     /** ABP clinician approval endpoint (admin). */
     USERS_APPROVE_CLINICIAN_ENDPOINT: "/api/services/app/User/ApproveClinician",
+
+    /** ABP clinician decline endpoint (admin). */
+    USERS_DECLINE_CLINICIAN_ENDPOINT: "/api/services/app/User/DeclineClinician",
+
+    /** ABP facility pagination endpoint (admin). */
+    FACILITIES_GET_ALL_ENDPOINT: "/api/services/app/Facility/GetAll",
+
+    /** ABP facility create endpoint (admin). */
+    FACILITIES_CREATE_ENDPOINT: "/api/services/app/Facility/Create",
+
+    /** ABP facility update endpoint (admin). */
+    FACILITIES_UPDATE_ENDPOINT: "/api/services/app/Facility/Update",
+
+    /** ABP facility activation endpoint (admin). */
+    FACILITIES_SET_ACTIVATION_ENDPOINT: "/api/services/app/Facility/SetActivation",
+
+    /** ABP facility-clinician assignment endpoint (admin). */
+    FACILITIES_ASSIGN_CLINICIAN_ENDPOINT: "/api/services/app/Facility/AssignClinician",
+
+    /** ABP active facilities endpoint for registration dropdowns. */
+    ACCOUNT_ACTIVE_FACILITIES_ENDPOINT: "/api/services/app/Account/GetActiveFacilities",
+
+    /** Internal Next route for auth login. */
+    AUTH_LOGIN_ROUTE: "/api/auth/login",
+
+    /** Internal Next route for auth registration. */
+    AUTH_REGISTER_ROUTE: "/api/auth/register",
+
+    /** Internal Next route for auth logout. */
+    AUTH_LOGOUT_ROUTE: "/api/auth/logout",
+
+    /** Internal Next route for current auth state. */
+    AUTH_ME_ROUTE: "/api/auth/me",
+
+    /** Internal Next admin route for clinician applicant listing. */
+    ADMIN_USERS_ROUTE: "/api/auth/admin/users",
+
+    /** Internal Next admin route for clinician approval. */
+    ADMIN_APPROVE_ROUTE: "/api/auth/admin/approve",
+
+    /** Internal Next admin route for clinician decline. */
+    ADMIN_DECLINE_ROUTE: "/api/auth/admin/decline",
+
+    /** Internal Next admin route for facilities list/create/update. */
+    ADMIN_FACILITIES_ROUTE: "/api/auth/admin/facilities",
+
+    /** Internal Next admin route for facility activation/deactivation. */
+    ADMIN_FACILITIES_ACTIVATION_ROUTE: "/api/auth/admin/facilities/activation",
+
+    /** Internal Next admin route for clinician-facility assignment. */
+    ADMIN_FACILITIES_ASSIGN_ROUTE: "/api/auth/admin/facilities/assign",
+
+    /** Internal Next route for active facilities used in registration forms. */
+    ACTIVE_FACILITIES_ROUTE: "/api/auth/facilities/active",
 } as const;

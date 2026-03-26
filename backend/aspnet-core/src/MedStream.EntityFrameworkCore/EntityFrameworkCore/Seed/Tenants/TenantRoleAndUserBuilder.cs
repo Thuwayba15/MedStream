@@ -5,9 +5,11 @@ using Abp.MultiTenancy;
 using MedStream.Authorization;
 using MedStream.Authorization.Roles;
 using MedStream.Authorization.Users;
+using MedStream.Facilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MedStream.EntityFrameworkCore.Seed.Tenants;
@@ -33,6 +35,7 @@ public class TenantRoleAndUserBuilder
         var adminRole = EnsureTenantRole(StaticRoleNames.Tenants.Admin);
         EnsureTenantRole(StaticRoleNames.Tenants.Patient);
         EnsureTenantRole(StaticRoleNames.Tenants.Clinician);
+        EnsureDefaultFacilities();
 
         // Grant all permissions to admin role
 
@@ -79,6 +82,32 @@ public class TenantRoleAndUserBuilder
             _context.UserRoles.Add(new UserRole(_tenantId, adminUser.Id, adminRole.Id));
             _context.SaveChanges();
         }
+    }
+
+    private void EnsureDefaultFacilities()
+    {
+        var existingNames = _context.Set<Facility>()
+            .IgnoreQueryFilters()
+            .Where(item => item.TenantId == _tenantId)
+            .Select(item => item.Name)
+            .ToHashSet();
+
+        var defaults = new List<Facility>
+        {
+            new() { TenantId = _tenantId, Name = "Thembisa Hospital", Code = "THB", FacilityType = "Hospital", Province = "Gauteng", District = "Ekurhuleni", IsActive = true },
+            new() { TenantId = _tenantId, Name = "Chris Hani Baragwanath Hospital", Code = "CHBH", FacilityType = "Hospital", Province = "Gauteng", District = "Johannesburg", IsActive = true },
+            new() { TenantId = _tenantId, Name = "Soweto Community Health Centre", Code = "SOW-CHC", FacilityType = "CommunityHealthCentre", Province = "Gauteng", District = "Johannesburg", IsActive = true },
+            new() { TenantId = _tenantId, Name = "Steve Biko Academic Hospital", Code = "SBAH", FacilityType = "Hospital", Province = "Gauteng", District = "Tshwane", IsActive = true }
+        };
+
+        var facilitiesToInsert = defaults.Where(item => !existingNames.Contains(item.Name)).ToList();
+        if (facilitiesToInsert.Count == 0)
+        {
+            return;
+        }
+
+        _context.AddRange(facilitiesToInsert);
+        _context.SaveChanges();
     }
 
     private Role EnsureTenantRole(string roleName)

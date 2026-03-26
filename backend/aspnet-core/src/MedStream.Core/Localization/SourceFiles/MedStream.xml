@@ -117,6 +117,16 @@
     <text name="ResetPasswordStepOneInfo">1. Enter your administrator password</text>
     <text name="ResetPasswordStepTwoInfo">2. Copy this random password so you can send it to the user</text>
     <text name="UsersActivation">Users activation</text>
+    <text name="UsersApprovals">Clinician approvals</text>
+    <text name="UsersApprovalsView">View clinician approvals</text>
+    <text name="UsersApprovalsApprove">Approve clinician applications</text>
+    <text name="UsersApprovalsDecline">Decline clinician applications</text>
+    <text name="Facilities">Facilities</text>
+    <text name="FacilitiesView">View facilities</text>
+    <text name="FacilitiesCreate">Create facilities</text>
+    <text name="FacilitiesEdit">Edit facilities</text>
+    <text name="FacilitiesActivation">Activate or deactivate facilities</text>
+    <text name="FacilitiesAssignClinician">Assign clinicians to facilities</text>
     <text name="403PageHeader">Forbidden</text>
     <text name="403PageDescription">You don't have permission to access this resource. Please contact your administrator.</text>
     <text name="403PageButton">Go back to Dashboard</text>

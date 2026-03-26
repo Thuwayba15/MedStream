@@ -8,6 +8,7 @@ public class RegisterInputFluentValidator : AbstractValidator<RegisterInput>
 {
     private const string SouthAfricaPhonePattern = @"^(\+27|0)[6-8][0-9]{8}$";
     private const string SouthAfricaIdPattern = @"^[0-9]{13}$";
+    private const string SouthAfricaRegistrationNumberPattern = @"^[A-Za-z0-9][A-Za-z0-9\-\/]{2,31}$";
     private const string StrongPasswordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$";
 
     public RegisterInputFluentValidator()
@@ -86,14 +87,17 @@ public class RegisterInputFluentValidator : AbstractValidator<RegisterInput>
                 RuleFor(x => x.RegistrationNumber)
                     .NotEmpty()
                     .WithMessage("Registration number is required for clinician registration.")
-                    .MinimumLength(2)
-                    .MaximumLength(64);
+                    .Matches(SouthAfricaRegistrationNumberPattern)
+                    .WithMessage("Registration number must be a valid SA registration format.");
 
                 RuleFor(x => x.RequestedFacility)
-                    .NotEmpty()
-                    .WithMessage("Requested facility is required for clinician registration.")
-                    .MinimumLength(2)
                     .MaximumLength(128);
+
+                RuleFor(x => x.RequestedFacilityId)
+                    .NotNull()
+                    .WithMessage("Requested facility is required for clinician registration.")
+                    .GreaterThan(0)
+                    .WithMessage("Requested facility is required for clinician registration.");
             });
     }
 

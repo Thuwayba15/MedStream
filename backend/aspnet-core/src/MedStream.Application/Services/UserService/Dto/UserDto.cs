@@ -48,6 +48,10 @@ public class UserDto : EntityDto<long>
 
     public long? ClinicianApprovedByUserId { get; set; }
 
+    public DateTime? ClinicianDeclinedAt { get; set; }
+
+    public long? ClinicianDeclinedByUserId { get; set; }
+
     public string AccountType { get; set; }
 
     public string ProfessionType { get; set; }
@@ -58,7 +62,11 @@ public class UserDto : EntityDto<long>
 
     public string RequestedFacility { get; set; }
 
+    public int? ClinicianFacilityId { get; set; }
+
     public string ApprovalStatus { get; set; }
+
+    public string ApprovalDecisionReason { get; set; }
 
     public string IdNumber { get; set; }
 

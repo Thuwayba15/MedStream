@@ -144,6 +144,19 @@ F1.3 Approval-Gated Clinician Access
 Full name, Email, Phone number, ID number, Profession type, Regulatory body, Registration number, Requested facility, Submitted date, Approval status
  3.5 Backend approval endpoints must be protected by explicit ABP permissions:
 `Pages.Users.Approvals.View` for applicant listing and `Pages.Users.Approvals.Approve` for approval action
+ 3.6 Admin must support both approve and decline actions for clinician applicants
+ 3.7 Admin approval decisions (approve/decline) must capture a mandatory decision reason and audit stamps
+ 3.8 Audit stamps must include decision timestamp and acting admin user id for both approval and decline
+
+F1.5 Facility Management (Admin)
+5.1 Admin must manage the master list of facilities (create, update, activate/deactivate)
+ 5.2 Only active facilities must appear in registration facility dropdowns
+ 5.3 Clinician registration must select `requestedFacility` from the same active facility list used by patient flows
+ 5.4 Admin must be able to assign/reassign clinicians to active facilities
+ 5.5 Facility governance controlled values:
+facilityType = Clinic | CommunityHealthCentre | DistrictHospital | RegionalHospital | TertiaryHospital | AcademicHospital
+province = Eastern Cape | Free State | Gauteng | KwaZulu-Natal | Limpopo | Mpumalanga | North West | Northern Cape | Western Cape
+ 5.6 Deactivating a facility removes it from registration/assignment picklists and prevents new assignment to it, but existing historical references remain intact
 
 F1.4 Auth State Routing
 4.1 Route guards must handle:
@@ -226,8 +239,8 @@ F8.2 Draft & Finalize
 
 F9. Medical Reports
 F9.1 Upload Report
-1.1 Clinician must upload reports
- 1.2 Must attach to a Visit
+1.1 Deferred from MVP. SOAP documentation uses manual objective/assessment/plan entry in MVP.
+ 1.2 If introduced later, report uploads must attach to a Visit.
 
 F10. Patient History
 F10.1 View Timeline
@@ -316,6 +329,9 @@ Trend detection
 S6. Referral Workflow Enhancements
 Cross-facility transfers
 Referral tracking
+
+S7. Medical Report Uploads
+File/report uploads linked to Visit (deferred from MVP)
 
 ✅ Final Summary
 MedStream is a:

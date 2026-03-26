@@ -69,6 +69,8 @@ test.describe("auth state routing", () => {
 
         await expect(page).toHaveURL(/\/patient$/);
         await expect(page.getByRole("heading", { level: 1, name: "Patient Portal" })).toBeVisible();
+        await expect(page.getByRole("link", { name: "Portal" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
     });
 
     test("registration redirects clinician to awaiting approval", async ({ page }) => {
@@ -77,7 +79,22 @@ test.describe("auth state routing", () => {
             "medstream:requested_registration_role": "Clinician",
         });
 
+        await page.route("**/api/auth/facilities/active", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    facilities: [
+                        { id: 1, name: "Johannesburg Clinic" },
+                        { id: 2, name: "Soweto CHC" },
+                    ],
+                }),
+            });
+        });
+
+        let registerRequestBody: Record<string, unknown> | null = null;
         await page.route("**/api/auth/register", async (route) => {
+            registerRequestBody = route.request().postDataJSON() as Record<string, unknown>;
             await route.fulfill({
                 status: 200,
                 headers: {
@@ -100,7 +117,10 @@ test.describe("auth state routing", () => {
         await page.getByRole("radio", { name: "Doctor" }).check();
         await page.getByRole("radio", { name: "HPCSA" }).check();
         await page.getByLabel("Registration number").fill("HPCSA-1234");
-        await page.getByLabel("Requested facility").fill("Johannesburg Clinic");
+        const requestedFacilitySelect = page.getByLabel("Requested facility");
+        await requestedFacilitySelect.click();
+        await requestedFacilitySelect.press("ArrowDown");
+        await requestedFacilitySelect.press("Enter");
         await Promise.all([
             page.waitForResponse((response) => response.url().includes("/api/auth/register") && response.status() === 200),
             page.getByRole("button", { name: "Create Account" }).click(),
@@ -108,6 +128,10 @@ test.describe("auth state routing", () => {
 
         await expect(page).toHaveURL(/\/awaiting-approval$/);
         await expect(page.getByRole("heading", { level: 1, name: "Awaiting Approval" })).toBeVisible();
+        expect(registerRequestBody).toMatchObject({
+            accountType: "Clinician",
+            requestedFacilityId: 2,
+        });
     });
 
     test("pending clinician is guarded to awaiting-approval route", async ({ page, context }) => {
@@ -127,5 +151,26 @@ test.describe("auth state routing", () => {
         await page.goto("/clinician");
         await expect(page).toHaveURL(/\/awaiting-approval$/);
         await expect(page.getByRole("heading", { level: 1, name: "Awaiting Approval" })).toBeVisible();
+    });
+
+    test("approved clinician sees workspace sidebar", async ({ page, context }) => {
+        const approvedClinicianToken = createJwt({
+            [roleClaimKey]: "Clinician",
+            "medstream:approval_state": "approved",
+            "medstream:requested_registration_role": "Clinician",
+        });
+
+        await context.addCookies([
+            {
+                name: "medstream_access_token",
+                value: approvedClinicianToken,
+                url: "http://localhost:3000",
+            },
+        ]);
+
+        await page.goto("/clinician");
+        await expect(page.getByRole("heading", { level: 1, name: "Clinician Workspace" })).toBeVisible();
+        await expect(page.getByRole("link", { name: "Workspace" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
     });
 });
