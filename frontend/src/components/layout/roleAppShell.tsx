@@ -85,12 +85,7 @@ export function RoleAppShell({ roleLabel, activeKey, items, children }: IRoleApp
 
             <Layout className={styles.contentLayout}>
                 <header className={styles.mobileHeader}>
-                    <Button
-                        type="text"
-                        icon={drawerOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
-                        aria-label="Open sidebar menu"
-                        onClick={() => setDrawerOpen((value) => !value)}
-                    />
+                    <Button type="text" icon={drawerOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />} aria-label="Open sidebar menu" onClick={() => setDrawerOpen((value) => !value)} />
                     <Space size={4} className={styles.mobileBrand}>
                         <span className={styles.brandMark} aria-hidden>
                             <Image src="/logo_ms.png" alt="" width={20} height={20} />

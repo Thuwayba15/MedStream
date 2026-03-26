@@ -52,10 +52,7 @@ export function UserApprovalPage(): React.JSX.Element {
     );
 
     return (
-        <RoleAppShell
-            roleLabel="Admin"
-            items={[]}
-        >
+        <RoleAppShell roleLabel="Admin" items={[]}>
             {viewModel.messageContextHolder}
             <section className={`${styles.dashboardCard} ${adminStyles.heroCard}`}>
                 <div className={adminStyles.headerRow}>
@@ -63,9 +60,7 @@ export function UserApprovalPage(): React.JSX.Element {
                         <Typography.Title level={1} className={adminStyles.heroHeading}>
                             Admin Governance
                         </Typography.Title>
-                        <Typography.Paragraph className={adminStyles.heroText}>
-                            Manage clinician approvals, assignments, and facility governance from one workspace.
-                        </Typography.Paragraph>
+                        <Typography.Paragraph className={adminStyles.heroText}>Manage clinician approvals, assignments, and facility governance from one workspace.</Typography.Paragraph>
                     </div>
                     <div className={adminStyles.headerActions}>
                         <Tag className={adminStyles.pendingBadge} color={viewModel.pendingCount > 0 ? "gold" : "green"}>
@@ -126,14 +121,8 @@ export function UserApprovalPage(): React.JSX.Element {
                             label: "Facility Governance",
                             children: (
                                 <Space orientation="vertical" size={16} className={adminStyles.fullWidth}>
-
                                     <section className={adminStyles.facilityFormSection}>
-                                        <FacilityCreateForm
-                                            form={viewModel.facilityForm}
-                                            isMutating={viewModel.isMutating}
-                                            adminStyles={adminStyles}
-                                            onCreateFacility={viewModel.onCreateFacility}
-                                        />
+                                        <FacilityCreateForm form={viewModel.facilityForm} isMutating={viewModel.isMutating} adminStyles={adminStyles} onCreateFacility={viewModel.onCreateFacility} />
                                     </section>
 
                                     <div className={adminStyles.tableWrap}>

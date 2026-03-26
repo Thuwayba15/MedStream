@@ -49,14 +49,11 @@ export const mutationStarted = createAction<IAdminGovernanceStatePayload>(AdminG
     successMessage: undefined,
 }));
 
-export const mutationSucceeded = createAction<IAdminGovernanceStatePayload, string>(
-    AdminGovernanceActionEnums.mutationSucceeded,
-    (message: string) => ({
-        isMutating: false,
-        successMessage: message,
-        errorMessage: undefined,
-    })
-);
+export const mutationSucceeded = createAction<IAdminGovernanceStatePayload, string>(AdminGovernanceActionEnums.mutationSucceeded, (message: string) => ({
+    isMutating: false,
+    successMessage: message,
+    errorMessage: undefined,
+}));
 
 export const mutationFailed = createAction<IAdminGovernanceStatePayload, string>(AdminGovernanceActionEnums.mutationFailed, (message: string) => ({
     isMutating: false,

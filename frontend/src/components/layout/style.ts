@@ -170,7 +170,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         }
     `,
     facilityFormSection: css`
-        background: ${colors.amberPale} ;
+        background: ${colors.amberPale};
         border-radius: ${radius.md}px;
         padding: 18px 16px 12px 16px;
         margin-bottom: 18px;

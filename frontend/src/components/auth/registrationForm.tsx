@@ -47,8 +47,7 @@ export function RegistrationForm(): React.JSX.Element {
     const accountType = Form.useWatch("accountType", form) as AccountType | undefined;
 
     useEffect(() => {
-        const shouldLoadFacilities =
-            accountType === "Clinician" && activeFacilities.length === 0 && !isLoadingFacilities && !hasRequestedFacilitiesRef.current;
+        const shouldLoadFacilities = accountType === "Clinician" && activeFacilities.length === 0 && !isLoadingFacilities && !hasRequestedFacilitiesRef.current;
 
         if (!shouldLoadFacilities) {
             return;
@@ -282,11 +281,7 @@ export function RegistrationForm(): React.JSX.Element {
                                                 <Input placeholder="Registration number" />
                                             </Form.Item>
 
-                                            <Form.Item
-                                                label="Requested facility"
-                                                name="requestedFacilityId"
-                                                rules={[{ required: true, message: "Select requested facility." }]}
-                                            >
+                                            <Form.Item label="Requested facility" name="requestedFacilityId" rules={[{ required: true, message: "Select requested facility." }]}>
                                                 <Select
                                                     placeholder="Select requested facility"
                                                     loading={isLoadingFacilities}
@@ -297,9 +292,7 @@ export function RegistrationForm(): React.JSX.Element {
                                                 />
                                             </Form.Item>
 
-                                            {facilityLoadError ? (
-                                                <Alert type="warning" title={facilityLoadError} showIcon className={styles.alertBlock} />
-                                            ) : null}
+                                            {facilityLoadError ? <Alert type="warning" title={facilityLoadError} showIcon className={styles.alertBlock} /> : null}
                                         </>
                                     ) : null
                                 }

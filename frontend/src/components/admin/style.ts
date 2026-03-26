@@ -3,7 +3,6 @@ import { createStyles, medstreamTheme } from "@/theme/theme";
 const { colors, radius, typography } = medstreamTheme;
 
 export const useAdminStyles = createStyles(({ css }) => ({
-
     panelCard: css`
         padding: 22px;
     `,

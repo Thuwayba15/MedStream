@@ -7,30 +7,10 @@ import { type ApprovalFilter, type IFacility } from "@/providers/admin-governanc
 import { type IDecisionFormValues, type IFacilityFormValues } from "@/components/admin/types";
 
 export function useAdminGovernancePage() {
-    const {
-        users,
-        facilities,
-        isLoadingUsers,
-        isLoadingFacilities,
-        isMutating,
-        errorMessage,
-        successMessage,
-        searchText,
-        approvalFilter,
-    } = useAdminGovernanceState();
+    const { users, facilities, isLoadingUsers, isLoadingFacilities, isMutating, errorMessage, successMessage, searchText, approvalFilter } = useAdminGovernanceState();
 
-    const {
-        loadGovernanceData,
-        setSearchText,
-        setApprovalFilter,
-        clearMessages,
-        approveClinician,
-        declineClinician,
-        createFacility,
-        updateFacility,
-        setFacilityActivation,
-        assignClinicianFacility,
-    } = useAdminGovernanceActions();
+    const { loadGovernanceData, setSearchText, setApprovalFilter, clearMessages, approveClinician, declineClinician, createFacility, updateFacility, setFacilityActivation, assignClinicianFacility } =
+        useAdminGovernanceActions();
 
     const [messageApi, messageContextHolder] = message.useMessage();
     const [decisionTargetUserId, setDecisionTargetUserId] = useState<number | null>(null);

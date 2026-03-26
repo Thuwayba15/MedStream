@@ -173,11 +173,7 @@ export function buildFacilityColumns(args: IBuildFacilityColumnsArgs): ColumnsTy
                     >
                         Edit
                     </Button>
-                    <Button
-                        loading={args.isMutating}
-                        data-testid={`toggle-facility-active-button-${row.id}`}
-                        onClick={() => void args.setFacilityActivation(row.id, !row.isActive)}
-                    >
+                    <Button loading={args.isMutating} data-testid={`toggle-facility-active-button-${row.id}`} onClick={() => void args.setFacilityActivation(row.id, !row.isActive)}>
                         {row.isActive ? "Deactivate" : "Activate"}
                     </Button>
                 </Space>

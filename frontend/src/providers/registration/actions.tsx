@@ -20,14 +20,11 @@ export const loadStarted = createAction<IRegistrationStatePayload>(RegistrationA
     errorMessage: undefined,
 }));
 
-export const loadSucceeded = createAction<IRegistrationStatePayload, IRegistrationFacilityOption[]>(
-    RegistrationActionEnums.loadSucceeded,
-    (facilities: IRegistrationFacilityOption[]) => ({
-        isLoading: false,
-        facilities,
-        errorMessage: undefined,
-    })
-);
+export const loadSucceeded = createAction<IRegistrationStatePayload, IRegistrationFacilityOption[]>(RegistrationActionEnums.loadSucceeded, (facilities: IRegistrationFacilityOption[]) => ({
+    isLoading: false,
+    facilities,
+    errorMessage: undefined,
+}));
 
 export const loadFailed = createAction<IRegistrationStatePayload, string>(RegistrationActionEnums.loadFailed, (errorMessage: string) => ({
     isLoading: false,

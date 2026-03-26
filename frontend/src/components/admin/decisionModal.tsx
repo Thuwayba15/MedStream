@@ -11,14 +11,7 @@ interface IDecisionModalProps {
     setDecisionTargetUserId: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
-export function DecisionModal({
-    decisionMode,
-    decisionTargetUserId,
-    isMutating,
-    decisionForm,
-    onSubmitDecision,
-    setDecisionTargetUserId,
-}: IDecisionModalProps): React.JSX.Element {
+export function DecisionModal({ decisionMode, decisionTargetUserId, isMutating, decisionForm, onSubmitDecision, setDecisionTargetUserId }: IDecisionModalProps): React.JSX.Element {
     return (
         <Modal
             title={decisionMode === "approve" ? "Approve Clinician" : "Decline Clinician"}
