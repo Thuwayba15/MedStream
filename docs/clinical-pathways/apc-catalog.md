@@ -1,0 +1,144 @@
+# APC 2023 Retrieval Catalog
+
+This catalog is a whole-document retrieval/index layer for APC 2023. It is intended for complaint routing, targeted APC retrieval, AI fallback context selection, and later pathway conversion. It is **not** a full rule-complete conversion of APC into engine JSON.
+
+## Summary
+- **totalSections**: 121
+- **byType**: {'supporting_reference': 18, 'general_screening': 1, 'emergency': 2, 'general': 1, 'entry_pathway': 50, 'linked_pathway': 27, 'chronic_condition': 22}
+- **entryPathways**: 50
+- **linkedOrNonEntrySections**: 71
+
+## Recommended MVP entry pathways
+- `injured_patient` — The Injured Patient (page 18)
+- `fever` — Fever (page 24)
+- `collapse_blackout_faint` — Collapse / Blackout / Faint / Falls (page 28)
+- `dizziness` — Dizziness (page 29)
+- `headache` — Headache (page 30)
+- `chest_pain` — Chest Pain (page 37)
+- `cough_or_difficulty_breathing` — Cough / Breathing Difficulty (page 38)
+- `abdominal_pain_heartburn` — Abdominal Pain / Heartburn (page 44)
+- `nausea_vomiting` — Nausea / Vomiting (page 45)
+- `urinary_symptoms` — Urinary Symptoms (page 59)
+
+## Catalog entries
+- **glossary** — Glossary | page 6 | type: `supporting_reference` | entry: `False`
+- **prescribe_rationally** — Prescribe Rationally | page 7 | type: `supporting_reference` | entry: `False`
+- **screen_all_patients_for_covid_19_and_tb** — Screen all Patients for COVID-19 and TB | page 8 | type: `general_screening` | entry: `False`
+- **initial_assessment_of_the_patient** — Initial Assessment of the Patient | page 9 | type: `emergency` | entry: `False`
+- **address_the_patients_general_health** — Address the Patient's General Health | page 10 | type: `general` | entry: `False`
+- **observation_post_vaccination** — Observation Post Vaccination | page 12 | type: `supporting_reference` | entry: `False`
+- **emergency_patient** — The Emergency Patient | page 14 | type: `emergency` | entry: `False`
+- **cardiopulmonary_resuscitation** — Cardiopulmonary Resuscitation (CPR) | page 15 | type: `supporting_reference` | entry: `False`
+- **decreased_consciousness** — Decreased Consciousness | page 16 | type: `entry_pathway` | entry: `True`
+- **assess_and_manage_glucose** — Assess and Manage Glucose | page 17 | type: `linked_pathway` | entry: `False`
+- **injured_patient** — The Injured Patient | page 18 | type: `entry_pathway` | entry: `True`
+- **convulsion** — Convulsion / Seizures / Fits | page 19 | type: `entry_pathway` | entry: `True`
+- **anaphylaxis** — Anaphylaxis | page 20 | type: `linked_pathway` | entry: `False`
+- **burns** — Burns | page 21 | type: `entry_pathway` | entry: `True`
+- **bites** — Bites / Stings | page 22 | type: `entry_pathway` | entry: `True`
+- **weight_loss** — Weight Loss | page 23 | type: `entry_pathway` | entry: `True`
+- **fever** — Fever | page 24 | type: `entry_pathway` | entry: `True`
+- **lump_neck_axilla_groin** — Lump, Neck / Axilla / Groin / Lymphadenopathy | page 25 | type: `entry_pathway` | entry: `True`
+- **fatigue_weakness** — Fatigue / Tiredness / Weakness | page 26 | type: `entry_pathway` | entry: `True`
+- **anaemia_pallor** — Anaemia / Pallor | page 27 | type: `entry_pathway` | entry: `True`
+- **collapse_blackout_faint** — Collapse / Blackout / Faint / Falls | page 28 | type: `entry_pathway` | entry: `True`
+- **dizziness** — Dizziness | page 29 | type: `entry_pathway` | entry: `True`
+- **headache** — Headache | page 30 | type: `entry_pathway` | entry: `True`
+- **eye_symptoms** — Eye / Vision Symptoms | page 31 | type: `entry_pathway` | entry: `True`
+- **face_symptoms** — Face Symptoms | page 32 | type: `entry_pathway` | entry: `True`
+- **ear_symptoms** — Ear / Hearing Symptoms | page 33 | type: `entry_pathway` | entry: `True`
+- **nose_symptoms** — Nose Symptoms | page 34 | type: `entry_pathway` | entry: `True`
+- **mouth_throat_symptoms** — Mouth / Throat / Tasting Symptoms | page 35 | type: `entry_pathway` | entry: `True`
+- **dental_symptoms** — Dental / Gum / Teeth Symptoms | page 36 | type: `entry_pathway` | entry: `True`
+- **chest_pain** — Chest Pain | page 37 | type: `entry_pathway` | entry: `True`
+- **cough_or_difficulty_breathing** — Cough / Breathing Difficulty | page 38 | type: `entry_pathway` | entry: `True`
+- **wheeze** — Wheeze | page 39 | type: `linked_pathway` | entry: `False`
+- **covid_19_diagnosis** — COVID-19 Diagnosis | page 40 | type: `linked_pathway` | entry: `False`
+- **acute_covid_19** — Acute COVID-19 | page 41 | type: `linked_pathway` | entry: `False`
+- **ongoing_covid_19_symptoms** — Ongoing COVID-19 Symptoms | page 42 | type: `linked_pathway` | entry: `False`
+- **breast_symptoms** — Breast Symptoms | page 43 | type: `entry_pathway` | entry: `True`
+- **abdominal_pain_heartburn** — Abdominal Pain / Heartburn | page 44 | type: `entry_pathway` | entry: `True`
+- **nausea_vomiting** — Nausea / Vomiting | page 45 | type: `entry_pathway` | entry: `True`
+- **diarrhoea** — Diarrhoea | page 46 | type: `entry_pathway` | entry: `True`
+- **cholera** — Cholera | page 47 | type: `linked_pathway` | entry: `False`
+- **anal_symptoms_constipation** — Anal Symptoms / Constipation | page 48 | type: `entry_pathway` | entry: `True`
+- **genital_symptoms** — Genital / Vaginal Discharge / STI / Scrotal Symptoms / Genital Ulcer | page 49 | type: `entry_pathway` | entry: `True`
+- **syphilis** — Syphilis | page 53 | type: `linked_pathway` | entry: `False`
+- **cervical_screening** — Cervical Screening | page 55 | type: `linked_pathway` | entry: `False`
+- **menstrual_symptoms** — Menstrual Symptoms / Period Problems | page 56 | type: `entry_pathway` | entry: `True`
+- **vaginal_bleeding** — Vaginal Bleeding | page 57 | type: `entry_pathway` | entry: `True`
+- **sexual_problems** — Sexual Problems | page 58 | type: `entry_pathway` | entry: `True`
+- **urinary_symptoms** — Urinary Symptoms | page 59 | type: `entry_pathway` | entry: `True`
+- **body_pain** — Body / General Pain | page 60 | type: `entry_pathway` | entry: `True`
+- **chronic_pain** — Chronic Pain | page 61 | type: `linked_pathway` | entry: `False`
+- **joint_symptoms** — Joint Symptoms | page 62 | type: `entry_pathway` | entry: `True`
+- **back_symptoms** — Back Pain / Neck Pain | page 63 | type: `entry_pathway` | entry: `True`
+- **arm_hand_symptoms** — Arm / Hand / Neck Symptoms | page 64 | type: `entry_pathway` | entry: `True`
+- **leg_symptoms** — Leg Symptoms | page 65 | type: `entry_pathway` | entry: `True`
+- **foot_symptoms** — Foot Symptoms / Foot Care | page 66 | type: `entry_pathway` | entry: `True`
+- **skin_symptoms** — Skin Symptoms / Rash / Itch / Pimples / Blackheads / Skin Lump | page 67 | type: `entry_pathway` | entry: `True`
+- **chronic_wound** — Chronic Wound / Skin Ulcer | page 76 | type: `linked_pathway` | entry: `False`
+- **jaundice** — Jaundice | page 79 | type: `entry_pathway` | entry: `True`
+- **scalp_symptoms** — Scalp Symptoms | page 80 | type: `entry_pathway` | entry: `True`
+- **hair_loss** — Hair Loss | page 81 | type: `entry_pathway` | entry: `True`
+- **nail_symptoms** — Nail Symptoms | page 82 | type: `entry_pathway` | entry: `True`
+- **suicidal_patient** — Suicidal Patient / Self-Harm | page 83 | type: `entry_pathway` | entry: `True`
+- **aggressive_disruptive_violent_patient** — Aggressive / Disruptive / Violent Patient | page 84 | type: `entry_pathway` | entry: `True`
+- **confused_patient** — Confused Patient | page 85 | type: `entry_pathway` | entry: `True`
+- **anxiety_stress_miserable_patient** — Anxiety / Stress / Miserable Patient | page 86 | type: `entry_pathway` | entry: `True`
+- **sleeping_difficulty** — Sleeping Difficulty | page 87 | type: `entry_pathway` | entry: `True`
+- **abused_rape_traumatised_patient** — Abused / Rape / Traumatised Patient | page 88 | type: `entry_pathway` | entry: `True`
+- **assess_and_manage_tb_infection** — Assess and Manage TB Infection | page 89 | type: `linked_pathway` | entry: `False`
+- **collect_sputum_for_tb** — How to Collect a Good Sputum Specimen for TB | page 91 | type: `supporting_reference` | entry: `False`
+- **tb_diagnosis** — TB: Diagnosis | page 92 | type: `linked_pathway` | entry: `False`
+- **drug_sensitive_tb_routine_care** — Drug-Sensitive TB: Routine Care | page 94 | type: `chronic_condition` | entry: `False`
+- **inh_mono_resistant_tb_routine_care** — INH Mono-Resistant TB: Routine Care | page 95 | type: `chronic_condition` | entry: `False`
+- **rr_tb_routine_care** — Rifampicin-Resistant TB: Routine Care | page 99 | type: `chronic_condition` | entry: `False`
+- **prep** — HIV: Pre-Exposure Prophylaxis (PrEP) | page 106 | type: `supporting_reference` | entry: `False`
+- **pep** — HIV: Post-Exposure Prophylaxis (PEP) | page 108 | type: `supporting_reference` | entry: `False`
+- **hiv_diagnosis** — HIV: Diagnosis | page 110 | type: `linked_pathway` | entry: `False`
+- **hiv_routine_care** — HIV: Routine Care | page 111 | type: `chronic_condition` | entry: `False`
+- **hepatitis_b** — Hepatitis B | page 120 | type: `linked_pathway` | entry: `False`
+- **long_covid_routine_care** — Long COVID | page 121 | type: `chronic_condition` | entry: `False`
+- **asthma_and_copd_diagnosis** — Asthma and COPD: Diagnosis | page 123 | type: `linked_pathway` | entry: `False`
+- **using_inhalers_and_spacers** — Using Inhalers and Spacers | page 123 | type: `supporting_reference` | entry: `False`
+- **asthma_routine_care** — Asthma: Routine Care | page 125 | type: `chronic_condition` | entry: `False`
+- **copd_routine_care** — COPD: Routine Care | page 126 | type: `chronic_condition` | entry: `False`
+- **cardiovascular_disease_risk_diagnosis** — Cardiovascular Disease Risk: Diagnosis | page 127 | type: `linked_pathway` | entry: `False`
+- **overweight_patient** — Overweight Patient | page 127 | type: `entry_pathway` | entry: `True`
+- **cardiovascular_disease_risk_routine_care** — Cardiovascular Disease Risk: Routine Care | page 129 | type: `chronic_condition` | entry: `False`
+- **diabetes_routine_care** — Diabetes: Routine Care | page 130 | type: `chronic_condition` | entry: `False`
+- **hypertension_diagnosis** — Hypertension: Diagnosis | page 132 | type: `linked_pathway` | entry: `False`
+- **hypertension_routine_care** — Hypertension: Routine Care | page 133 | type: `chronic_condition` | entry: `False`
+- **heart_failure** — Heart Failure | page 135 | type: `linked_pathway` | entry: `False`
+- **stroke** — Stroke | page 136 | type: `linked_pathway` | entry: `False`
+- **ischaemic_heart_disease_initial_assessment** — Ischaemic Heart Disease: Initial Assessment | page 137 | type: `linked_pathway` | entry: `False`
+- **ischaemic_heart_disease_routine_care** — Ischaemic Heart Disease: Routine Care | page 138 | type: `chronic_condition` | entry: `False`
+- **peripheral_vascular_disease** — Peripheral Vascular Disease | page 139 | type: `linked_pathway` | entry: `False`
+- **mentally_ill_patient_needing_treatment_or_admission** — The Mentally Ill Patient Needing Treatment or Admission | page 140 | type: `linked_pathway` | entry: `False`
+- **tobacco_smoking** — Tobacco Smoking | page 141 | type: `supporting_reference` | entry: `False`
+- **alcohol_drug_use** — Alcohol / Drug Use | page 142 | type: `linked_pathway` | entry: `False`
+- **depression_diagnosis** — Depression: Diagnosis | page 143 | type: `linked_pathway` | entry: `False`
+- **depression_and_or_anxiety_routine_care** — Depression and/or Anxiety: Routine Care | page 144 | type: `chronic_condition` | entry: `False`
+- **schizophrenia** — Schizophrenia | page 146 | type: `chronic_condition` | entry: `False`
+- **dementia** — Dementia | page 148 | type: `chronic_condition` | entry: `False`
+- **epilepsy** — Epilepsy | page 149 | type: `chronic_condition` | entry: `False`
+- **chronic_arthritis** — Chronic Arthritis | page 151 | type: `chronic_condition` | entry: `False`
+- **gout** — Gout | page 152 | type: `chronic_condition` | entry: `False`
+- **fibromyalgia** — Fibromyalgia | page 153 | type: `chronic_condition` | entry: `False`
+- **contraception** — Contraception | page 154 | type: `linked_pathway` | entry: `False`
+- **pregnancy** — Pregnancy | page 157 | type: `linked_pathway` | entry: `False`
+- **routine_antenatal_care** — Routine Antenatal Care | page 159 | type: `chronic_condition` | entry: `False`
+- **routine_postnatal_care** — Routine Postnatal Care | page 164 | type: `chronic_condition` | entry: `False`
+- **pregnant_breastfeeding_mother_unsuppressed_vl** — Manage the Pregnant/Breastfeeding Mother with an Unsuppressed VL | page 166 | type: `chronic_condition` | entry: `False`
+- **prevent_communicable_infections_in_newborn** — Prevent Communicable Infections in the Newborn | page 167 | type: `supporting_reference` | entry: `False`
+- **prevent_vertical_transmission_of_hiv** — Prevent Vertical Transmission of HIV | page 168 | type: `supporting_reference` | entry: `False`
+- **menopause** — Menopause | page 169 | type: `entry_pathway` | entry: `True`
+- **routine_palliative_care** — Routine Palliative Care | page 170 | type: `chronic_condition` | entry: `False`
+- **address_the_dying_patients_needs** — Address the Dying Patient's Needs | page 172 | type: `supporting_reference` | entry: `False`
+- **support_patient_taking_long_term_medication** — Support the Patient Taking Long-Term Medication | page 173 | type: `supporting_reference` | entry: `False`
+- **protect_yourself_from_occupational_infection** — Protect Yourself from Occupational Infection | page 174 | type: `supporting_reference` | entry: `False`
+- **protect_yourself_from_occupational_stress** — Protect Yourself from Occupational Stress | page 175 | type: `supporting_reference` | entry: `False`
+- **communicate_effectively** — Communicate Effectively | page 176 | type: `supporting_reference` | entry: `False`
+- **support_the_patient_to_make_a_change** — Support the Patient to Make a Change | page 177 | type: `supporting_reference` | entry: `False`
+- **helpline_numbers** — Helpline Numbers | page 178 | type: `supporting_reference` | entry: `False`

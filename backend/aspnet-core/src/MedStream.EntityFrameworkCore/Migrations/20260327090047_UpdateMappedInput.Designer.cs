@@ -3,6 +3,7 @@ using System;
 using MedStream.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MedStream.Migrations
 {
     [DbContext(typeof(MedStreamDbContext))]
-    partial class MedStreamDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327090047_UpdateMappedInput")]
+    partial class UpdateMappedInput
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1801,10 +1804,6 @@ namespace MedStream.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("FollowUpAnswersJson")
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)");
-
                     b.Property<string>("FreeTextComplaint")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -1826,10 +1825,6 @@ namespace MedStream.Migrations
                     b.Property<string>("SelectedSymptoms")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("SubjectiveSummary")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
 
                     b.Property<DateTime>("SubmittedAt")
                         .HasColumnType("timestamp with time zone");

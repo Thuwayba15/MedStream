@@ -1,0 +1,1847 @@
+{
+  "id": "apc_2023_catalog",
+  "name": "APC 2023 Retrieval Catalog",
+  "version": "1.0.0",
+  "source": {
+    "type": "document_catalog",
+    "document": "APC 2023 Clinical Tool",
+    "documentPages": 178,
+    "notes": "Catalog derived from APC 2023 contents and introductory pages. Intended for retrieval, routing, and AI fallback context selection. Not a full rule-complete pathway conversion."
+  },
+  "designRules": {
+    "entryPathwayDefinition": "A section that makes sense as a first complaint/intake target from free-text or symptom chips.",
+    "linkedPathwayDefinition": "A section usually reached from another pathway, a clinician decision, or a chronic-condition workflow.",
+    "supportingReferenceDefinition": "A section used for reference, guidance, or clinician support rather than direct complaint intake.",
+    "routingGuidance": [
+      "Classify only into isEntryPathway=true sections during initial intake routing.",
+      "Use linked/supporting sections for pathway links, clinician review, AI fallback context, and chronic-condition follow-up.",
+      "Prefer targeted APC retrieval rather than sending the entire APC document to AI at runtime."
+    ]
+  },
+  "sections": [
+    {
+      "id": "glossary",
+      "title": "Glossary",
+      "page": 6,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "prescribe_rationally",
+      "title": "Prescribe Rationally",
+      "page": 7,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "screen_all_patients_for_covid_19_and_tb",
+      "title": "Screen all Patients for COVID-19 and TB",
+      "page": 8,
+      "type": "general_screening",
+      "isEntryPathway": false,
+      "symptomCategory": "screening",
+      "keywords": [
+        "covid",
+        "tb",
+        "screening",
+        "cough",
+        "fever",
+        "breathing difficulty"
+      ],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "initial_assessment_of_the_patient",
+      "title": "Initial Assessment of the Patient",
+      "page": 9,
+      "type": "emergency",
+      "isEntryPathway": false,
+      "symptomCategory": "emergency",
+      "keywords": [
+        "emergency",
+        "urgent",
+        "respiratory rate",
+        "oxygen saturation",
+        "chest pain",
+        "coughing blood",
+        "difficulty breathing"
+      ],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "address_the_patients_general_health",
+      "title": "Address the Patient's General Health",
+      "page": 10,
+      "type": "general",
+      "isEntryPathway": false,
+      "symptomCategory": "general_health",
+      "keywords": [
+        "general health",
+        "smoking",
+        "alcohol",
+        "depression",
+        "family planning",
+        "bp",
+        "hiv",
+        "tb"
+      ],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "observation_post_vaccination",
+      "title": "Observation Post Vaccination",
+      "page": 12,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "emergency_patient",
+      "title": "The Emergency Patient",
+      "page": 14,
+      "type": "emergency",
+      "isEntryPathway": false,
+      "symptomCategory": "emergency",
+      "keywords": [
+        "collapse",
+        "cardiac arrest",
+        "respiratory arrest",
+        "unresponsive",
+        "emergency"
+      ],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "cardiopulmonary_resuscitation",
+      "title": "Cardiopulmonary Resuscitation (CPR)",
+      "page": 15,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "decreased_consciousness",
+      "title": "Decreased Consciousness",
+      "page": 16,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "neurological",
+      "keywords": [
+        "unconscious",
+        "reduced consciousness",
+        "drowsy",
+        "not waking up"
+      ],
+      "bodyRegions": [
+        "head",
+        "brain"
+      ],
+      "linkedPathways": [
+        "assess_and_manage_glucose",
+        "emergency_patient"
+      ]
+    },
+    {
+      "id": "assess_and_manage_glucose",
+      "title": "Assess and Manage Glucose",
+      "page": 17,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "metabolic",
+      "keywords": [
+        "glucose",
+        "low sugar",
+        "high sugar",
+        "hypoglycaemia",
+        "diabetes"
+      ],
+      "bodyRegions": [],
+      "linkedPathways": [
+        "diabetes_routine_care"
+      ]
+    },
+    {
+      "id": "injured_patient",
+      "title": "The Injured Patient",
+      "page": 18,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "injury",
+      "keywords": [
+        "injury",
+        "fell",
+        "hurt",
+        "wound",
+        "fracture",
+        "cut"
+      ],
+      "bodyRegions": [
+        "head",
+        "neck",
+        "chest",
+        "abdomen",
+        "limb"
+      ],
+      "linkedPathways": [
+        "fracture",
+        "acute_wound"
+      ]
+    },
+    {
+      "id": "convulsion",
+      "title": "Convulsion / Seizures / Fits",
+      "page": 19,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "neurological",
+      "keywords": [
+        "convulsion",
+        "seizure",
+        "fit",
+        "fits"
+      ],
+      "bodyRegions": [
+        "brain",
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "anaphylaxis",
+      "title": "Anaphylaxis",
+      "page": 20,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "emergency",
+      "keywords": [
+        "allergic reaction",
+        "anaphylaxis",
+        "swelling after injection",
+        "difficulty breathing after allergy"
+      ],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "burns",
+      "title": "Burns",
+      "page": 21,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "injury",
+      "keywords": [
+        "burn",
+        "burns",
+        "scald"
+      ],
+      "bodyRegions": [
+        "skin",
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "bites",
+      "title": "Bites / Stings",
+      "page": 22,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "injury",
+      "keywords": [
+        "bite",
+        "sting",
+        "snake bite",
+        "dog bite",
+        "insect bite"
+      ],
+      "bodyRegions": [
+        "skin",
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "weight_loss",
+      "title": "Weight Loss",
+      "page": 23,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "general_systemic",
+      "keywords": [
+        "weight loss",
+        "losing weight",
+        "unintentional weight loss"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "fever",
+      "title": "Fever",
+      "page": 24,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "general_systemic",
+      "keywords": [
+        "fever",
+        "temperature",
+        "hot",
+        "feverish",
+        "chills"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "lump_neck_axilla_groin",
+      "title": "Lump, Neck / Axilla / Groin / Lymphadenopathy",
+      "page": 25,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "general_systemic",
+      "keywords": [
+        "lump in neck",
+        "swollen glands",
+        "groin lump",
+        "lymph nodes"
+      ],
+      "bodyRegions": [
+        "neck",
+        "axilla",
+        "groin"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "fatigue_weakness",
+      "title": "Fatigue / Tiredness / Weakness",
+      "page": 26,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "general_systemic",
+      "keywords": [
+        "fatigue",
+        "tired",
+        "weak",
+        "weakness"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "anaemia_pallor",
+      "title": "Anaemia / Pallor",
+      "page": 27,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "general_systemic",
+      "keywords": [
+        "anaemia",
+        "pale",
+        "pallor"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "collapse_blackout_faint",
+      "title": "Collapse / Blackout / Faint / Falls",
+      "page": 28,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "neurological",
+      "keywords": [
+        "collapse",
+        "blackout",
+        "faint",
+        "passed out",
+        "falls"
+      ],
+      "bodyRegions": [
+        "head",
+        "brain",
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "dizziness",
+      "title": "Dizziness",
+      "page": 29,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "neurological",
+      "keywords": [
+        "dizzy",
+        "dizziness",
+        "lightheaded",
+        "vertigo"
+      ],
+      "bodyRegions": [
+        "head",
+        "brain"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "headache",
+      "title": "Headache",
+      "page": 30,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "neurological",
+      "keywords": [
+        "headache",
+        "head pain",
+        "migraine"
+      ],
+      "bodyRegions": [
+        "head"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "eye_symptoms",
+      "title": "Eye / Vision Symptoms",
+      "page": 31,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "sensory",
+      "keywords": [
+        "eye pain",
+        "vision problem",
+        "blurred vision",
+        "red eye"
+      ],
+      "bodyRegions": [
+        "eye"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "face_symptoms",
+      "title": "Face Symptoms",
+      "page": 32,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "ent_face",
+      "keywords": [
+        "face swelling",
+        "face pain",
+        "facial symptoms"
+      ],
+      "bodyRegions": [
+        "face"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "ear_symptoms",
+      "title": "Ear / Hearing Symptoms",
+      "page": 33,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "ent",
+      "keywords": [
+        "ear pain",
+        "ear discharge",
+        "hearing problem"
+      ],
+      "bodyRegions": [
+        "ear"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "nose_symptoms",
+      "title": "Nose Symptoms",
+      "page": 34,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "ent",
+      "keywords": [
+        "nose",
+        "runny nose",
+        "blocked nose",
+        "nose bleed"
+      ],
+      "bodyRegions": [
+        "nose"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "mouth_throat_symptoms",
+      "title": "Mouth / Throat / Tasting Symptoms",
+      "page": 35,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "ent",
+      "keywords": [
+        "mouth pain",
+        "sore throat",
+        "taste change",
+        "throat symptoms"
+      ],
+      "bodyRegions": [
+        "mouth",
+        "throat"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "dental_symptoms",
+      "title": "Dental / Gum / Teeth Symptoms",
+      "page": 36,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "ent",
+      "keywords": [
+        "tooth pain",
+        "gum pain",
+        "dental symptoms"
+      ],
+      "bodyRegions": [
+        "mouth",
+        "teeth"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "chest_pain",
+      "title": "Chest Pain",
+      "page": 37,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "cardiorespiratory",
+      "keywords": [
+        "chest pain",
+        "pain in chest",
+        "tight chest",
+        "pressure in chest"
+      ],
+      "bodyRegions": [
+        "chest",
+        "heart"
+      ],
+      "linkedPathways": [
+        "ischaemic_heart_disease_initial_assessment"
+      ]
+    },
+    {
+      "id": "cough_or_difficulty_breathing",
+      "title": "Cough / Breathing Difficulty",
+      "page": 38,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "respiratory",
+      "keywords": [
+        "cough",
+        "difficulty breathing",
+        "shortness of breath",
+        "breathless"
+      ],
+      "bodyRegions": [
+        "chest",
+        "lungs",
+        "respiratory"
+      ],
+      "linkedPathways": [
+        "wheeze",
+        "tb_diagnosis",
+        "acute_covid_19"
+      ]
+    },
+    {
+      "id": "wheeze",
+      "title": "Wheeze",
+      "page": 39,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "respiratory",
+      "keywords": [
+        "wheeze",
+        "tight chest",
+        "whistling breathing"
+      ],
+      "bodyRegions": [
+        "chest",
+        "lungs",
+        "respiratory"
+      ],
+      "linkedPathways": [
+        "asthma_and_copd_diagnosis"
+      ]
+    },
+    {
+      "id": "covid_19_diagnosis",
+      "title": "COVID-19 Diagnosis",
+      "page": 40,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [
+        "covid",
+        "covid-19",
+        "coronavirus"
+      ],
+      "bodyRegions": [
+        "body",
+        "respiratory"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "acute_covid_19",
+      "title": "Acute COVID-19",
+      "page": 41,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [
+        "acute covid",
+        "covid symptoms"
+      ],
+      "bodyRegions": [
+        "body",
+        "respiratory"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "ongoing_covid_19_symptoms",
+      "title": "Ongoing COVID-19 Symptoms",
+      "page": 42,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [
+        "long covid",
+        "ongoing covid symptoms"
+      ],
+      "bodyRegions": [
+        "body",
+        "respiratory"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "breast_symptoms",
+      "title": "Breast Symptoms",
+      "page": 43,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "womens_health",
+      "keywords": [
+        "breast lump",
+        "breast pain",
+        "nipple discharge"
+      ],
+      "bodyRegions": [
+        "breast"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "abdominal_pain_heartburn",
+      "title": "Abdominal Pain / Heartburn",
+      "page": 44,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "gastrointestinal",
+      "keywords": [
+        "abdominal pain",
+        "stomach pain",
+        "tummy pain",
+        "belly pain",
+        "heartburn"
+      ],
+      "bodyRegions": [
+        "abdomen",
+        "stomach"
+      ],
+      "linkedPathways": [
+        "urinary_symptoms",
+        "pregnancy"
+      ]
+    },
+    {
+      "id": "nausea_vomiting",
+      "title": "Nausea / Vomiting",
+      "page": 45,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "gastrointestinal",
+      "keywords": [
+        "nausea",
+        "vomiting",
+        "vomit",
+        "throwing up"
+      ],
+      "bodyRegions": [
+        "abdomen",
+        "stomach"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "diarrhoea",
+      "title": "Diarrhoea",
+      "page": 46,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "gastrointestinal",
+      "keywords": [
+        "diarrhoea",
+        "diarrhea",
+        "loose stools"
+      ],
+      "bodyRegions": [
+        "abdomen",
+        "bowel"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "cholera",
+      "title": "Cholera",
+      "page": 47,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [
+        "cholera",
+        "rice water stools"
+      ],
+      "bodyRegions": [
+        "abdomen",
+        "bowel"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "anal_symptoms_constipation",
+      "title": "Anal Symptoms / Constipation",
+      "page": 48,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "gastrointestinal",
+      "keywords": [
+        "constipation",
+        "anal pain",
+        "anal symptoms"
+      ],
+      "bodyRegions": [
+        "rectum",
+        "abdomen"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "genital_symptoms",
+      "title": "Genital / Vaginal Discharge / STI / Scrotal Symptoms / Genital Ulcer",
+      "page": 49,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "genitourinary",
+      "keywords": [
+        "genital symptoms",
+        "vaginal discharge",
+        "scrotal pain",
+        "sti",
+        "genital ulcer"
+      ],
+      "bodyRegions": [
+        "genitals",
+        "pelvis"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "syphilis",
+      "title": "Syphilis",
+      "page": 53,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [
+        "syphilis"
+      ],
+      "bodyRegions": [
+        "genitals",
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "cervical_screening",
+      "title": "Cervical Screening",
+      "page": 55,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [
+        "pap smear",
+        "cervical screening"
+      ],
+      "bodyRegions": [
+        "cervix"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "menstrual_symptoms",
+      "title": "Menstrual Symptoms / Period Problems",
+      "page": 56,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "womens_health",
+      "keywords": [
+        "period problems",
+        "heavy periods",
+        "missed periods",
+        "menstrual symptoms"
+      ],
+      "bodyRegions": [
+        "pelvis"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "vaginal_bleeding",
+      "title": "Vaginal Bleeding",
+      "page": 57,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "womens_health",
+      "keywords": [
+        "vaginal bleeding",
+        "bleeding between periods"
+      ],
+      "bodyRegions": [
+        "pelvis"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "sexual_problems",
+      "title": "Sexual Problems",
+      "page": 58,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "genitourinary",
+      "keywords": [
+        "sexual problems",
+        "painful sex",
+        "sexual dysfunction"
+      ],
+      "bodyRegions": [
+        "genitals"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "urinary_symptoms",
+      "title": "Urinary Symptoms",
+      "page": 59,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "genitourinary",
+      "keywords": [
+        "urine pain",
+        "burning urine",
+        "frequent urination",
+        "can't pass urine"
+      ],
+      "bodyRegions": [
+        "pelvis",
+        "urinary"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "body_pain",
+      "title": "Body / General Pain",
+      "page": 60,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [
+        "body pain",
+        "general pain",
+        "aches all over"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "chronic_pain",
+      "title": "Chronic Pain",
+      "page": 61,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "pain",
+      "keywords": [
+        "chronic pain"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "joint_symptoms",
+      "title": "Joint Symptoms",
+      "page": 62,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [
+        "joint pain",
+        "swollen joints"
+      ],
+      "bodyRegions": [
+        "joint"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "back_symptoms",
+      "title": "Back Pain / Neck Pain",
+      "page": 63,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [
+        "back pain",
+        "neck pain"
+      ],
+      "bodyRegions": [
+        "back",
+        "neck"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "arm_hand_symptoms",
+      "title": "Arm / Hand / Neck Symptoms",
+      "page": 64,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [
+        "arm pain",
+        "hand pain",
+        "hand injury",
+        "arm symptoms"
+      ],
+      "bodyRegions": [
+        "arm",
+        "hand",
+        "neck"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "leg_symptoms",
+      "title": "Leg Symptoms",
+      "page": 65,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [
+        "leg pain",
+        "leg swelling",
+        "leg symptoms"
+      ],
+      "bodyRegions": [
+        "leg"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "foot_symptoms",
+      "title": "Foot Symptoms / Foot Care",
+      "page": 66,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [
+        "foot pain",
+        "foot wound",
+        "foot symptoms"
+      ],
+      "bodyRegions": [
+        "foot"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "skin_symptoms",
+      "title": "Skin Symptoms / Rash / Itch / Pimples / Blackheads / Skin Lump",
+      "page": 67,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "dermatology",
+      "keywords": [
+        "rash",
+        "itch",
+        "pimples",
+        "skin lump",
+        "skin sore"
+      ],
+      "bodyRegions": [
+        "skin"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "chronic_wound",
+      "title": "Chronic Wound / Skin Ulcer",
+      "page": 76,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "dermatology",
+      "keywords": [
+        "chronic wound",
+        "non healing wound",
+        "skin ulcer"
+      ],
+      "bodyRegions": [
+        "skin"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "jaundice",
+      "title": "Jaundice",
+      "page": 79,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "gastrointestinal",
+      "keywords": [
+        "jaundice",
+        "yellow eyes",
+        "yellow skin"
+      ],
+      "bodyRegions": [
+        "abdomen",
+        "liver"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "scalp_symptoms",
+      "title": "Scalp Symptoms",
+      "page": 80,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "dermatology",
+      "keywords": [
+        "scalp itch",
+        "scalp rash",
+        "dandruff"
+      ],
+      "bodyRegions": [
+        "scalp"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "hair_loss",
+      "title": "Hair Loss",
+      "page": 81,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "dermatology",
+      "keywords": [
+        "hair loss"
+      ],
+      "bodyRegions": [
+        "scalp"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "nail_symptoms",
+      "title": "Nail Symptoms",
+      "page": 82,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "dermatology",
+      "keywords": [
+        "nail changes",
+        "nail symptoms"
+      ],
+      "bodyRegions": [
+        "nail"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "suicidal_patient",
+      "title": "Suicidal Patient / Self-Harm",
+      "page": 83,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "mental_health",
+      "keywords": [
+        "suicidal",
+        "self harm",
+        "want to die"
+      ],
+      "bodyRegions": [
+        "mind",
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "aggressive_disruptive_violent_patient",
+      "title": "Aggressive / Disruptive / Violent Patient",
+      "page": 84,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "mental_health",
+      "keywords": [
+        "aggressive",
+        "violent",
+        "disruptive"
+      ],
+      "bodyRegions": [
+        "mind",
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "confused_patient",
+      "title": "Confused Patient",
+      "page": 85,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "mental_health",
+      "keywords": [
+        "confused",
+        "agitated",
+        "disoriented"
+      ],
+      "bodyRegions": [
+        "mind",
+        "brain"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "anxiety_stress_miserable_patient",
+      "title": "Anxiety / Stress / Miserable Patient",
+      "page": 86,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "mental_health",
+      "keywords": [
+        "anxiety",
+        "stress",
+        "miserable",
+        "panic"
+      ],
+      "bodyRegions": [
+        "mind"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "sleeping_difficulty",
+      "title": "Sleeping Difficulty",
+      "page": 87,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "mental_health",
+      "keywords": [
+        "sleeping difficulty",
+        "insomnia",
+        "can't sleep"
+      ],
+      "bodyRegions": [
+        "mind"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "abused_rape_traumatised_patient",
+      "title": "Abused / Rape / Traumatised Patient",
+      "page": 88,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "trauma_psychosocial",
+      "keywords": [
+        "rape",
+        "sexual assault",
+        "abuse",
+        "trauma"
+      ],
+      "bodyRegions": [
+        "body",
+        "mind"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "assess_and_manage_tb_infection",
+      "title": "Assess and Manage TB Infection",
+      "page": 89,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "collect_sputum_for_tb",
+      "title": "How to Collect a Good Sputum Specimen for TB",
+      "page": 91,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "tb_diagnosis",
+      "title": "TB: Diagnosis",
+      "page": 92,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [
+        "tb",
+        "tuberculosis",
+        "cough > 2 weeks",
+        "night sweats",
+        "weight loss"
+      ],
+      "bodyRegions": [
+        "chest",
+        "lungs"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "drug_sensitive_tb_routine_care",
+      "title": "Drug-Sensitive TB: Routine Care",
+      "page": 94,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "inh_mono_resistant_tb_routine_care",
+      "title": "INH Mono-Resistant TB: Routine Care",
+      "page": 95,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "rr_tb_routine_care",
+      "title": "Rifampicin-Resistant TB: Routine Care",
+      "page": 99,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "prep",
+      "title": "HIV: Pre-Exposure Prophylaxis (PrEP)",
+      "page": 106,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": "hiv",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "pep",
+      "title": "HIV: Post-Exposure Prophylaxis (PEP)",
+      "page": 108,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": "hiv",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "hiv_diagnosis",
+      "title": "HIV: Diagnosis",
+      "page": 110,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "hiv",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "hiv_routine_care",
+      "title": "HIV: Routine Care",
+      "page": 111,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "hiv",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "hepatitis_b",
+      "title": "Hepatitis B",
+      "page": 120,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "long_covid_routine_care",
+      "title": "Long COVID",
+      "page": 121,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "infectious",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "asthma_and_copd_diagnosis",
+      "title": "Asthma and COPD: Diagnosis",
+      "page": 123,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "respiratory",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "using_inhalers_and_spacers",
+      "title": "Using Inhalers and Spacers",
+      "page": 123,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "asthma_routine_care",
+      "title": "Asthma: Routine Care",
+      "page": 125,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "respiratory",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "copd_routine_care",
+      "title": "COPD: Routine Care",
+      "page": 126,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "respiratory",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "cardiovascular_disease_risk_diagnosis",
+      "title": "Cardiovascular Disease Risk: Diagnosis",
+      "page": 127,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "overweight_patient",
+      "title": "Overweight Patient",
+      "page": 127,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [
+        "overweight",
+        "obesity",
+        "weight gain"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "cardiovascular_disease_risk_routine_care",
+      "title": "Cardiovascular Disease Risk: Routine Care",
+      "page": 129,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "diabetes_routine_care",
+      "title": "Diabetes: Routine Care",
+      "page": 130,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "hypertension_diagnosis",
+      "title": "Hypertension: Diagnosis",
+      "page": 132,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "hypertension_routine_care",
+      "title": "Hypertension: Routine Care",
+      "page": 133,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "heart_failure",
+      "title": "Heart Failure",
+      "page": 135,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "stroke",
+      "title": "Stroke",
+      "page": 136,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "neurological",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "ischaemic_heart_disease_initial_assessment",
+      "title": "Ischaemic Heart Disease: Initial Assessment",
+      "page": 137,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "ischaemic_heart_disease_routine_care",
+      "title": "Ischaemic Heart Disease: Routine Care",
+      "page": 138,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "peripheral_vascular_disease",
+      "title": "Peripheral Vascular Disease",
+      "page": 139,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "cardiometabolic",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "mentally_ill_patient_needing_treatment_or_admission",
+      "title": "The Mentally Ill Patient Needing Treatment or Admission",
+      "page": 140,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "mental_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "tobacco_smoking",
+      "title": "Tobacco Smoking",
+      "page": 141,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": "mental_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "alcohol_drug_use",
+      "title": "Alcohol / Drug Use",
+      "page": 142,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "mental_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "depression_diagnosis",
+      "title": "Depression: Diagnosis",
+      "page": 143,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "mental_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "depression_and_or_anxiety_routine_care",
+      "title": "Depression and/or Anxiety: Routine Care",
+      "page": 144,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "mental_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "schizophrenia",
+      "title": "Schizophrenia",
+      "page": 146,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "mental_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "dementia",
+      "title": "Dementia",
+      "page": 148,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "mental_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "epilepsy",
+      "title": "Epilepsy",
+      "page": 149,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "neurological",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "chronic_arthritis",
+      "title": "Chronic Arthritis",
+      "page": 151,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "gout",
+      "title": "Gout",
+      "page": 152,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "fibromyalgia",
+      "title": "Fibromyalgia",
+      "page": 153,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "musculoskeletal",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "contraception",
+      "title": "Contraception",
+      "page": 154,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "pregnancy",
+      "title": "Pregnancy",
+      "page": 157,
+      "type": "linked_pathway",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "routine_antenatal_care",
+      "title": "Routine Antenatal Care",
+      "page": 159,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "routine_postnatal_care",
+      "title": "Routine Postnatal Care",
+      "page": 164,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "pregnant_breastfeeding_mother_unsuppressed_vl",
+      "title": "Manage the Pregnant/Breastfeeding Mother with an Unsuppressed VL",
+      "page": 166,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "prevent_communicable_infections_in_newborn",
+      "title": "Prevent Communicable Infections in the Newborn",
+      "page": 167,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "prevent_vertical_transmission_of_hiv",
+      "title": "Prevent Vertical Transmission of HIV",
+      "page": 168,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": "womens_health",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "menopause",
+      "title": "Menopause",
+      "page": 169,
+      "type": "entry_pathway",
+      "isEntryPathway": true,
+      "symptomCategory": "womens_health",
+      "keywords": [
+        "menopause",
+        "hot flushes",
+        "night sweats menopause"
+      ],
+      "bodyRegions": [
+        "body"
+      ],
+      "linkedPathways": []
+    },
+    {
+      "id": "routine_palliative_care",
+      "title": "Routine Palliative Care",
+      "page": 170,
+      "type": "chronic_condition",
+      "isEntryPathway": false,
+      "symptomCategory": "palliative_care",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "address_the_dying_patients_needs",
+      "title": "Address the Dying Patient's Needs",
+      "page": 172,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": "palliative_care",
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "support_patient_taking_long_term_medication",
+      "title": "Support the Patient Taking Long-Term Medication",
+      "page": 173,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "protect_yourself_from_occupational_infection",
+      "title": "Protect Yourself from Occupational Infection",
+      "page": 174,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "protect_yourself_from_occupational_stress",
+      "title": "Protect Yourself from Occupational Stress",
+      "page": 175,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "communicate_effectively",
+      "title": "Communicate Effectively",
+      "page": 176,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "support_the_patient_to_make_a_change",
+      "title": "Support the Patient to Make a Change",
+      "page": 177,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    },
+    {
+      "id": "helpline_numbers",
+      "title": "Helpline Numbers",
+      "page": 178,
+      "type": "supporting_reference",
+      "isEntryPathway": false,
+      "symptomCategory": null,
+      "keywords": [],
+      "bodyRegions": [],
+      "linkedPathways": []
+    }
+  ],
+  "summary": {
+    "totalSections": 121,
+    "byType": {
+      "supporting_reference": 18,
+      "general_screening": 1,
+      "emergency": 2,
+      "general": 1,
+      "entry_pathway": 50,
+      "linked_pathway": 27,
+      "chronic_condition": 22
+    },
+    "entryPathways": 50,
+    "linkedOrNonEntrySections": 71
+  }
+}

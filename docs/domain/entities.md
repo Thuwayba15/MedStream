@@ -213,18 +213,23 @@ Behavioral notes:
 **Key fields**
 - Id
 - VisitId
-- ChiefComplaint
-- ComplaintCategory
 - FreeTextComplaint
-- PatientReportedSummary
-- LanguageUsed
+- SelectedSymptoms
+- ExtractedPrimarySymptoms
+- ExtractionSource
+- MappedInputValues
+- FollowUpAnswersJson
+- SubjectiveSummary
 - SubmittedAt
-- AiExtractedSymptoms
-- AiInitialSubjective
 
 **Relationships**
 - belongs to Visit
-- has many IntakeAnswers
+
+**Implementation notes**
+- `MappedInputValues` stores deterministic/AI-assisted pre-mapped pathway input key-values.
+- `FollowUpAnswersJson` stores structured follow-up responses used by triage and SOAP handoff.
+- `SubjectiveSummary` stores clinician-readable subjective text intended to seed SOAP `S`.
+- Intake routing mode (`approved_json` vs `apc_fallback`) is currently computed at runtime and not persisted as a dedicated column.
 
 ---
 
