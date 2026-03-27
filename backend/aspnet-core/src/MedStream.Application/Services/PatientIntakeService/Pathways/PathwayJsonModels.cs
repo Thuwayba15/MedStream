@@ -121,9 +121,44 @@ public class PathwaySourceJson
 public class PathwayEntryJson
 {
     /// <summary>
+    /// Gets or sets whether this pathway is directly classifiable from intake complaint text.
+    /// </summary>
+    public bool IsEntryPathway { get; set; }
+
+    /// <summary>
     /// Gets or sets keyword hints.
     /// </summary>
     public List<string> ComplaintKeywords { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets synonym phrases for complaint matching.
+    /// </summary>
+    public List<string> Synonyms { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets common patient phrase patterns.
+    /// </summary>
+    public List<string> CommonPhrases { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets phrases that should penalize this pathway match.
+    /// </summary>
+    public List<string> ExcludePhrases { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets high-level symptom category.
+    /// </summary>
+    public string SymptomCategory { get; set; }
+
+    /// <summary>
+    /// Gets or sets body region hints for classification.
+    /// </summary>
+    public List<string> BodyRegions { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets pathway metadata priority (lower is higher priority).
+    /// </summary>
+    public int Priority { get; set; } = 99;
 
     /// <summary>
     /// Gets or sets complaint code hints.

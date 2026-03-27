@@ -11,9 +11,14 @@ public static class PatientIntakeConstants
     public const string UnassignedPathwayKey = "unassigned";
 
     /// <summary>
-    /// Default pathway key for the MVP intake workflow.
+    /// General fallback pathway key used for low-confidence or nonsensical intake complaints.
     /// </summary>
-    public const string DefaultPathwayKey = "general_adult_fever_cough";
+    public const string GeneralFallbackPathwayKey = "general_unspecified_complaint";
+
+    /// <summary>
+    /// Default pathway key when no stronger selection is available.
+    /// </summary>
+    public const string DefaultPathwayKey = GeneralFallbackPathwayKey;
 
     /// <summary>
     /// Visit status used while intake is still in progress.

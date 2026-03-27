@@ -201,13 +201,10 @@ public class PathwayExecutionEngine : IPathwayExecutionEngine, ITransientDepende
 
     private static void FinalizeTriageIndicators(PathwayDefinitionJson definition, IReadOnlyCollection<string> primarySymptoms, PathwayExecutionResult result)
     {
-        result.TriageIndicators["priorityScore"] = result.Score.ToString(CultureInfo.InvariantCulture);
-
+        var urgentThreshold = definition.Triage?.UrgentThreshold ?? 75;
+        var priorityThreshold = definition.Triage?.PriorityThreshold ?? 45;
         if (!result.TriageIndicators.ContainsKey("urgencyLevel"))
         {
-            var urgentThreshold = definition.Triage?.UrgentThreshold ?? 75;
-            var priorityThreshold = definition.Triage?.PriorityThreshold ?? 45;
-
             if (result.TriggeredRedFlags.Count > 0 || result.Score >= urgentThreshold)
             {
                 result.TriageIndicators["urgencyLevel"] = "Urgent";
@@ -223,6 +220,16 @@ public class PathwayExecutionEngine : IPathwayExecutionEngine, ITransientDepende
         }
 
         var urgency = result.TriageIndicators["urgencyLevel"];
+        if (string.Equals(urgency, "Urgent", StringComparison.OrdinalIgnoreCase))
+        {
+            result.Score = Math.Max(result.Score, urgentThreshold);
+        }
+        else if (string.Equals(urgency, "Priority", StringComparison.OrdinalIgnoreCase))
+        {
+            result.Score = Math.Max(result.Score, priorityThreshold);
+        }
+
+        result.TriageIndicators["priorityScore"] = result.Score.ToString(CultureInfo.InvariantCulture);
         var symptomText = primarySymptoms.Count > 0 ? string.Join(", ", primarySymptoms) : "reported symptoms";
 
         var explanation = urgency switch

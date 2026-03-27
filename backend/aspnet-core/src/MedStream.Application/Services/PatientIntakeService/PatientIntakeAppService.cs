@@ -26,6 +26,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
     private readonly IRepository<Facility, int> _facilityRepository;
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
+    private readonly IPathwayDefinitionProvider _pathwayDefinitionProvider;
     private readonly IPathwayExecutionEngine _pathwayExecutionEngine;
     private readonly IPathwayExtractionService _pathwayExtractionService;
 
@@ -36,6 +37,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         IRepository<Facility, int> facilityRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
+        IPathwayDefinitionProvider pathwayDefinitionProvider,
         IPathwayExecutionEngine pathwayExecutionEngine,
         IPathwayExtractionService pathwayExtractionService)
     {
@@ -45,6 +47,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         _facilityRepository = facilityRepository;
         _userRepository = userRepository;
         _userManager = userManager;
+        _pathwayDefinitionProvider = pathwayDefinitionProvider;
         _pathwayExecutionEngine = pathwayExecutionEngine;
         _pathwayExtractionService = pathwayExtractionService;
     }
@@ -128,6 +131,10 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             ExtractionSource = extraction.ExtractionSource,
             LikelyPathwayIds = extraction.LikelyPathwayIds,
             SelectedPathwayKey = visit.PathwayKey,
+            ConfidenceBand = extraction.ConfidenceBand,
+            ShouldAskDisambiguation = extraction.ShouldAskDisambiguation,
+            DisambiguationPrompt = extraction.DisambiguationPrompt,
+            Candidates = extraction.Candidates.Select(MapClassificationCandidate).ToList(),
             MappedInputValues = extraction.MappedInputValues
         };
     }
@@ -167,6 +174,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         }
 
         var visit = await GetVisitForCurrentPatientAsync(input.VisitId);
+        var intake = await GetOrCreateIntakeAsync(visit.Id, visit.TenantId);
         var pathwayExecution = _pathwayExecutionEngine.Execute(new PathwayExecutionRequest
         {
             PathwayId = visit.PathwayKey,
@@ -191,6 +199,9 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
 
         var queueMessage = BuildQueueStatus(triage.UrgencyLevel);
         var assessedAt = DateTime.UtcNow;
+        intake.FollowUpAnswersJson = JsonConvert.SerializeObject(input.Answers ?? new Dictionary<string, object>());
+        intake.SubjectiveSummary = BuildSubjectiveSummary(visit.PathwayKey, intake, input.Answers ?? new Dictionary<string, object>());
+        intake.SubmittedAt = assessedAt;
 
         var triageEntity = new TriageAssessment
         {
@@ -208,6 +219,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
 
         visit.Status = PatientIntakeConstants.VisitStatusTriageCompleted;
 
+        await _symptomIntakeRepository.UpdateAsync(intake);
         await _triageAssessmentRepository.InsertAsync(triageEntity);
         await _visitRepository.UpdateAsync(visit);
         await CurrentUnitOfWork.SaveChangesAsync();
@@ -348,6 +360,124 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             "text" => "Text",
             _ => "Text"
         };
+    }
+
+    private static PathwayClassificationCandidateDto MapClassificationCandidate(PathwayClassificationCandidate candidate)
+    {
+        return new PathwayClassificationCandidateDto
+        {
+            PathwayId = candidate.PathwayId,
+            TotalScore = candidate.TotalScore,
+            ConfidenceBand = candidate.ConfidenceBand.ToString(),
+            MatchedSignals = candidate.MatchedSignals.Select(item => new PathwayClassificationSignalDto
+            {
+                SignalType = item.SignalType,
+                MatchedTerm = item.MatchedTerm,
+                Weight = item.Weight
+            }).ToList()
+        };
+    }
+
+    private string BuildSubjectiveSummary(string pathwayKey, SymptomIntake intake, IReadOnlyDictionary<string, object> answers)
+    {
+        var safePathwayKey = string.IsNullOrWhiteSpace(pathwayKey) || string.Equals(pathwayKey, PatientIntakeConstants.UnassignedPathwayKey, StringComparison.OrdinalIgnoreCase)
+            ? PatientIntakeConstants.GeneralFallbackPathwayKey
+            : pathwayKey;
+        var selectedSymptoms = DeserializeList(intake.SelectedSymptoms);
+        var extractedSymptoms = DeserializeList(intake.ExtractedPrimarySymptoms);
+        var summaryParts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(intake.FreeTextComplaint))
+        {
+            summaryParts.Add($"Chief complaint: {intake.FreeTextComplaint.Trim()}");
+        }
+
+        if (selectedSymptoms.Count > 0)
+        {
+            summaryParts.Add($"Selected symptoms: {string.Join(", ", selectedSymptoms)}");
+        }
+
+        if (extractedSymptoms.Count > 0)
+        {
+            summaryParts.Add($"Extracted primary symptoms: {string.Join(", ", extractedSymptoms)}");
+        }
+
+        if (answers.Count == 0)
+        {
+            return string.Join("\n", summaryParts);
+        }
+
+        PathwayDefinitionJson pathwayDefinition;
+        try
+        {
+            pathwayDefinition = _pathwayDefinitionProvider.GetById(safePathwayKey);
+        }
+        catch
+        {
+            pathwayDefinition = _pathwayDefinitionProvider.GetById(PatientIntakeConstants.GeneralFallbackPathwayKey);
+        }
+
+        var inputLookup = pathwayDefinition.Inputs
+            .Where(item => string.Equals(item.Stage, "patient_intake", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(item => item.Id, item => item.Label, StringComparer.OrdinalIgnoreCase);
+
+        var answeredDetails = answers
+            .Where(item => item.Value != null)
+            .Select(item =>
+            {
+                var label = inputLookup.TryGetValue(item.Key, out var mappedLabel) ? mappedLabel : item.Key;
+                return $"{label}: {FormatAnswer(item.Value)}";
+            })
+            .ToList();
+
+        if (answeredDetails.Count > 0)
+        {
+            summaryParts.Add($"Follow-up answers: {string.Join("; ", answeredDetails)}");
+        }
+
+        return string.Join("\n", summaryParts);
+    }
+
+    private static List<string> DeserializeList(string serializedList)
+    {
+        if (string.IsNullOrWhiteSpace(serializedList))
+        {
+            return new List<string>();
+        }
+
+        try
+        {
+            return JsonConvert.DeserializeObject<List<string>>(serializedList) ?? new List<string>();
+        }
+        catch
+        {
+            return new List<string>();
+        }
+    }
+
+    private static string FormatAnswer(object value)
+    {
+        if (value is IEnumerable<object> objectList && value is not string)
+        {
+            return string.Join(", ", objectList.Select(item => Convert.ToString(item)?.Trim()).Where(item => !string.IsNullOrWhiteSpace(item)));
+        }
+
+        if (value is System.Collections.IEnumerable enumerable && value is not string)
+        {
+            var values = new List<string>();
+            foreach (var item in enumerable)
+            {
+                var text = Convert.ToString(item)?.Trim();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    values.Add(text);
+                }
+            }
+
+            return string.Join(", ", values);
+        }
+
+        return Convert.ToString(value)?.Trim() ?? string.Empty;
     }
 
     private static string BuildQueueStatus(string urgencyLevel)

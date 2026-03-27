@@ -2,86 +2,139 @@ using Abp.Dependency;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace MedStream.PatientIntake.Pathways;
 
 /// <summary>
-/// Keyword-based classifier that ranks likely pathway ids from intake text and extracted symptoms.
+/// Deterministic intake classifier that ranks entry pathways using normalized complaint signals.
 /// </summary>
 public class PathwayClassifier : IPathwayClassifier, ITransientDependency
 {
     private readonly IPathwayDefinitionProvider _definitionProvider;
+    private readonly IComplaintTextNormalizer _complaintTextNormalizer;
+    private readonly IPathwayClassificationScorer _classificationScorer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PathwayClassifier"/> class.
     /// </summary>
-    public PathwayClassifier(IPathwayDefinitionProvider definitionProvider)
+    public PathwayClassifier(
+        IPathwayDefinitionProvider definitionProvider,
+        IComplaintTextNormalizer complaintTextNormalizer,
+        IPathwayClassificationScorer classificationScorer)
     {
         _definitionProvider = definitionProvider;
+        _complaintTextNormalizer = complaintTextNormalizer;
+        _classificationScorer = classificationScorer;
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<string> ClassifyLikelyPathways(string freeText, IReadOnlyCollection<string> selectedSymptoms, IReadOnlyCollection<string> extractedPrimarySymptoms)
+    public PathwayClassificationResult ClassifyLikelyPathways(string freeText, IReadOnlyCollection<string> selectedSymptoms, IReadOnlyCollection<string> extractedPrimarySymptoms)
     {
-        var signalText = BuildSignalText(freeText, selectedSymptoms, extractedPrimarySymptoms);
-        var tokens = Tokenize(signalText);
-        var scores = new List<(string PathwayId, int Score)>();
+        var normalizedComplaint = _complaintTextNormalizer.Normalize(freeText, selectedSymptoms, extractedPrimarySymptoms);
+        var candidates = _definitionProvider.GetAllActive()
+            .Where(item => item.Entry?.IsEntryPathway ?? false)
+            .Select(item => _classificationScorer.Score(item, normalizedComplaint))
+            .Where(item => item.TotalScore > 0)
+            .OrderByDescending(item => item.TotalScore)
+            .ThenBy(item => item.PathwayId, StringComparer.OrdinalIgnoreCase)
+            .Take(5)
+            .ToList();
 
-        foreach (var pathway in _definitionProvider.GetAllActive())
+        if (candidates.Count == 0)
         {
-            var score = 0;
-            foreach (var keyword in pathway.Entry?.ComplaintKeywords ?? new List<string>())
+            return BuildNoMatchFallback(normalizedComplaint);
+        }
+
+        ApplyConfidence(candidates);
+        var topCandidate = candidates[0];
+        var secondCandidate = candidates.Count > 1 ? candidates[1] : null;
+        var margin = secondCandidate == null ? topCandidate.TotalScore : topCandidate.TotalScore - secondCandidate.TotalScore;
+
+        var shouldAskDisambiguation = topCandidate.ConfidenceBand == ClassificationConfidenceBand.Low ||
+                                      (secondCandidate != null && margin < 10m);
+
+        return new PathwayClassificationResult
+        {
+            NormalizedComplaintText = normalizedComplaint.NormalizedText,
+            Candidates = candidates,
+            SelectedPathwayId = topCandidate.PathwayId,
+            LikelyPathwayIds = candidates.Select(item => item.PathwayId).ToList(),
+            ShouldAskDisambiguation = shouldAskDisambiguation,
+            DisambiguationPrompt = shouldAskDisambiguation
+                ? "Please clarify the main issue so we can route you correctly."
+                : null,
+            ConfidenceBand = topCandidate.ConfidenceBand
+        };
+    }
+
+    private static PathwayClassificationResult BuildNoMatchFallback(NormalizedComplaintText normalizedComplaint)
+    {
+        var fallbackCandidate = new PathwayClassificationCandidate
+        {
+            PathwayId = PatientIntakeConstants.GeneralFallbackPathwayKey,
+            TotalScore = 1,
+            ConfidenceBand = ClassificationConfidenceBand.Low,
+            MatchedSignals = new List<PathwayClassificationSignal>
             {
-                if (string.IsNullOrWhiteSpace(keyword))
+                new()
                 {
-                    continue;
-                }
-
-                var normalizedKeyword = keyword.Trim().ToLowerInvariant();
-                if (signalText.Contains(normalizedKeyword, StringComparison.OrdinalIgnoreCase))
-                {
-                    score += 6;
-                    continue;
-                }
-
-                var keywordTokens = Tokenize(normalizedKeyword);
-                if (keywordTokens.All(token => tokens.Contains(token)))
-                {
-                    score += 3;
+                    SignalType = "fallback",
+                    MatchedTerm = "no_strong_entry_match",
+                    Weight = 1
                 }
             }
+        };
 
-            if (score > 0)
+        return new PathwayClassificationResult
+        {
+            NormalizedComplaintText = normalizedComplaint.NormalizedText,
+            Candidates = new List<PathwayClassificationCandidate> { fallbackCandidate },
+            SelectedPathwayId = fallbackCandidate.PathwayId,
+            LikelyPathwayIds = new List<string> { fallbackCandidate.PathwayId },
+            ShouldAskDisambiguation = true,
+            DisambiguationPrompt = "We could not confidently identify the complaint category. Please describe your main concern in one sentence.",
+            ConfidenceBand = ClassificationConfidenceBand.Low
+        };
+    }
+
+    private static void ApplyConfidence(IReadOnlyList<PathwayClassificationCandidate> candidates)
+    {
+        if (candidates.Count == 0)
+        {
+            return;
+        }
+
+        var topScore = candidates[0].TotalScore;
+        var secondScore = candidates.Count > 1 ? candidates[1].TotalScore : 0m;
+        var margin = topScore - secondScore;
+
+        for (var index = 0; index < candidates.Count; index++)
+        {
+            var candidate = candidates[index];
+            candidate.ConfidenceBand = ResolveConfidence(candidate.TotalScore, margin, index);
+        }
+    }
+
+    private static ClassificationConfidenceBand ResolveConfidence(decimal score, decimal topMargin, int rank)
+    {
+        if (rank == 0)
+        {
+            if (score >= 45m && topMargin >= 12m)
             {
-                scores.Add((pathway.Id, score));
+                return ClassificationConfidenceBand.High;
+            }
+
+            if (score >= 25m)
+            {
+                return ClassificationConfidenceBand.Medium;
             }
         }
 
-        return scores
-            .OrderByDescending(item => item.Score)
-            .ThenBy(item => item.PathwayId, StringComparer.OrdinalIgnoreCase)
-            .Select(item => item.PathwayId)
-            .ToList();
-    }
-
-    private static string BuildSignalText(string freeText, IReadOnlyCollection<string> selectedSymptoms, IReadOnlyCollection<string> extractedPrimarySymptoms)
-    {
-        var parts = new List<string>
+        if (score >= 25m && rank <= 1)
         {
-            freeText ?? string.Empty
-        };
+            return ClassificationConfidenceBand.Medium;
+        }
 
-        parts.AddRange(selectedSymptoms ?? Array.Empty<string>());
-        parts.AddRange(extractedPrimarySymptoms ?? Array.Empty<string>());
-
-        return string.Join(" ", parts).ToLowerInvariant();
-    }
-
-    private static HashSet<string> Tokenize(string text)
-    {
-        return Regex.Matches(text ?? string.Empty, "[a-z0-9]+", RegexOptions.IgnoreCase)
-            .Select(item => item.Value.ToLowerInvariant())
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return ClassificationConfidenceBand.Low;
     }
 }

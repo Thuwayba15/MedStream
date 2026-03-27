@@ -52,6 +52,18 @@ public class SymptomIntake : FullAuditedEntity<long>, IMustHaveTenant
     public string MappedInputValues { get; set; }
 
     /// <summary>
+    /// Gets or sets serialized patient follow-up answers captured during intake.
+    /// </summary>
+    [StringLength(8000)]
+    public string FollowUpAnswersJson { get; set; }
+
+    /// <summary>
+    /// Gets or sets clinician-readable subjective summary generated from intake symptoms and answers.
+    /// </summary>
+    [StringLength(4000)]
+    public string SubjectiveSummary { get; set; }
+
+    /// <summary>
     /// Gets or sets when symptom submission was captured.
     /// </summary>
     public DateTime SubmittedAt { get; set; }

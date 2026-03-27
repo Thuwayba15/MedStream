@@ -36,9 +36,29 @@ public class PathwayExtractionResult
     public List<string> LikelyPathwayIds { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets ranked pathway classification candidates.
+    /// </summary>
+    public List<PathwayClassificationCandidate> Candidates { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets selected pathway id.
     /// </summary>
     public string SelectedPathwayId { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether disambiguation prompt is recommended.
+    /// </summary>
+    public bool ShouldAskDisambiguation { get; set; }
+
+    /// <summary>
+    /// Gets or sets disambiguation prompt when confidence is low.
+    /// </summary>
+    public string DisambiguationPrompt { get; set; }
+
+    /// <summary>
+    /// Gets or sets overall classification confidence.
+    /// </summary>
+    public string ConfidenceBand { get; set; }
 
     /// <summary>
     /// Gets or sets mapped pathway input values inferred from intake text.
@@ -110,9 +130,11 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
             extractionSource = PatientIntakeConstants.ExtractionSourceDeterministicFallback;
         }
 
-        var likelyPathwayIds = _pathwayClassifier.ClassifyLikelyPathways(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>(), extractedSymptoms)
-            .ToList();
-        var selectedPathwayId = likelyPathwayIds.FirstOrDefault() ?? PatientIntakeConstants.DefaultPathwayKey;
+        var classification = _pathwayClassifier.ClassifyLikelyPathways(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>(), extractedSymptoms);
+        var likelyPathwayIds = classification.LikelyPathwayIds;
+        var selectedPathwayId = string.IsNullOrWhiteSpace(classification.SelectedPathwayId)
+            ? PatientIntakeConstants.DefaultPathwayKey
+            : classification.SelectedPathwayId;
         var mappedValues = await MapInputsForPathwayAsync(selectedPathwayId, freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>());
 
         return new PathwayExtractionResult
@@ -120,7 +142,11 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
             ExtractedPrimarySymptoms = extractedSymptoms,
             ExtractionSource = extractionSource,
             LikelyPathwayIds = likelyPathwayIds,
+            Candidates = classification.Candidates,
             SelectedPathwayId = selectedPathwayId,
+            ShouldAskDisambiguation = classification.ShouldAskDisambiguation,
+            DisambiguationPrompt = classification.DisambiguationPrompt,
+            ConfidenceBand = classification.ConfidenceBand.ToString(),
             MappedInputValues = mappedValues
         };
     }

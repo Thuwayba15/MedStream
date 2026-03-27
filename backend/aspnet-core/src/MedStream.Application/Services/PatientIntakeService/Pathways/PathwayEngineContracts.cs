@@ -163,9 +163,9 @@ public interface IPathwayDefinitionProvider
 public interface IPathwayClassifier
 {
     /// <summary>
-    /// Returns ordered likely pathway ids for provided intake signal.
+    /// Returns deterministic ranked pathway candidates for provided intake signal.
     /// </summary>
-    IReadOnlyList<string> ClassifyLikelyPathways(string freeText, IReadOnlyCollection<string> selectedSymptoms, IReadOnlyCollection<string> extractedPrimarySymptoms);
+    PathwayClassificationResult ClassifyLikelyPathways(string freeText, IReadOnlyCollection<string> selectedSymptoms, IReadOnlyCollection<string> extractedPrimarySymptoms);
 }
 
 /// <summary>

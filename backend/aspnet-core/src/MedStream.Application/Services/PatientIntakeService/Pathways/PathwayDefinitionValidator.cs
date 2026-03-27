@@ -25,6 +25,20 @@ public class PathwayDefinitionValidator : ITransientDependency
             throw new UserFriendlyException("Pathway definition id is required.");
         }
 
+        if (definition.Entry?.IsEntryPathway == true &&
+            !string.Equals(definition.Id, MedStream.PatientIntake.PatientIntakeConstants.GeneralFallbackPathwayKey, System.StringComparison.OrdinalIgnoreCase))
+        {
+            var hasClassificationSignals =
+                (definition.Entry.ComplaintKeywords?.Count ?? 0) > 0 ||
+                (definition.Entry.Synonyms?.Count ?? 0) > 0 ||
+                (definition.Entry.CommonPhrases?.Count ?? 0) > 0;
+
+            if (!hasClassificationSignals)
+            {
+                throw new UserFriendlyException($"Entry pathway '{definition.Id}' must define complaintKeywords, synonyms, or commonPhrases.");
+            }
+        }
+
         var duplicateInputIds = definition.Inputs
             .GroupBy(item => item.Id)
             .Where(group => !string.IsNullOrWhiteSpace(group.Key) && group.Count() > 1)
