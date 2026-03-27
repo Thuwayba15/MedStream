@@ -1,4 +1,5 @@
 using Abp.Dependency;
+using Castle.Core.Logging;
 using MedStream.PatientIntake.Dto;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -46,6 +47,11 @@ public class PathwayExtractionResult
     public string SelectedPathwayId { get; set; }
 
     /// <summary>
+    /// Gets or sets selected intake mode (approved_json or apc_fallback).
+    /// </summary>
+    public string IntakeMode { get; set; }
+
+    /// <summary>
     /// Gets or sets whether disambiguation prompt is recommended.
     /// </summary>
     public bool ShouldAskDisambiguation { get; set; }
@@ -59,6 +65,16 @@ public class PathwayExtractionResult
     /// Gets or sets overall classification confidence.
     /// </summary>
     public string ConfidenceBand { get; set; }
+
+    /// <summary>
+    /// Gets or sets selected APC catalog sections for fallback retrieval.
+    /// </summary>
+    public List<string> FallbackSectionIds { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets selected APC summaries for fallback question generation.
+    /// </summary>
+    public List<string> FallbackSummaryIds { get; set; } = new();
 
     /// <summary>
     /// Gets or sets mapped pathway input values inferred from intake text.
@@ -105,36 +121,60 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
     private readonly IConfiguration _configuration;
     private readonly IPathwayDefinitionProvider _definitionProvider;
     private readonly IPathwayClassifier _pathwayClassifier;
+    private readonly IApcFallbackRoutingService _apcFallbackRoutingService;
+
+    /// <summary>
+    /// Gets or sets logger.
+    /// </summary>
+    public ILogger Logger { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PathwayExtractionService"/> class.
     /// </summary>
     public PathwayExtractionService(
-        IConfiguration configuration,
         IPathwayDefinitionProvider definitionProvider,
-        IPathwayClassifier pathwayClassifier)
+        IPathwayClassifier pathwayClassifier,
+        IApcFallbackRoutingService apcFallbackRoutingService,
+        IConfiguration configuration = null)
     {
         _configuration = configuration;
         _definitionProvider = definitionProvider;
         _pathwayClassifier = pathwayClassifier;
+        _apcFallbackRoutingService = apcFallbackRoutingService;
+        Logger = NullLogger.Instance;
     }
 
     /// <inheritdoc />
     public async Task<PathwayExtractionResult> ExtractAsync(string freeText, IReadOnlyCollection<string> selectedSymptoms)
     {
-        var extractedSymptoms = await TryExtractSymptomsWithOpenAiAsync(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>());
-        var extractionSource = PatientIntakeConstants.ExtractionSourceAi;
-        if (extractedSymptoms == null || extractedSymptoms.Count == 0)
+        Logger.Info($"[Intake][Extract] Start. freeTextLength={(freeText ?? string.Empty).Length}, selectedSymptomsCount={selectedSymptoms?.Count ?? 0}");
+        var extractedSymptoms = ExtractDeterministicSymptoms(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>());
+        var extractionSource = PatientIntakeConstants.ExtractionSourceDeterministicFallback;
+        Logger.Info($"[Intake][Extract] Deterministic extracted: {string.Join(", ", extractedSymptoms)}");
+        if (extractedSymptoms.Count == 0 || (extractedSymptoms.Count == 1 && string.Equals(extractedSymptoms[0], "General Illness", StringComparison.OrdinalIgnoreCase)))
         {
-            extractedSymptoms = ExtractDeterministicSymptoms(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>());
-            extractionSource = PatientIntakeConstants.ExtractionSourceDeterministicFallback;
+            Logger.Info("[Intake][Extract] Deterministic signal low; attempting AI symptom extraction.");
+            var aiExtractedSymptoms = await TryExtractSymptomsWithOpenAiAsync(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>());
+            if (aiExtractedSymptoms != null && aiExtractedSymptoms.Count > 0)
+            {
+                extractedSymptoms = aiExtractedSymptoms;
+                extractionSource = PatientIntakeConstants.ExtractionSourceAi;
+                Logger.Info($"[Intake][Extract] AI extraction used: {string.Join(", ", extractedSymptoms)}");
+            }
+            else
+            {
+                Logger.Warn("[Intake][Extract] AI extraction unavailable/empty. Falling back to deterministic extraction.");
+            }
         }
 
         var classification = _pathwayClassifier.ClassifyLikelyPathways(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>(), extractedSymptoms);
-        var likelyPathwayIds = classification.LikelyPathwayIds;
-        var selectedPathwayId = string.IsNullOrWhiteSpace(classification.SelectedPathwayId)
-            ? PatientIntakeConstants.DefaultPathwayKey
-            : classification.SelectedPathwayId;
+        var likelyPathwayIds = classification.LikelyPathwayIds ?? new List<string>();
+        var selectedPathwayId = ResolvePrimaryPathway(classification);
+        var intakeMode = ResolveIntakeMode(classification, selectedPathwayId);
+        var fallbackRouting = intakeMode == PatientIntakeConstants.IntakeModeApcFallback
+            ? _apcFallbackRoutingService.Resolve(freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>(), extractedSymptoms)
+            : new ApcFallbackContext();
+        Logger.Info($"[Intake][Extract] Classification selectedPathway={selectedPathwayId}, intakeMode={intakeMode}, confidence={classification.ConfidenceBand}, candidates={classification.Candidates.Count}, fallbackSummaries={string.Join(", ", fallbackRouting.SummaryIds)}");
         var mappedValues = await MapInputsForPathwayAsync(selectedPathwayId, freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>());
 
         return new PathwayExtractionResult
@@ -144,11 +184,43 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
             LikelyPathwayIds = likelyPathwayIds,
             Candidates = classification.Candidates,
             SelectedPathwayId = selectedPathwayId,
+            IntakeMode = intakeMode,
             ShouldAskDisambiguation = classification.ShouldAskDisambiguation,
             DisambiguationPrompt = classification.DisambiguationPrompt,
             ConfidenceBand = classification.ConfidenceBand.ToString(),
+            FallbackSectionIds = fallbackRouting.SectionIds,
+            FallbackSummaryIds = fallbackRouting.SummaryIds,
             MappedInputValues = mappedValues
         };
+    }
+
+    private static string ResolvePrimaryPathway(PathwayClassificationResult classification)
+    {
+        var selectedPathwayId = string.IsNullOrWhiteSpace(classification.SelectedPathwayId)
+            ? PatientIntakeConstants.DefaultPathwayKey
+            : classification.SelectedPathwayId;
+
+        if (classification.ConfidenceBand == ClassificationConfidenceBand.Low || classification.ShouldAskDisambiguation)
+        {
+            return PatientIntakeConstants.GeneralFallbackPathwayKey;
+        }
+
+        return selectedPathwayId;
+    }
+
+    private static string ResolveIntakeMode(PathwayClassificationResult classification, string selectedPathwayId)
+    {
+        if (string.Equals(selectedPathwayId, PatientIntakeConstants.GeneralFallbackPathwayKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return PatientIntakeConstants.IntakeModeApcFallback;
+        }
+
+        if (classification.ConfidenceBand == ClassificationConfidenceBand.Low || classification.ShouldAskDisambiguation)
+        {
+            return PatientIntakeConstants.IntakeModeApcFallback;
+        }
+
+        return PatientIntakeConstants.IntakeModeApprovedJson;
     }
 
     private async Task<Dictionary<string, object>> MapInputsForPathwayAsync(string pathwayId, string freeText, IReadOnlyCollection<string> selectedSymptoms)
@@ -164,14 +236,15 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
 
     private async Task<List<string>> TryExtractSymptomsWithOpenAiAsync(string freeText, IReadOnlyCollection<string> selectedSymptoms)
     {
-        var apiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var apiKey = GetOpenAiSetting("OpenAI:ApiKey") ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         if (string.IsNullOrWhiteSpace(apiKey))
         {
+            Logger.Warn("[Intake][Extract] OPENAI_API_KEY missing; skipping AI extraction.");
             return null;
         }
 
-        var model = _configuration["OpenAI:Model"] ?? "gpt-4o-mini";
-        var endpoint = (_configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/v1").TrimEnd('/') + "/chat/completions";
+        var model = GetOpenAiSetting("OpenAI:Model") ?? "gpt-4o-mini";
+        var endpoint = (GetOpenAiSetting("OpenAI:BaseUrl") ?? "https://api.openai.com/v1").TrimEnd('/') + "/chat/completions";
         var userText = $"{freeText}\nSelected: {string.Join(", ", selectedSymptoms ?? Array.Empty<string>())}";
 
         using var httpClient = new HttpClient();
@@ -202,6 +275,7 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
             using var response = await httpClient.PostAsync(endpoint, content);
             if (!response.IsSuccessStatusCode)
             {
+                Logger.Warn($"[Intake][Extract] AI extraction HTTP failure. statusCode={(int)response.StatusCode}.");
                 return null;
             }
 
@@ -234,8 +308,9 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
 
             return extracted.Count == 0 ? null : extracted;
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.Warn($"[Intake][Extract] AI extraction exception: {exception.Message}");
             return null;
         }
     }
@@ -271,7 +346,7 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
 
     private async Task<Dictionary<string, object>> TryMapInputsWithOpenAiAsync(string pathwayId, string freeText, IReadOnlyCollection<string> selectedSymptoms)
     {
-        var apiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var apiKey = GetOpenAiSetting("OpenAI:ApiKey") ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             return new Dictionary<string, object>();
@@ -284,8 +359,8 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
             .Select(item => new { item.Id, item.Label, item.Type, item.Required })
             .ToList();
 
-        var model = _configuration["OpenAI:Model"] ?? "gpt-4o-mini";
-        var endpoint = (_configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/v1").TrimEnd('/') + "/chat/completions";
+        var model = GetOpenAiSetting("OpenAI:Model") ?? "gpt-4o-mini";
+        var endpoint = (GetOpenAiSetting("OpenAI:BaseUrl") ?? "https://api.openai.com/v1").TrimEnd('/') + "/chat/completions";
         var userText = $"Pathway: {pathwayId}\nFree text: {freeText}\nSelected symptoms: {string.Join(", ", selectedSymptoms)}\nInputs: {JsonConvert.SerializeObject(inputs)}";
 
         using var httpClient = new HttpClient();
@@ -434,5 +509,10 @@ public class PathwayExtractionService : IPathwayExtractionService, ITransientDep
             JsonValueKind.Object => element.EnumerateObject().ToDictionary(item => item.Name, item => JsonElementToObject(item.Value)),
             _ => element.ToString()
         };
+    }
+
+    private string GetOpenAiSetting(string key)
+    {
+        return _configuration?[key];
     }
 }

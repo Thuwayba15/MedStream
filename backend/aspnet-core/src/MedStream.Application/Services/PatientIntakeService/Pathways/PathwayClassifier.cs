@@ -39,6 +39,9 @@ public class PathwayClassifier : IPathwayClassifier, ITransientDependency
             .ThenBy(item => item.PathwayId, StringComparer.OrdinalIgnoreCase)
             .Take(5)
             .ToList();
+        candidates = candidates
+            .Where(item => item.MatchedSignals.Any(signal => signal.Weight > 0m && !string.Equals(signal.SignalType, "entry_priority", StringComparison.OrdinalIgnoreCase)))
+            .ToList();
 
         if (candidates.Count == 0)
         {

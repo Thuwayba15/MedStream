@@ -39,4 +39,14 @@ public static class PatientIntakeConstants
     /// Extraction source label for deterministic fallback extraction.
     /// </summary>
     public const string ExtractionSourceDeterministicFallback = "deterministic_fallback";
+
+    /// <summary>
+    /// Intake mode using approved JSON pathway definition directly.
+    /// </summary>
+    public const string IntakeModeApprovedJson = "approved_json";
+
+    /// <summary>
+    /// Intake mode using APC summary-backed AI fallback questions.
+    /// </summary>
+    public const string IntakeModeApcFallback = "apc_fallback";
 }

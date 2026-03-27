@@ -33,6 +33,13 @@ public class ExtractSymptomsOutput
     public string SelectedPathwayKey { get; set; }
 
     /// <summary>
+    /// Gets or sets intake mode selected after deterministic routing.
+    /// approved_json uses approved JSON pathway questions;
+    /// apc_fallback uses APC summary-backed temporary subjective questions.
+    /// </summary>
+    public string IntakeMode { get; set; }
+
+    /// <summary>
     /// Gets or sets overall classification confidence.
     /// </summary>
     public string ConfidenceBand { get; set; }
@@ -46,6 +53,16 @@ public class ExtractSymptomsOutput
     /// Gets or sets disambiguation prompt for low-confidence routing.
     /// </summary>
     public string DisambiguationPrompt { get; set; }
+
+    /// <summary>
+    /// Gets or sets selected APC catalog section ids used for fallback retrieval.
+    /// </summary>
+    public List<string> FallbackSectionIds { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets selected APC summary ids used to generate fallback questions.
+    /// </summary>
+    public List<string> FallbackSummaryIds { get; set; } = new();
 
     /// <summary>
     /// Gets or sets mapped input values inferred from free-text intake.

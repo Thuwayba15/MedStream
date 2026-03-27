@@ -65,18 +65,6 @@ public class PathwayExecutionEngine : IPathwayExecutionEngine, ITransientDepende
             question.DisplayOrder = int.MaxValue;
         }
 
-        var respiratoryPrimary = request.PrimarySymptoms.Any(item =>
-            item.Contains("cough", StringComparison.OrdinalIgnoreCase) ||
-            item.Contains("breathing", StringComparison.OrdinalIgnoreCase));
-        if (respiratoryPrimary)
-        {
-            var breathingQuestion = stageInputs.FirstOrDefault(item => string.Equals(item.Id, "breathingDifficulty", StringComparison.OrdinalIgnoreCase));
-            if (breathingQuestion != null)
-            {
-                breathingQuestion.DisplayOrder = 0;
-            }
-        }
-
         return stageInputs
             .OrderBy(item => item.DisplayOrder ?? int.MaxValue)
             .ThenBy(item => item.Id)

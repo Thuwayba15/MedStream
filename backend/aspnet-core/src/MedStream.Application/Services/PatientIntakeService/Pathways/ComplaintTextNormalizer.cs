@@ -25,6 +25,9 @@ public class ComplaintTextNormalizer : IComplaintTextNormalizer, ITransientDepen
     private static readonly IReadOnlyDictionary<string, string> CanonicalPhraseMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "can't breathe properly", "difficulty breathing" },
+        { "can t breathe properly", "difficulty breathing" },
+        { "can't breathe", "difficulty breathing" },
+        { "can t breathe", "difficulty breathing" },
         { "cannot breathe properly", "difficulty breathing" },
         { "short of breath", "shortness of breath" },
         { "breathless", "difficulty breathing" },
