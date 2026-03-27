@@ -6,6 +6,7 @@ using MedStream.Authorization.Users;
 using MedStream.Facilities;
 using MedStream.PatientIntake.Dto;
 using MedStream.PatientIntake.Pathways;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -29,6 +30,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
     private readonly IPathwayDefinitionProvider _pathwayDefinitionProvider;
     private readonly IPathwayExecutionEngine _pathwayExecutionEngine;
     private readonly IPathwayExtractionService _pathwayExtractionService;
+    private readonly IApcFallbackQuestionService _apcFallbackQuestionService;
 
     public PatientIntakeAppService(
         IRepository<Visit, long> visitRepository,
@@ -39,7 +41,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         UserManager userManager,
         IPathwayDefinitionProvider pathwayDefinitionProvider,
         IPathwayExecutionEngine pathwayExecutionEngine,
-        IPathwayExtractionService pathwayExtractionService)
+        IPathwayExtractionService pathwayExtractionService,
+        IApcFallbackQuestionService apcFallbackQuestionService)
     {
         _visitRepository = visitRepository;
         _symptomIntakeRepository = symptomIntakeRepository;
@@ -50,6 +53,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         _pathwayDefinitionProvider = pathwayDefinitionProvider;
         _pathwayExecutionEngine = pathwayExecutionEngine;
         _pathwayExtractionService = pathwayExtractionService;
+        _apcFallbackQuestionService = apcFallbackQuestionService;
     }
 
     /// <inheritdoc />
@@ -113,6 +117,16 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
 
         var extraction = await _pathwayExtractionService.ExtractAsync(input.FreeText ?? string.Empty, input.SelectedSymptoms ?? new List<string>());
 
+        if (!string.IsNullOrWhiteSpace(input.FreeText))
+        {
+            intake.FreeTextComplaint = input.FreeText.Trim();
+        }
+
+        if (input.SelectedSymptoms != null && input.SelectedSymptoms.Count > 0)
+        {
+            intake.SelectedSymptoms = SerializeStringList(input.SelectedSymptoms);
+        }
+
         intake.ExtractedPrimarySymptoms = SerializeStringList(extraction.ExtractedPrimarySymptoms);
         intake.ExtractionSource = extraction.ExtractionSource;
         intake.MappedInputValues = JsonConvert.SerializeObject(extraction.MappedInputValues ?? new Dictionary<string, object>());
@@ -131,17 +145,38 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             ExtractionSource = extraction.ExtractionSource,
             LikelyPathwayIds = extraction.LikelyPathwayIds,
             SelectedPathwayKey = visit.PathwayKey,
+            IntakeMode = extraction.IntakeMode,
             ConfidenceBand = extraction.ConfidenceBand,
             ShouldAskDisambiguation = extraction.ShouldAskDisambiguation,
             DisambiguationPrompt = extraction.DisambiguationPrompt,
+            FallbackSectionIds = extraction.FallbackSectionIds,
+            FallbackSummaryIds = extraction.FallbackSummaryIds,
             Candidates = extraction.Candidates.Select(MapClassificationCandidate).ToList(),
             MappedInputValues = extraction.MappedInputValues
         };
     }
 
     /// <inheritdoc />
-    public Task<GetIntakeQuestionsOutput> GetQuestions(GetIntakeQuestionsInput input)
+    [HttpPost]
+    public async Task<GetIntakeQuestionsOutput> GetQuestions(GetIntakeQuestionsInput input)
     {
+        Logger.Info($"[Intake][Questions] Request. visitId={input.VisitId}, pathway={input.PathwayKey}, useApcFallback={input.UseApcFallback}, fallbackSummaryCount={input.FallbackSummaryIds?.Count ?? 0}");
+        if (input.UseApcFallback)
+        {
+            var fallbackQuestions = await _apcFallbackQuestionService.GenerateQuestionsAsync(
+                input.FreeText ?? string.Empty,
+                input.SelectedSymptoms ?? new List<string>(),
+                input.ExtractedPrimarySymptoms ?? new List<string>(),
+                input.FallbackSummaryIds ?? new List<string>());
+            Logger.Info($"[Intake][Questions] APC fallback questions generated. count={fallbackQuestions.Count}");
+
+            return new GetIntakeQuestionsOutput
+            {
+                QuestionSet = fallbackQuestions,
+                RuleTrace = new List<PathwayRuleTraceDto>()
+            };
+        }
+
         var execution = _pathwayExecutionEngine.Execute(new PathwayExecutionRequest
         {
             PathwayId = input.PathwayKey,
@@ -157,12 +192,72 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         var questionSet = execution.NextQuestions
             .Select(MapPathwayInputToQuestion)
             .ToList();
+        Logger.Info($"[Intake][Questions] Approved JSON pathway questions generated. count={questionSet.Count}, stage={input.StageId ?? "patient_intake"}");
 
-        return Task.FromResult(new GetIntakeQuestionsOutput
+        return new GetIntakeQuestionsOutput
         {
             QuestionSet = questionSet,
             RuleTrace = MapRuleTrace(execution.RuleTrace)
+        };
+    }
+
+    /// <inheritdoc />
+    [HttpPost]
+    public Task<GetIntakeQuestionsOutput> LoadQuestions(GetIntakeQuestionsInput input)
+    {
+        return GetQuestions(input);
+    }
+
+    /// <inheritdoc />
+    public async Task<UrgentCheckOutput> UrgentCheck(UrgentCheckInput input)
+    {
+        var visit = await GetVisitForCurrentPatientAsync(input.VisitId);
+        var urgentAnswers = input.Answers ?? new Dictionary<string, object>();
+        var safePathwayKey = string.IsNullOrWhiteSpace(input.PathwayKey)
+            ? visit.PathwayKey
+            : input.PathwayKey.Trim();
+        if (string.IsNullOrWhiteSpace(safePathwayKey) || string.Equals(safePathwayKey, PatientIntakeConstants.UnassignedPathwayKey, StringComparison.OrdinalIgnoreCase))
+        {
+            safePathwayKey = PatientIntakeConstants.GeneralFallbackPathwayKey;
+        }
+
+        var execution = _pathwayExecutionEngine.Execute(new PathwayExecutionRequest
+        {
+            PathwayId = safePathwayKey,
+            StageId = "urgent_check",
+            Audience = "patient",
+            PrimarySymptoms = input.ExtractedPrimarySymptoms ?? new List<string>(),
+            Answers = urgentAnswers,
+            Observations = new Dictionary<string, object>()
         });
+
+        var globalUrgentReasons = EvaluateGlobalUrgency(input.FreeText, urgentAnswers);
+        var pathwayUrgentReasons = execution.TriggeredRedFlags
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var urgentReasons = globalUrgentReasons
+            .Concat(pathwayUrgentReasons)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var isUrgent = urgentReasons.Count > 0 || string.Equals(execution.TriageIndicators.GetValueOrDefault("urgencyLevel"), "Urgent", StringComparison.OrdinalIgnoreCase);
+        var intakeMode = string.IsNullOrWhiteSpace(input.IntakeMode) ? PatientIntakeConstants.IntakeModeApprovedJson : input.IntakeMode.Trim();
+        var fallbackSummaryIds = input.FallbackSummaryIds ?? new List<string>();
+
+        var questionSet = BuildUrgentCheckQuestionSet();
+        Logger.Info($"[Intake][UrgentCheck] pathway={safePathwayKey}, intakeMode={intakeMode}, urgent={isUrgent}, questionCount={questionSet.Count}, reasons={string.Join(", ", urgentReasons)}");
+        return new UrgentCheckOutput
+        {
+            QuestionSet = questionSet,
+            IsUrgent = isUrgent,
+            ShouldFastTrack = isUrgent,
+            TriggerReasons = urgentReasons,
+            IntakeMode = intakeMode,
+            FallbackSummaryIds = fallbackSummaryIds,
+            Message = isUrgent
+                ? "Urgent signs detected. We are fast-tracking your intake."
+                : "Urgent check completed. Continue to symptom intake."
+        };
     }
 
     /// <inheritdoc />
@@ -170,31 +265,54 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
     {
         if (input.ExtractedPrimarySymptoms == null || input.ExtractedPrimarySymptoms.Count == 0)
         {
-            throw new UserFriendlyException("At least one extracted symptom is required before triage.");
+            if (!HasGlobalUrgentPositiveAnswers(input.Answers))
+            {
+                throw new UserFriendlyException("At least one extracted symptom is required before triage.");
+            }
         }
 
         var visit = await GetVisitForCurrentPatientAsync(input.VisitId);
         var intake = await GetOrCreateIntakeAsync(visit.Id, visit.TenantId);
+        var safePathwayKey = string.IsNullOrWhiteSpace(visit.PathwayKey) || string.Equals(visit.PathwayKey, PatientIntakeConstants.UnassignedPathwayKey, StringComparison.OrdinalIgnoreCase)
+            ? PatientIntakeConstants.GeneralFallbackPathwayKey
+            : visit.PathwayKey;
         var pathwayExecution = _pathwayExecutionEngine.Execute(new PathwayExecutionRequest
         {
-            PathwayId = visit.PathwayKey,
+            PathwayId = safePathwayKey,
             StageId = "patient_intake",
-            Audience = "clinician",
+            Audience = "patient",
             PrimarySymptoms = input.ExtractedPrimarySymptoms ?? new List<string>(),
             Answers = input.Answers ?? new Dictionary<string, object>(),
             Observations = input.Observations ?? new Dictionary<string, object>()
         });
+        var hasGlobalUrgent = HasGlobalUrgentPositiveAnswers(input.Answers);
+        var resolvedRedFlags = pathwayExecution.TriggeredRedFlags ?? new List<string>();
+        if (hasGlobalUrgent && !resolvedRedFlags.Contains("global_urgent_check_positive", StringComparer.OrdinalIgnoreCase))
+        {
+            resolvedRedFlags = resolvedRedFlags.Concat(new[] { "global_urgent_check_positive" }).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        var resolvedUrgency = pathwayExecution.TriageIndicators.TryGetValue("urgencyLevel", out var urgency)
+            ? urgency
+            : "Routine";
+        var resolvedExplanation = pathwayExecution.TriageIndicators.TryGetValue("explanation", out var explanation)
+            ? explanation
+            : "Triage assessment completed.";
+        var resolvedPriorityScore = pathwayExecution.Score;
+
+        if (hasGlobalUrgent)
+        {
+            resolvedUrgency = "Urgent";
+            resolvedPriorityScore = Math.Max(resolvedPriorityScore, 95m);
+            resolvedExplanation = "Urgent triage because one or more emergency safety checks were positive.";
+        }
 
         var triage = new TriageResultDto
         {
-            UrgencyLevel = pathwayExecution.TriageIndicators.TryGetValue("urgencyLevel", out var urgency)
-                ? urgency
-                : "Routine",
-            PriorityScore = pathwayExecution.Score,
-            Explanation = pathwayExecution.TriageIndicators.TryGetValue("explanation", out var explanation)
-                ? explanation
-                : "Triage assessment completed.",
-            RedFlags = pathwayExecution.TriggeredRedFlags
+            UrgencyLevel = resolvedUrgency,
+            PriorityScore = resolvedPriorityScore,
+            Explanation = resolvedExplanation,
+            RedFlags = resolvedRedFlags
         };
 
         var queueMessage = BuildQueueStatus(triage.UrgencyLevel);
@@ -237,16 +355,10 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             {
                 TriggeredRedFlags = pathwayExecution.TriggeredRedFlags,
                 TriageIndicators = pathwayExecution.TriageIndicators,
-                TriggeredOutcomeIds = pathwayExecution.TriggeredOutcomeIds,
-                TriggeredRecommendationIds = pathwayExecution.TriggeredRecommendationIds,
-                TriggeredLinks = pathwayExecution.TriggeredLinks.Select(item => new PathwayTriggeredLinkDto
-                {
-                    Id = item.Id,
-                    Label = item.Label,
-                    TargetPathwayId = item.TargetPathwayId,
-                    SourcePage = item.SourcePage
-                }).ToList(),
-                RuleTrace = MapRuleTrace(pathwayExecution.RuleTrace)
+                TriggeredOutcomeIds = new List<string>(),
+                TriggeredRecommendationIds = new List<string>(),
+                TriggeredLinks = new List<PathwayTriggeredLinkDto>(),
+                RuleTrace = new List<PathwayRuleTraceDto>()
             }
         };
     }
@@ -478,6 +590,109 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         }
 
         return Convert.ToString(value)?.Trim() ?? string.Empty;
+    }
+
+    private static List<string> EvaluateGlobalUrgency(string freeText, IReadOnlyDictionary<string, object> answers)
+    {
+        var reasons = new List<string>();
+        if (GetBooleanAnswer(answers, "urgentSevereBreathing") ||
+            GetBooleanAnswer(answers, "urgentSevereChestPain") ||
+            GetBooleanAnswer(answers, "urgentUncontrolledBleeding") ||
+            GetBooleanAnswer(answers, "urgentConfusion") ||
+            GetBooleanAnswer(answers, "urgentCollapse"))
+        {
+            reasons.Add("global_urgent_check_positive");
+        }
+
+        var normalized = (freeText ?? string.Empty).ToLowerInvariant();
+        if (normalized.Contains("can't breathe", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("cannot breathe", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("struggling to breathe", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("severe chest pain", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("bleeding heavily", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("passed out", StringComparison.OrdinalIgnoreCase))
+        {
+            reasons.Add("urgent_keyword_detected");
+        }
+
+        return reasons;
+    }
+
+    private static List<IntakeQuestionDto> BuildUrgentCheckQuestionSet()
+    {
+        return new List<IntakeQuestionDto>
+        {
+            new()
+            {
+                QuestionKey = "urgentSevereBreathing",
+                QuestionText = "Are you struggling to breathe right now?",
+                InputType = "Boolean",
+                DisplayOrder = 1,
+                IsRequired = true
+            },
+            new()
+            {
+                QuestionKey = "urgentSevereChestPain",
+                QuestionText = "Do you have severe chest pain right now?",
+                InputType = "Boolean",
+                DisplayOrder = 2,
+                IsRequired = true
+            },
+            new()
+            {
+                QuestionKey = "urgentUncontrolledBleeding",
+                QuestionText = "Do you have heavy bleeding that is not stopping?",
+                InputType = "Boolean",
+                DisplayOrder = 3,
+                IsRequired = true
+            },
+            new()
+            {
+                QuestionKey = "urgentCollapse",
+                QuestionText = "Did you faint, collapse, or lose consciousness today?",
+                InputType = "Boolean",
+                DisplayOrder = 4,
+                IsRequired = true
+            },
+            new()
+            {
+                QuestionKey = "urgentConfusion",
+                QuestionText = "Are you currently confused, unusually sleepy, or difficult to wake?",
+                InputType = "Boolean",
+                DisplayOrder = 5,
+                IsRequired = true
+            }
+        };
+    }
+
+    private static bool HasGlobalUrgentPositiveAnswers(IReadOnlyDictionary<string, object> answers)
+    {
+        return GetBooleanAnswer(answers ?? new Dictionary<string, object>(), "urgentSevereBreathing") ||
+               GetBooleanAnswer(answers ?? new Dictionary<string, object>(), "urgentSevereChestPain") ||
+               GetBooleanAnswer(answers ?? new Dictionary<string, object>(), "urgentUncontrolledBleeding") ||
+               GetBooleanAnswer(answers ?? new Dictionary<string, object>(), "urgentCollapse") ||
+               GetBooleanAnswer(answers ?? new Dictionary<string, object>(), "urgentConfusion");
+    }
+
+    private static bool GetBooleanAnswer(IReadOnlyDictionary<string, object> answers, string key)
+    {
+        if (!answers.TryGetValue(key, out var value) || value == null)
+        {
+            return false;
+        }
+
+        if (value is bool boolValue)
+        {
+            return boolValue;
+        }
+
+        if (value is string stringValue)
+        {
+            return string.Equals(stringValue.Trim(), "true", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(stringValue.Trim(), "yes", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 
     private static string BuildQueueStatus(string urgencyLevel)

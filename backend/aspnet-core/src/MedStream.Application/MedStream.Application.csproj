@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <VersionPrefix>1.0.0.0</VersionPrefix>
     <TargetFramework>net9.0</TargetFramework>
@@ -10,6 +10,7 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <RootNamespace>MedStream</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <UserSecretsId>08740df9-0681-4bd4-970e-a439968c5d7a</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\MedStream.Core\MedStream.Core.csproj" />
@@ -19,5 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Services\PatientIntakeService\Pathways\Definitions\*.json" />
+    <EmbeddedResource Include="..\..\..\..\docs\clinical-pathways\apc-catalog.v1.json">
+      <LogicalName>MedStream.Application.Pathways.Apc.apc-catalog.v1.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\docs\clinical-pathways\apc-summaries.v1.json">
+      <LogicalName>MedStream.Application.Pathways.Apc.apc-summaries.v1.json</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>
