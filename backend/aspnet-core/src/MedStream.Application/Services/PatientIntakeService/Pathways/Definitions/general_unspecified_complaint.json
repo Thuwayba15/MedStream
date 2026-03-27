@@ -1,0 +1,180 @@
+{
+  "id": "general_unspecified_complaint",
+  "name": "General Unspecified Complaint",
+  "version": "1.0.0",
+  "status": "active",
+  "source": {
+    "type": "MedStream",
+    "document": "Fallback Intake Pathway",
+    "pages": [],
+    "notes": "Fallback entry pathway for low-confidence or nonsensical complaint text."
+  },
+  "entry": {
+    "isEntryPathway": true,
+    "complaintKeywords": [],
+    "synonyms": [],
+    "commonPhrases": [],
+    "excludePhrases": [],
+    "symptomCategory": "general",
+    "bodyRegions": [],
+    "priority": 20,
+    "complaintCodes": [],
+    "appliesTo": {
+      "minAge": 0
+    }
+  },
+  "visibility": {
+    "patientCanAnswer": true,
+    "patientCanSeeOutcomes": false,
+    "clinicianOnlyRecommendations": true
+  },
+  "stages": [
+    {
+      "id": "urgent_check",
+      "name": "Urgent Check",
+      "type": "intake"
+    },
+    {
+      "id": "patient_intake",
+      "name": "Patient Intake",
+      "type": "intake"
+    },
+    {
+      "id": "clinician_review",
+      "name": "Clinician Review",
+      "type": "consultation"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "urgentSevereBreathing",
+      "label": "Are you struggling to breathe right now?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 1,
+      "tags": [ "subjective", "red_flag", "urgent_check" ]
+    },
+    {
+      "id": "urgentSevereChestPain",
+      "label": "Do you have severe chest pain right now?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 2,
+      "tags": [ "subjective", "red_flag", "urgent_check" ]
+    },
+    {
+      "id": "urgentUncontrolledBleeding",
+      "label": "Do you have heavy bleeding that is not stopping?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 3,
+      "tags": [ "subjective", "red_flag", "urgent_check" ]
+    },
+    {
+      "id": "mainConcern",
+      "label": "Please describe your main concern in one sentence.",
+      "type": "text",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 1,
+      "tags": [ "subjective" ]
+    },
+    {
+      "id": "symptomDurationDays",
+      "label": "How many days have you had this concern?",
+      "type": "number",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "displayOrder": 2,
+      "tags": [ "subjective", "duration" ]
+    },
+    {
+      "id": "generalDangerSigns",
+      "label": "Select any danger signs now.",
+      "type": "multi_select",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "displayOrder": 3,
+      "tags": [ "subjective", "red_flag" ],
+      "options": [
+        { "value": "severe-pain", "label": "Severe pain" },
+        { "value": "fainting", "label": "Fainting/collapse" },
+        { "value": "breathing", "label": "Difficulty breathing" },
+        { "value": "none", "label": "None of the above" }
+      ]
+    }
+  ],
+  "globalChecks": [
+    {
+      "id": "global_urgent_check",
+      "label": "Global urgent check",
+      "when": {
+        "any": [
+          { "input": "urgentSevereBreathing", "operator": "equals", "value": true },
+          { "input": "urgentSevereChestPain", "operator": "equals", "value": true },
+          { "input": "urgentUncontrolledBleeding", "operator": "equals", "value": true }
+        ]
+      },
+      "effects": [
+        { "type": "score", "value": 80 },
+        { "type": "red_flag", "redFlag": "urgent_global_red_flag" },
+        { "type": "triage_indicator", "indicator": "urgencyLevel", "indicatorValue": "Urgent" }
+      ]
+    },
+    {
+      "id": "general_danger_signs",
+      "label": "General danger signs",
+      "when": {
+        "all": [
+          { "input": "generalDangerSigns", "operator": "contains", "value": "severe-pain" }
+        ]
+      },
+      "effects": [
+        { "type": "score", "value": 40 },
+        { "type": "red_flag", "redFlag": "severe_pain_reported" }
+      ]
+    }
+  ],
+  "flows": [],
+  "outcomes": [
+    {
+      "id": "general_review_needed",
+      "label": "General review needed",
+      "category": "assessment_hint",
+      "severity": "moderate",
+      "patientVisible": false
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "clinician_general_review",
+      "label": "Clinician should review complaint and route to specific pathway if needed.",
+      "type": "triage_action",
+      "clinicianOnly": true
+    }
+  ],
+  "links": [],
+  "triage": {
+    "baseScore": 10,
+    "priorityThreshold": 45,
+    "urgentThreshold": 75,
+    "routineExplanationTemplate": "General intake captured for {symptoms}. Clinician review is required to refine the pathway.",
+    "priorityExplanationTemplate": "Priority review recommended due to concerning general intake indicators for {symptoms}.",
+    "urgentExplanationTemplate": "Urgent review required due to general danger indicators with {symptoms}."
+  },
+  "soapMapping": {
+    "subjective": [ "mainConcern", "symptomDurationDays", "generalDangerSigns" ],
+    "objective": [],
+    "assessmentFromOutcomes": [ "general_review_needed" ],
+    "planFromRecommendations": [ "clinician_general_review" ]
+  }
+}

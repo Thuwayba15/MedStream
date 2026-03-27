@@ -10,12 +10,29 @@
     "notes": "Converted from previous hardcoded question and triage logic for engine parity."
   },
   "entry": {
+    "isEntryPathway": false,
     "complaintKeywords": [
       "cough",
       "fever",
       "breathing difficulty",
       "chest pain"
     ],
+    "synonyms": [
+      "shortness of breath",
+      "breathless",
+      "high temperature"
+    ],
+    "commonPhrases": [
+      "i have cough and fever",
+      "i am feeling feverish"
+    ],
+    "excludePhrases": [],
+    "symptomCategory": "respiratory",
+    "bodyRegions": [
+      "chest",
+      "lungs"
+    ],
+    "priority": 4,
     "complaintCodes": [],
     "appliesTo": {
       "minAge": 18

@@ -1,0 +1,145 @@
+{
+  "id": "hand_or_upper_limb_injury",
+  "name": "Hand or Upper Limb Injury",
+  "version": "1.0.0",
+  "status": "active",
+  "source": {
+    "type": "MedStream",
+    "document": "Initial Injury Entry Pathway",
+    "pages": [],
+    "notes": "Entry pathway for hand/upper-limb trauma complaints."
+  },
+  "entry": {
+    "isEntryPathway": true,
+    "complaintKeywords": [ "hand injury", "hand swollen", "fell", "injury", "arm pain", "wrist pain" ],
+    "synonyms": [ "swollen hand", "hurt my hand", "hand is swollen", "upper limb injury" ],
+    "commonPhrases": [ "my hand is swollen after i fell", "i fell and hurt my hand" ],
+    "excludePhrases": [ "chronic cough", "shortness of breath" ],
+    "symptomCategory": "injury",
+    "bodyRegions": [ "hand", "wrist", "arm", "elbow", "upper limb" ],
+    "priority": 2,
+    "complaintCodes": [],
+    "appliesTo": {
+      "minAge": 0
+    }
+  },
+  "visibility": {
+    "patientCanAnswer": true,
+    "patientCanSeeOutcomes": false,
+    "clinicianOnlyRecommendations": true
+  },
+  "stages": [
+    { "id": "urgent_check", "name": "Urgent Check", "type": "intake" },
+    { "id": "patient_intake", "name": "Patient Intake", "type": "intake" },
+    { "id": "clinician_review", "name": "Clinician Review", "type": "consultation" }
+  ],
+  "inputs": [
+    {
+      "id": "urgentHeavyBleeding",
+      "label": "Is there heavy bleeding that is not stopping?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 1,
+      "tags": [ "subjective", "red_flag", "urgent_check" ]
+    },
+    {
+      "id": "urgentNumbColdHand",
+      "label": "Is your hand numb, very cold, or turning blue?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 2,
+      "tags": [ "subjective", "red_flag", "urgent_check" ]
+    },
+    {
+      "id": "injuryFromFall",
+      "label": "Did this start after a fall or direct injury?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 1,
+      "tags": [ "subjective", "injury_mechanism" ]
+    },
+    {
+      "id": "visibleDeformity",
+      "label": "Do you see any deformity or severe swelling?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 2,
+      "tags": [ "subjective", "red_flag" ]
+    },
+    {
+      "id": "cannotMoveFingers",
+      "label": "Can you move your fingers normally?",
+      "type": "single_select",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 3,
+      "tags": [ "subjective", "red_flag" ],
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "limited", "label": "Limited movement" },
+        { "value": "no", "label": "No" }
+      ]
+    }
+  ],
+  "globalChecks": [
+    {
+      "id": "possible_fracture_red_flag",
+      "label": "Possible fracture red flag",
+      "when": {
+        "any": [
+          { "input": "urgentHeavyBleeding", "operator": "equals", "value": true },
+          { "input": "urgentNumbColdHand", "operator": "equals", "value": true },
+          { "input": "visibleDeformity", "operator": "equals", "value": true },
+          { "input": "cannotMoveFingers", "operator": "equals", "value": "no" }
+        ]
+      },
+      "effects": [
+        { "type": "score", "value": 55 },
+        { "type": "red_flag", "redFlag": "possible_fracture" },
+        { "type": "recommendation", "recommendationId": "urgent_xray_review" }
+      ]
+    }
+  ],
+  "flows": [],
+  "outcomes": [
+    {
+      "id": "possible_soft_tissue_injury",
+      "label": "Possible soft tissue injury",
+      "category": "assessment_hint",
+      "severity": "moderate",
+      "patientVisible": false
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "urgent_xray_review",
+      "label": "Prioritize imaging and clinician review for fracture exclusion.",
+      "type": "triage_action",
+      "clinicianOnly": true
+    }
+  ],
+  "links": [],
+  "triage": {
+    "baseScore": 12,
+    "priorityThreshold": 40,
+    "urgentThreshold": 70,
+    "routineExplanationTemplate": "Routine injury intake recorded for {symptoms}.",
+    "priorityExplanationTemplate": "Priority injury review advised for {symptoms}.",
+    "urgentExplanationTemplate": "Urgent injury review required due to fracture indicators with {symptoms}."
+  },
+  "soapMapping": {
+    "subjective": [ "injuryFromFall", "visibleDeformity", "cannotMoveFingers" ],
+    "objective": [],
+    "assessmentFromOutcomes": [ "possible_soft_tissue_injury" ],
+    "planFromRecommendations": [ "urgent_xray_review" ]
+  }
+}

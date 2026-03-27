@@ -10,12 +10,33 @@
     "notes": "Derived manually from APC; reviewed before activation."
   },
   "entry": {
+    "isEntryPathway": true,
     "complaintKeywords": [
       "cough",
       "difficulty breathing",
       "shortness of breath",
       "breathlessness"
     ],
+    "synonyms": [
+      "trouble breathing",
+      "cannot breathe properly",
+      "chest tightness"
+    ],
+    "commonPhrases": [
+      "i have a cough",
+      "i cant breathe properly",
+      "i'm short of breath"
+    ],
+    "excludePhrases": [
+      "pain only when turning neck"
+    ],
+    "symptomCategory": "respiratory",
+    "bodyRegions": [
+      "chest",
+      "lungs",
+      "respiratory"
+    ],
+    "priority": 1,
     "complaintCodes": [],
     "appliesTo": {
       "minAge": 18
@@ -28,6 +49,11 @@
   },
   "stages": [
     {
+      "id": "urgent_check",
+      "name": "Urgent Check",
+      "type": "intake"
+    },
+    {
       "id": "patient_intake",
       "name": "Patient Intake",
       "type": "intake"
@@ -39,6 +65,26 @@
     }
   ],
   "inputs": [
+    {
+      "id": "urgentDifficultyBreathingNow",
+      "label": "Are you struggling to breathe right now?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 1,
+      "tags": ["subjective", "red_flag", "urgent_check"]
+    },
+    {
+      "id": "urgentChestPainNow",
+      "label": "Do you have severe chest pain right now?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 2,
+      "tags": ["subjective", "red_flag", "urgent_check"]
+    },
     {
       "id": "coughDurationWeeks",
       "label": "How long have you had the cough?",
@@ -193,6 +239,8 @@
       "severity": "urgent",
       "when": {
         "any": [
+          { "input": "urgentDifficultyBreathingNow", "operator": "equals", "value": true },
+          { "input": "urgentChestPainNow", "operator": "equals", "value": true },
           { "input": "isCoughingBlood", "operator": "equals", "value": true },
           { "input": "hasChestPain", "operator": "equals", "value": true },
           { "input": "hasDifficultyBreathing", "operator": "equals", "value": true },
