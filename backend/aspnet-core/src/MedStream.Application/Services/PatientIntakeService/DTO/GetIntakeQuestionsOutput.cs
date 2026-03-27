@@ -11,4 +11,9 @@ public class GetIntakeQuestionsOutput
     /// Gets or sets ordered question set.
     /// </summary>
     public List<IntakeQuestionDto> QuestionSet { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets rule trace details for audit-friendly execution visibility.
+    /// </summary>
+    public List<PathwayRuleTraceDto> RuleTrace { get; set; } = new();
 }

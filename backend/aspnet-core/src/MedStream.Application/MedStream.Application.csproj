@@ -17,4 +17,7 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="11.11.0" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\PatientIntakeService\Pathways\Definitions\*.json" />
+  </ItemGroup>
 </Project>

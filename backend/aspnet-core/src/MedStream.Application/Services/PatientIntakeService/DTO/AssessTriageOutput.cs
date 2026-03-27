@@ -17,6 +17,11 @@ public class AssessTriageOutput
     /// Gets or sets queue placeholder output.
     /// </summary>
     public QueueStatusDto Queue { get; set; }
+
+    /// <summary>
+    /// Gets or sets full decision-support execution summary.
+    /// </summary>
+    public PathwayExecutionSummaryDto Execution { get; set; } = new();
 }
 
 /// <summary>
