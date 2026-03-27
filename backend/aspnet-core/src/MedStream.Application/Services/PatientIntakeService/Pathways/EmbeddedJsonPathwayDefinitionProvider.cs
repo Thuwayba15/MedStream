@@ -71,4 +71,12 @@ public class EmbeddedJsonPathwayDefinitionProvider : IPathwayDefinitionProvider,
 
         return definition;
     }
+
+    /// <inheritdoc />
+    public IReadOnlyCollection<PathwayDefinitionJson> GetAllActive()
+    {
+        return _definitions.Values
+            .Where(item => string.Equals(item.Status, "active", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
 }

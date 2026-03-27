@@ -6,15 +6,10 @@ using MedStream.Authorization.Users;
 using MedStream.Facilities;
 using MedStream.PatientIntake.Dto;
 using MedStream.PatientIntake.Pathways;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MedStream.PatientIntake;
@@ -25,32 +20,14 @@ namespace MedStream.PatientIntake;
 [AbpAuthorize]
 public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAppService
 {
-    private static readonly Dictionary<string, string> KeywordSymptomMap = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "cough", "Cough" },
-        { "fever", "Fever" },
-        { "temperature", "Fever" },
-        { "chills", "Fever" },
-        { "breath", "Difficulty Breathing" },
-        { "breathing", "Difficulty Breathing" },
-        { "chest", "Chest Pain" },
-        { "sore", "Sore Throat" },
-        { "throat", "Sore Throat" },
-        { "dizzy", "Dizziness" },
-        { "nausea", "Nausea" },
-        { "headache", "Headache" },
-        { "tired", "Fatigue" },
-        { "fatigue", "Fatigue" }
-    };
-
     private readonly IRepository<Visit, long> _visitRepository;
     private readonly IRepository<SymptomIntake, long> _symptomIntakeRepository;
     private readonly IRepository<TriageAssessment, long> _triageAssessmentRepository;
     private readonly IRepository<Facility, int> _facilityRepository;
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
-    private readonly IConfiguration _configuration;
     private readonly IPathwayExecutionEngine _pathwayExecutionEngine;
+    private readonly IPathwayExtractionService _pathwayExtractionService;
 
     public PatientIntakeAppService(
         IRepository<Visit, long> visitRepository,
@@ -59,8 +36,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         IRepository<Facility, int> facilityRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
-        IConfiguration configuration,
-        IPathwayExecutionEngine pathwayExecutionEngine)
+        IPathwayExecutionEngine pathwayExecutionEngine,
+        IPathwayExtractionService pathwayExtractionService)
     {
         _visitRepository = visitRepository;
         _symptomIntakeRepository = symptomIntakeRepository;
@@ -68,8 +45,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         _facilityRepository = facilityRepository;
         _userRepository = userRepository;
         _userManager = userManager;
-        _configuration = configuration;
         _pathwayExecutionEngine = pathwayExecutionEngine;
+        _pathwayExtractionService = pathwayExtractionService;
     }
 
     /// <inheritdoc />
@@ -86,7 +63,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             FacilityId = facility?.Id,
             VisitDate = DateTime.UtcNow,
             Status = PatientIntakeConstants.VisitStatusIntakeInProgress,
-            PathwayKey = PatientIntakeConstants.DefaultPathwayKey
+            PathwayKey = PatientIntakeConstants.UnassignedPathwayKey
         };
 
         await _visitRepository.InsertAsync(visit);
@@ -131,25 +108,27 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         var visit = await GetVisitForCurrentPatientAsync(input.VisitId);
         var intake = await GetOrCreateIntakeAsync(visit.Id, visit.TenantId);
 
-        var extractedSymptoms = await TryExtractWithOpenAiAsync(input.FreeText ?? string.Empty, input.SelectedSymptoms ?? new List<string>());
-        var extractionSource = PatientIntakeConstants.ExtractionSourceAi;
-        if (extractedSymptoms == null || extractedSymptoms.Count == 0)
-        {
-            extractedSymptoms = ExtractDeterministic(input.FreeText ?? string.Empty, input.SelectedSymptoms ?? new List<string>());
-            extractionSource = PatientIntakeConstants.ExtractionSourceDeterministicFallback;
-        }
+        var extraction = await _pathwayExtractionService.ExtractAsync(input.FreeText ?? string.Empty, input.SelectedSymptoms ?? new List<string>());
 
-        intake.ExtractedPrimarySymptoms = SerializeStringList(extractedSymptoms);
-        intake.ExtractionSource = extractionSource;
+        intake.ExtractedPrimarySymptoms = SerializeStringList(extraction.ExtractedPrimarySymptoms);
+        intake.ExtractionSource = extraction.ExtractionSource;
+        intake.MappedInputValues = JsonConvert.SerializeObject(extraction.MappedInputValues ?? new Dictionary<string, object>());
         intake.SubmittedAt = DateTime.UtcNow;
+        visit.PathwayKey = string.IsNullOrWhiteSpace(extraction.SelectedPathwayId)
+            ? PatientIntakeConstants.DefaultPathwayKey
+            : extraction.SelectedPathwayId;
 
         await _symptomIntakeRepository.UpdateAsync(intake);
+        await _visitRepository.UpdateAsync(visit);
         await CurrentUnitOfWork.SaveChangesAsync();
 
         return new ExtractSymptomsOutput
         {
-            ExtractedPrimarySymptoms = extractedSymptoms,
-            ExtractionSource = extractionSource
+            ExtractedPrimarySymptoms = extraction.ExtractedPrimarySymptoms,
+            ExtractionSource = extraction.ExtractionSource,
+            LikelyPathwayIds = extraction.LikelyPathwayIds,
+            SelectedPathwayKey = visit.PathwayKey,
+            MappedInputValues = extraction.MappedInputValues
         };
     }
 
@@ -326,113 +305,6 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             .Select(item => item.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList());
-    }
-
-    private static List<string> ExtractDeterministic(string freeText, IEnumerable<string> selectedSymptoms)
-    {
-        var normalized = (freeText ?? string.Empty).ToLowerInvariant();
-        var detected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var entry in KeywordSymptomMap)
-        {
-            if (normalized.Contains(entry.Key, StringComparison.OrdinalIgnoreCase))
-            {
-                detected.Add(entry.Value);
-            }
-        }
-
-        foreach (var symptom in selectedSymptoms ?? Array.Empty<string>())
-        {
-            if (!string.IsNullOrWhiteSpace(symptom))
-            {
-                detected.Add(symptom.Trim());
-            }
-        }
-
-        if (detected.Count == 0 && !string.IsNullOrWhiteSpace(freeText))
-        {
-            detected.Add("General Illness");
-        }
-
-        return detected.Take(3).ToList();
-    }
-
-    private async Task<List<string>> TryExtractWithOpenAiAsync(string freeText, IReadOnlyCollection<string> selectedSymptoms)
-    {
-        var apiKey = _configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            return null;
-        }
-
-        var model = _configuration["OpenAI:Model"] ?? "gpt-4o-mini";
-        var endpoint = (_configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com/v1").TrimEnd('/') + "/chat/completions";
-        var userText = $"{freeText}\nSelected: {string.Join(", ", selectedSymptoms ?? Array.Empty<string>())}";
-
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        var payload = new
-        {
-            model,
-            temperature = 0,
-            response_format = new { type = "json_object" },
-            messages = new object[]
-            {
-                new
-                {
-                    role = "system",
-                    content = "Extract up to three primary medical symptoms from patient text. Return JSON only with key primarySymptoms as an array of short strings."
-                },
-                new
-                {
-                    role = "user",
-                    content = userText
-                }
-            }
-        };
-
-        try
-        {
-            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-            using var response = await httpClient.PostAsync(endpoint, content);
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            using var document = JsonDocument.Parse(responseJson);
-            var completionContent = document.RootElement
-                .GetProperty("choices")[0]
-                .GetProperty("message")
-                .GetProperty("content")
-                .GetString();
-            if (string.IsNullOrWhiteSpace(completionContent))
-            {
-                return null;
-            }
-
-            using var extractionDoc = JsonDocument.Parse(completionContent);
-            if (!extractionDoc.RootElement.TryGetProperty("primarySymptoms", out var symptomsElement) || symptomsElement.ValueKind != JsonValueKind.Array)
-            {
-                return null;
-            }
-
-            var extracted = symptomsElement.EnumerateArray()
-                .Where(item => item.ValueKind == JsonValueKind.String)
-                .Select(item => item.GetString())
-                .Where(item => !string.IsNullOrWhiteSpace(item))
-                .Select(item => item.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(3)
-                .ToList();
-
-            return extracted.Count == 0 ? null : extracted;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private static IntakeQuestionDto MapPathwayInputToQuestion(PathwayInputJson input)

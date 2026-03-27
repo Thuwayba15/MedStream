@@ -46,6 +46,12 @@ public class SymptomIntake : FullAuditedEntity<long>, IMustHaveTenant
     public string ExtractionSource { get; set; }
 
     /// <summary>
+    /// Gets or sets serialized mapped pathway input values inferred during extraction.
+    /// </summary>
+    [StringLength(4000)]
+    public string MappedInputValues { get; set; }
+
+    /// <summary>
     /// Gets or sets when symptom submission was captured.
     /// </summary>
     public DateTime SubmittedAt { get; set; }

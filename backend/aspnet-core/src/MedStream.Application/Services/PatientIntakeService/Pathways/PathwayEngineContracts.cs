@@ -150,6 +150,22 @@ public interface IPathwayDefinitionProvider
     /// Loads a pathway definition by id.
     /// </summary>
     PathwayDefinitionJson GetById(string pathwayId);
+
+    /// <summary>
+    /// Returns all active pathway definitions.
+    /// </summary>
+    IReadOnlyCollection<PathwayDefinitionJson> GetAllActive();
+}
+
+/// <summary>
+/// Classifies likely pathways from intake text and extracted symptoms.
+/// </summary>
+public interface IPathwayClassifier
+{
+    /// <summary>
+    /// Returns ordered likely pathway ids for provided intake signal.
+    /// </summary>
+    IReadOnlyList<string> ClassifyLikelyPathways(string freeText, IReadOnlyCollection<string> selectedSymptoms, IReadOnlyCollection<string> extractedPrimarySymptoms);
 }
 
 /// <summary>

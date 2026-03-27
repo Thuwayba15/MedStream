@@ -6,6 +6,11 @@ namespace MedStream.PatientIntake;
 public static class PatientIntakeConstants
 {
     /// <summary>
+    /// Placeholder pathway key used before symptoms are classified.
+    /// </summary>
+    public const string UnassignedPathwayKey = "unassigned";
+
+    /// <summary>
     /// Default pathway key for the MVP intake workflow.
     /// </summary>
     public const string DefaultPathwayKey = "general_adult_fever_cough";
