@@ -67,10 +67,7 @@ export const PatientIntakePage = () => {
 
     const progressPercent = Math.round(((state.currentStep + 1) / PATIENT_INTAKE_STEPS.length) * 100);
     const currentStepDetails = PATIENT_INTAKE_STEPS[state.currentStep];
-    const visibleQuestions = useMemo(
-        () => getVisibleQuestions(state.questionSet, state.answers, state.extractedPrimarySymptoms),
-        [state.questionSet, state.answers, state.extractedPrimarySymptoms]
-    );
+    const visibleQuestions = useMemo(() => getVisibleQuestions(state.questionSet, state.answers, state.extractedPrimarySymptoms), [state.questionSet, state.answers, state.extractedPrimarySymptoms]);
 
     const startSpeechCapture = (): void => {
         const Recognition = resolveSpeechRecognitionApi();
@@ -114,108 +111,114 @@ export const PatientIntakePage = () => {
         setIsListening(false);
     };
 
-    const isContinueDisabled =
-        (state.currentStep === 2 && !state.freeText.trim() && state.selectedSymptoms.length === 0) || state.isProcessing;
+    const isContinueDisabled = (state.currentStep === 2 && !state.freeText.trim() && state.selectedSymptoms.length === 0) || state.isProcessing;
 
     return (
         <Card className={styles.stepCard}>
-                <div className={styles.stepHeader}>
-                    <div className={styles.progressRow}>
-                        <Typography.Text>{currentStepDetails.subtitle}</Typography.Text>
-                        <Typography.Text>{progressPercent}%</Typography.Text>
-                    </div>
-                    <Progress percent={progressPercent} showInfo={false} strokeColor="#E07B2A" railColor="#E8EDF7" />
-                    <Typography.Title level={2} className={styles.stepTitle}>
-                        {currentStepDetails.label}
-                    </Typography.Title>
-                    <Typography.Text className={styles.subtitleText}>{stepDescription(state.currentStep)}</Typography.Text>
+            <div className={styles.stepHeader}>
+                <div className={styles.progressRow}>
+                    <Typography.Text>{currentStepDetails.subtitle}</Typography.Text>
+                    <Typography.Text>{progressPercent}%</Typography.Text>
                 </div>
+                <Progress percent={progressPercent} showInfo={false} strokeColor="#E07B2A" railColor="#E8EDF7" />
+                <Typography.Title level={2} className={styles.stepTitle}>
+                    {currentStepDetails.label}
+                </Typography.Title>
+                <Typography.Text className={styles.subtitleText}>{stepDescription(state.currentStep)}</Typography.Text>
+            </div>
 
-                {state.errorMessage ? (
-                    <Alert
-                        type="error"
-                        showIcon
-                        title={state.errorMessage}
-                        action={
-                            <Button size="small" onClick={actions.clearError}>
-                                Dismiss
-                            </Button>
-                        }
+            {state.errorMessage ? (
+                <Alert
+                    type="error"
+                    showIcon
+                    title={state.errorMessage}
+                    action={
+                        <Button size="small" onClick={actions.clearError}>
+                            Dismiss
+                        </Button>
+                    }
+                />
+            ) : null}
+
+            {state.currentStep === 0 ? (
+                <CheckInStep
+                    facilityName={state.facilityName}
+                    selectedFacilityId={state.selectedFacilityId}
+                    facilities={state.availableFacilities}
+                    startedAt={state.startedAt}
+                    styles={styles}
+                    onSelectFacility={actions.setSelectedFacilityId}
+                />
+            ) : null}
+
+            {state.currentStep === 1 ? (
+                <UrgentCheckStep
+                    questions={state.urgentQuestionSet}
+                    answers={state.answers}
+                    onSetAnswer={actions.setAnswer}
+                    urgentMessage={state.urgentMessage}
+                    urgentTriggered={state.urgentTriggered}
+                    styles={styles}
+                />
+            ) : null}
+
+            {state.currentStep === 2 ? (
+                <SymptomsStep
+                    freeText={state.freeText}
+                    selectedSymptoms={state.selectedSymptoms}
+                    styles={styles}
+                    isListening={isListening}
+                    speechSupported={speechSupported}
+                    onChangeFreeText={actions.setFreeText}
+                    onToggleSymptom={actions.toggleSymptom}
+                    onStartSpeech={startSpeechCapture}
+                    onStopSpeech={stopSpeechCapture}
+                />
+            ) : null}
+
+            {state.currentStep === 3 ? (
+                <FollowUpStep
+                    extractedPrimarySymptoms={state.extractedPrimarySymptoms}
+                    extractionSource={state.extractionSource}
+                    questions={visibleQuestions}
+                    answers={state.answers}
+                    onSetAnswer={actions.setAnswer}
+                    styles={styles}
+                />
+            ) : null}
+
+            {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
+
+            <div className={styles.stickyActions}>
+                <div className={styles.bottomNavWrap}>
+                    <Segmented
+                        block
+                        options={[
+                            { label: "New Visit", value: "new-visit" },
+                            { label: "My Queue", value: "my-queue", disabled: true },
+                            { label: "History", value: "history", disabled: true },
+                        ]}
+                        value="new-visit"
                     />
-                ) : null}
-
-                {state.currentStep === 0 ? (
-                    <CheckInStep
-                        facilityName={state.facilityName}
-                        selectedFacilityId={state.selectedFacilityId}
-                        facilities={state.availableFacilities}
-                        startedAt={state.startedAt}
-                        styles={styles}
-                        onSelectFacility={actions.setSelectedFacilityId}
-                    />
-                ) : null}
-
-                {state.currentStep === 1 ? (
-                    <UrgentCheckStep
-                        questions={state.urgentQuestionSet}
-                        answers={state.answers}
-                        onSetAnswer={actions.setAnswer}
-                        urgentMessage={state.urgentMessage}
-                        urgentTriggered={state.urgentTriggered}
-                        styles={styles}
-                    />
-                ) : null}
-
-                {state.currentStep === 2 ? (
-                    <SymptomsStep
-                        freeText={state.freeText}
-                        selectedSymptoms={state.selectedSymptoms}
-                        styles={styles}
-                        isListening={isListening}
-                        speechSupported={speechSupported}
-                        onChangeFreeText={actions.setFreeText}
-                        onToggleSymptom={actions.toggleSymptom}
-                        onStartSpeech={startSpeechCapture}
-                        onStopSpeech={stopSpeechCapture}
-                    />
-                ) : null}
-
-                {state.currentStep === 3 ? (
-                    <FollowUpStep extractedPrimarySymptoms={state.extractedPrimarySymptoms} extractionSource={state.extractionSource} questions={visibleQuestions} answers={state.answers} onSetAnswer={actions.setAnswer} styles={styles} />
-                ) : null}
-
-                {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
-
-                <div className={styles.stickyActions}>
-                    <div className={styles.bottomNavWrap}>
-                        <Segmented
-                            block
-                            options={[
-                                { label: "New Visit", value: "new-visit" },
-                                { label: "My Queue", value: "my-queue", disabled: true },
-                                { label: "History", value: "history", disabled: true },
-                            ]}
-                            value="new-visit"
-                        />
-                    </div>
-                    {state.currentStep < 4 ? (
-                        <div className={styles.actionsRow}>
-                            <Button className={styles.secondaryButton} onClick={actions.backStep} disabled={state.currentStep === 0 || state.isProcessing}>
-                                Back
-                            </Button>
-                            <Button type="primary" className={styles.primaryButton} loading={state.isProcessing} onClick={() => void actions.continueStep()} disabled={isContinueDisabled}>
-                                {state.currentStep === 3 ? "Generate Status" : "Continue"}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className={styles.actionsRow}>
-                            <Button type="primary" className={styles.primaryButton} onClick={() => void actions.resetFlow()}>
-                                Start New Visit
-                            </Button>
-                        </div>
-                    )}
                 </div>
-            </Card>
+                {state.currentStep < 4 ? (
+                    <div className={styles.actionsRow}>
+                        <Button className={styles.secondaryButton} onClick={actions.backStep} disabled={state.currentStep === 0 || state.isProcessing}>
+                            Back
+                        </Button>
+                        <Button type="primary" className={styles.primaryButton} loading={state.isProcessing} onClick={() => void actions.continueStep()} disabled={isContinueDisabled}>
+                            {state.currentStep === 3 ? "Generate Status" : "Continue"}
+                        </Button>
+                    </div>
+                ) : (
+                    <div className={styles.actionsRow}>
+                        <Button type="primary" className={styles.primaryButton} onClick={() => void actions.resetFlow()}>
+                            Start New Visit
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </Card>
     );
 };
 
@@ -236,9 +239,7 @@ const CheckInStep = ({
 }): React.JSX.Element => {
     return (
         <Space orientation="vertical" size={14} className={`${styles.panel} ${styles.centeredBlock}`}>
-            <Typography.Text className={styles.centeredText}>
-                We will use your responses to prioritize your visit safely and quickly. You can review answers before final submission.
-            </Typography.Text>
+            <Typography.Text className={styles.centeredText}>We will use your responses to prioritize your visit safely and quickly. You can review answers before final submission.</Typography.Text>
             <Select<number>
                 aria-label="Hospital"
                 className={styles.facilitySelect}
@@ -332,7 +333,15 @@ const FollowUpStep = ({ extractedPrimarySymptoms, extractionSource, questions, a
         <Space orientation="vertical" size={14} className={styles.centeredBlock}>
             <Space wrap className={styles.centeredWrap}>
                 <Typography.Text strong>Captured main symptoms:</Typography.Text>
-                {extractedPrimarySymptoms.length > 0 ? extractedPrimarySymptoms.map((symptom) => <Tag key={symptom} className={styles.extractedTag}>{symptom}</Tag>) : <Tag>No primary symptom found</Tag>}
+                {extractedPrimarySymptoms.length > 0 ? (
+                    extractedPrimarySymptoms.map((symptom) => (
+                        <Tag key={symptom} className={styles.extractedTag}>
+                            {symptom}
+                        </Tag>
+                    ))
+                ) : (
+                    <Tag>No primary symptom found</Tag>
+                )}
             </Space>
 
             <div className={styles.questionList}>
@@ -422,11 +431,22 @@ const QuestionField = ({
             ) : null}
 
             {question.inputType === "Number" ? (
-                <InputNumber aria-label={question.questionText} min={0} max={30} value={typeof value === "number" ? value : undefined} onChange={(nextValue) => onSetAnswer(question.questionKey, Number(nextValue ?? 0))} />
+                <InputNumber
+                    aria-label={question.questionText}
+                    min={0}
+                    max={30}
+                    value={typeof value === "number" ? value : undefined}
+                    onChange={(nextValue) => onSetAnswer(question.questionKey, Number(nextValue ?? 0))}
+                />
             ) : null}
 
             {question.inputType === "Text" ? (
-                <Input.TextArea aria-label={question.questionText} value={typeof value === "string" ? value : ""} autoSize={{ minRows: 2, maxRows: 5 }} onChange={(event) => onSetAnswer(question.questionKey, event.target.value)} />
+                <Input.TextArea
+                    aria-label={question.questionText}
+                    value={typeof value === "string" ? value : ""}
+                    autoSize={{ minRows: 2, maxRows: 5 }}
+                    onChange={(event) => onSetAnswer(question.questionKey, event.target.value)}
+                />
             ) : null}
         </Space>
     );

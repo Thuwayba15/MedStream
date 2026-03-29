@@ -48,20 +48,19 @@ export const initializeStarted = createAction<IPatientIntakeStatePayload>(Patien
     errorMessage: undefined,
 }));
 
-export const initializeSucceeded = createAction<
-    IPatientIntakeStatePayload,
-    ICheckInResponse,
-    Array<{ id: number; name: string }>
->(PatientIntakeActionEnums.initializeSucceeded, (payload: ICheckInResponse, facilities: Array<{ id: number; name: string }>) => ({
-    isInitializing: false,
-    visitId: payload.visitId,
-    facilityName: payload.facilityName,
-    availableFacilities: facilities,
-    selectedFacilityId: facilities.find((facility) => facility.name === payload.facilityName)?.id ?? null,
-    startedAt: payload.startedAt,
-    pathwayKey: payload.pathwayKey,
-    errorMessage: undefined,
-}));
+export const initializeSucceeded = createAction<IPatientIntakeStatePayload, ICheckInResponse, Array<{ id: number; name: string }>>(
+    PatientIntakeActionEnums.initializeSucceeded,
+    (payload: ICheckInResponse, facilities: Array<{ id: number; name: string }>) => ({
+        isInitializing: false,
+        visitId: payload.visitId,
+        facilityName: payload.facilityName,
+        availableFacilities: facilities,
+        selectedFacilityId: facilities.find((facility) => facility.name === payload.facilityName)?.id ?? null,
+        startedAt: payload.startedAt,
+        pathwayKey: payload.pathwayKey,
+        errorMessage: undefined,
+    })
+);
 
 export const processingStarted = createAction<IPatientIntakeStatePayload>(PatientIntakeActionEnums.processingStarted, () => ({
     isProcessing: true,
@@ -84,12 +83,9 @@ export const setSelectedFacilityId = createAction<IPatientIntakeStatePayload, nu
     })
 );
 
-export const toggleSymptom = createAction<IPatientIntakeStatePayload, string, string[]>(
-    PatientIntakeActionEnums.toggleSymptom,
-    (symptom: string, selectedSymptoms: string[]) => ({
-        selectedSymptoms: selectedSymptoms.includes(symptom) ? selectedSymptoms.filter((item) => item !== symptom) : [...selectedSymptoms, symptom],
-    })
-);
+export const toggleSymptom = createAction<IPatientIntakeStatePayload, string, string[]>(PatientIntakeActionEnums.toggleSymptom, (symptom: string, selectedSymptoms: string[]) => ({
+    selectedSymptoms: selectedSymptoms.includes(symptom) ? selectedSymptoms.filter((item) => item !== symptom) : [...selectedSymptoms, symptom],
+}));
 
 export const setAnswer = createAction<IPatientIntakeStatePayload, string, string | number | boolean | string[], Record<string, string | number | boolean | string[]>>(
     PatientIntakeActionEnums.setAnswer,

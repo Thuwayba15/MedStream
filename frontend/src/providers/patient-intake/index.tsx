@@ -2,7 +2,22 @@
 
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
-import { actionFailed, clearError, followUpQuestionsLoaded, initializeStarted, initializeSucceeded, processingStarted, setAnswer, setFreeText, setSelectedFacilityId, setStep, symptomProcessingSucceeded, toggleSymptom, triageSucceeded, urgentCheckSucceeded } from "./actions";
+import {
+    actionFailed,
+    clearError,
+    followUpQuestionsLoaded,
+    initializeStarted,
+    initializeSucceeded,
+    processingStarted,
+    setAnswer,
+    setFreeText,
+    setSelectedFacilityId,
+    setStep,
+    symptomProcessingSucceeded,
+    toggleSymptom,
+    triageSucceeded,
+    urgentCheckSucceeded,
+} from "./actions";
 import { INITIAL_STATE, IPatientIntakeActionContext, IPatientIntakeStateContext, PatientIntakeActionContext, PatientIntakeStateContext } from "./context";
 import { patientIntakeReducer } from "./reducer";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
@@ -211,7 +226,9 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             return;
         }
 
-        const missingUrgentAnswer = state.urgentQuestionSet.find((question) => question.isRequired && (state.answers[question.questionKey] === undefined || state.answers[question.questionKey] === null || state.answers[question.questionKey] === ""));
+        const missingUrgentAnswer = state.urgentQuestionSet.find(
+            (question) => question.isRequired && (state.answers[question.questionKey] === undefined || state.answers[question.questionKey] === null || state.answers[question.questionKey] === "")
+        );
         if (missingUrgentAnswer) {
             dispatch(actionFailed(`Please answer "${missingUrgentAnswer.questionText}" before continuing.`));
             return;
@@ -353,7 +370,19 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to start urgent safety check.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn, getActiveFacilities, runUrgentCheck, state.extractedPrimarySymptoms, state.fallbackSummaryIds, state.freeText, state.intakeMode, state.pathwayKey, state.selectedFacilityId, state.selectedSymptoms, state.visitId]);
+    }, [
+        checkIn,
+        getActiveFacilities,
+        runUrgentCheck,
+        state.extractedPrimarySymptoms,
+        state.fallbackSummaryIds,
+        state.freeText,
+        state.intakeMode,
+        state.pathwayKey,
+        state.selectedFacilityId,
+        state.selectedSymptoms,
+        state.visitId,
+    ]);
 
     const actions: IPatientIntakeActionContext = useMemo(
         () => ({

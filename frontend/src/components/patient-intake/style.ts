@@ -268,7 +268,9 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
     `,
 
     listeningMicButton: css`
-        box-shadow: 0 0 0 3px rgba(240, 144, 64, 0.18), 0 24px 44px rgba(13, 27, 46, 0.28) !important;
+        box-shadow:
+            0 0 0 3px rgba(240, 144, 64, 0.18),
+            0 24px 44px rgba(13, 27, 46, 0.28) !important;
     `,
 
     micButtonContent: css`

@@ -3,11 +3,7 @@ import type { IIntakeQuestion } from "./types";
 /**
  * Evaluates a lightweight visibility expression for a question.
  */
-export const evaluateShowWhenExpression = (
-    expression: string | null,
-    answers: Record<string, string | number | boolean | string[]>,
-    extractedPrimarySymptoms: string[]
-): boolean => {
+export const evaluateShowWhenExpression = (expression: string | null, answers: Record<string, string | number | boolean | string[]>, extractedPrimarySymptoms: string[]): boolean => {
     if (!expression) {
         return true;
     }
@@ -39,11 +35,7 @@ export const evaluateShowWhenExpression = (
 /**
  * Returns ordered questions that are currently visible for the given answer set.
  */
-export const getVisibleQuestions = (
-    questions: IIntakeQuestion[],
-    answers: Record<string, string | number | boolean | string[]>,
-    extractedPrimarySymptoms: string[]
-): IIntakeQuestion[] => {
+export const getVisibleQuestions = (questions: IIntakeQuestion[], answers: Record<string, string | number | boolean | string[]>, extractedPrimarySymptoms: string[]): IIntakeQuestion[] => {
     return [...questions]
         .sort((left, right) => left.displayOrder - right.displayOrder)
         .filter((question) => evaluateShowWhenExpression(question.showWhenExpression, answers, extractedPrimarySymptoms));
