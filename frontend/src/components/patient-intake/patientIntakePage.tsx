@@ -328,7 +328,7 @@ interface IFollowUpStepProps {
     styles: Record<string, string>;
 }
 
-const FollowUpStep = ({ extractedPrimarySymptoms, extractionSource, questions, answers, onSetAnswer, styles }: IFollowUpStepProps): React.JSX.Element => {
+const FollowUpStep = ({ extractedPrimarySymptoms, questions, answers, onSetAnswer, styles }: IFollowUpStepProps): React.JSX.Element => {
     return (
         <Space orientation="vertical" size={14} className={styles.centeredBlock}>
             <Space wrap className={styles.centeredWrap}>

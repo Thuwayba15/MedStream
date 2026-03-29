@@ -1,6 +1,6 @@
 import { createStyles, medstreamTheme } from "@/theme/theme";
 
-const { colors, radius, shadows, typography } = medstreamTheme;
+const { colors, radius, typography } = medstreamTheme;
 const pageBackground = colors.offWhite;
 
 export const useRoleShellStyles = createStyles(({ css }) => ({
