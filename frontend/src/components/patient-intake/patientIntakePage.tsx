@@ -1,6 +1,6 @@
 "use client";
 
-import { AudioOutlined, ClockCircleOutlined, ExclamationCircleOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
+import { AudioOutlined, ClockCircleOutlined, EnvironmentOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Input, InputNumber, Progress, Radio, Select, Segmented, Space, Tag, Typography } from "antd";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { COMMON_SYMPTOMS, PATIENT_INTAKE_STEPS } from "@/constants/patientIntake";
@@ -118,15 +118,7 @@ export const PatientIntakePage = () => {
         (state.currentStep === 2 && !state.freeText.trim() && state.selectedSymptoms.length === 0) || state.isProcessing;
 
     return (
-        <>
-            <Card className={styles.heroCard}>
-                <Typography.Title level={1} className={styles.heroTitle}>
-                    Patient Intake
-                </Typography.Title>
-                <Typography.Paragraph className={styles.heroText}>Complete your visit intake in guided steps. This helps clinical staff triage you faster.</Typography.Paragraph>
-            </Card>
-
-            <Card className={styles.stepCard}>
+        <Card className={styles.stepCard}>
                 <div className={styles.stepHeader}>
                     <div className={styles.progressRow}>
                         <Typography.Text>{currentStepDetails.subtitle}</Typography.Text>
@@ -153,7 +145,14 @@ export const PatientIntakePage = () => {
                 ) : null}
 
                 {state.currentStep === 0 ? (
-                    <CheckInStep facilityName={state.facilityName} startedAt={state.startedAt} styles={styles} />
+                    <CheckInStep
+                        facilityName={state.facilityName}
+                        selectedFacilityId={state.selectedFacilityId}
+                        facilities={state.availableFacilities}
+                        startedAt={state.startedAt}
+                        styles={styles}
+                        onSelectFacility={actions.setSelectedFacilityId}
+                    />
                 ) : null}
 
                 {state.currentStep === 1 ? (
@@ -188,6 +187,17 @@ export const PatientIntakePage = () => {
                 {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
 
                 <div className={styles.stickyActions}>
+                    <div className={styles.bottomNavWrap}>
+                        <Segmented
+                            block
+                            options={[
+                                { label: "New Visit", value: "new-visit" },
+                                { label: "My Queue", value: "my-queue", disabled: true },
+                                { label: "History", value: "history", disabled: true },
+                            ]}
+                            value="new-visit"
+                        />
+                    </div>
                     {state.currentStep < 4 ? (
                         <div className={styles.actionsRow}>
                             <Button className={styles.secondaryButton} onClick={actions.backStep} disabled={state.currentStep === 0 || state.isProcessing}>
@@ -206,32 +216,44 @@ export const PatientIntakePage = () => {
                     )}
                 </div>
             </Card>
-
-            <Card>
-                <Segmented
-                    block
-                    options={[
-                        { label: "New Visit", value: "new-visit" },
-                        { label: "My Queue", value: "my-queue", disabled: true },
-                        { label: "History", value: "history", disabled: true },
-                    ]}
-                    value="new-visit"
-                />
-            </Card>
-        </>
     );
 };
 
-const CheckInStep = ({ facilityName, startedAt, styles }: { facilityName: string; startedAt: string | null; styles: Record<string, string> }): React.JSX.Element => {
+const CheckInStep = ({
+    facilityName,
+    selectedFacilityId,
+    facilities,
+    startedAt,
+    styles,
+    onSelectFacility,
+}: {
+    facilityName: string;
+    selectedFacilityId: number | null;
+    facilities: Array<{ id: number; name: string }>;
+    startedAt: string | null;
+    styles: Record<string, string>;
+    onSelectFacility: (value: number) => void;
+}): React.JSX.Element => {
     return (
-        <Space orientation="vertical" size={12} className={styles.panel}>
-            <Typography.Text>
+        <Space orientation="vertical" size={14} className={`${styles.panel} ${styles.centeredBlock}`}>
+            <Typography.Text className={styles.centeredText}>
                 We will use your responses to prioritize your visit safely and quickly. You can review answers before final submission.
             </Typography.Text>
-            <Typography.Text>
-                <strong>Facility:</strong> {facilityName || "Assigned on check-in"}
+            <Select<number>
+                aria-label="Hospital"
+                className={styles.facilitySelect}
+                value={selectedFacilityId ?? undefined}
+                placeholder="Select your hospital"
+                showSearch
+                optionFilterProp="label"
+                options={facilities.map((facility) => ({ value: facility.id, label: facility.name }))}
+                suffixIcon={<EnvironmentOutlined />}
+                onChange={onSelectFacility}
+            />
+            <Typography.Text className={styles.centeredText}>
+                <strong>Selected:</strong> {facilityName || "Not selected"}
             </Typography.Text>
-            <Typography.Text>
+            <Typography.Text className={styles.centeredText}>
                 <strong>Session started:</strong> {startedAt ? new Date(startedAt).toLocaleString() : "Now"}
             </Typography.Text>
         </Space>
@@ -252,18 +274,25 @@ interface ISymptomsStepProps {
 
 const SymptomsStep = ({ freeText, selectedSymptoms, styles, isListening, speechSupported, onChangeFreeText, onToggleSymptom, onStartSpeech, onStopSpeech }: ISymptomsStepProps): React.JSX.Element => {
     return (
-        <Space orientation="vertical" size={16}>
-            <Space orientation="vertical" size={8} className={styles.panel}>
+        <Space orientation="vertical" size={18} className={styles.centeredBlock}>
+            <Space orientation="vertical" size={8} className={`${styles.panel} ${styles.centeredBlock}`}>
                 <Button
-                    className={styles.disabledMicButton}
+                    aria-label="Tap to speak your symptoms"
+                    className={`${styles.disabledMicButton} ${isListening ? styles.listeningMicButton : ""}`}
                     type={isListening ? "primary" : "default"}
                     shape="round"
-                    icon={<AudioOutlined />}
                     onClick={isListening ? onStopSpeech : onStartSpeech}
                     disabled={!speechSupported}
                 >
-                    {isListening ? "Listening... tap to stop" : speechSupported ? "Tap to speak your symptoms" : "Speech input not supported on this browser"}
+                    <span className={styles.micButtonContent}>
+                        <span className={styles.micOrb}>
+                            {isListening ? <span className={styles.micPulse} /> : null}
+                            <AudioOutlined />
+                        </span>
+                        <span>{isListening ? "Listening... tap to stop" : speechSupported ? "Tap to speak your symptoms" : "Speech input not supported on this browser"}</span>
+                    </span>
                 </Button>
+                <Typography.Text className={styles.orDivider}>or describe in writing</Typography.Text>
                 <Input.TextArea
                     value={freeText}
                     onChange={(event) => onChangeFreeText(event.target.value)}
@@ -274,8 +303,10 @@ const SymptomsStep = ({ freeText, selectedSymptoms, styles, isListening, speechS
             </Space>
 
             <div>
-                <Typography.Text strong>Common Symptoms</Typography.Text>
-                <div className={styles.chipsWrap}>
+                <Typography.Text strong className={styles.symptomChipTitle}>
+                    Common Symptoms
+                </Typography.Text>
+                <div className={`${styles.chipsWrap} ${styles.centeredWrap}`}>
                     {COMMON_SYMPTOMS.map((symptom) => (
                         <Button key={symptom} size="small" className={styles.chipButton} type={selectedSymptoms.includes(symptom) ? "primary" : "default"} onClick={() => onToggleSymptom(symptom)}>
                             {symptom}
@@ -298,13 +329,11 @@ interface IFollowUpStepProps {
 
 const FollowUpStep = ({ extractedPrimarySymptoms, extractionSource, questions, answers, onSetAnswer, styles }: IFollowUpStepProps): React.JSX.Element => {
     return (
-        <Space orientation="vertical" size={14}>
-            <Space wrap>
+        <Space orientation="vertical" size={14} className={styles.centeredBlock}>
+            <Space wrap className={styles.centeredWrap}>
                 <Typography.Text strong>Captured main symptoms:</Typography.Text>
                 {extractedPrimarySymptoms.length > 0 ? extractedPrimarySymptoms.map((symptom) => <Tag key={symptom} className={styles.extractedTag}>{symptom}</Tag>) : <Tag>No primary symptom found</Tag>}
             </Space>
-
-            {extractionSource === "deterministic_fallback" ? <Alert type="info" showIcon title="Fallback extraction used. Please review your symptoms below." /> : null}
 
             <div className={styles.questionList}>
                 {questions.map((question) => (
@@ -331,7 +360,7 @@ const UrgentCheckStep = ({
     styles: Record<string, string>;
 }): React.JSX.Element => {
     return (
-        <Space orientation="vertical" size={14}>
+        <Space orientation="vertical" size={14} className={styles.centeredBlock}>
             <Alert
                 type={urgentTriggered ? "error" : "warning"}
                 showIcon
@@ -424,8 +453,8 @@ const StatusStep = ({
     const statusColor = triage?.urgencyLevel === "Urgent" ? "red" : triage?.urgencyLevel === "Priority" ? "orange" : "blue";
 
     return (
-        <Space orientation="vertical" size={14}>
-            <Card>
+        <Space orientation="vertical" size={14} className={styles.centeredBlock}>
+            <Card className={styles.statusCard}>
                 <Space orientation="vertical" size={8}>
                     <Space size={10}>
                         <SafetyCertificateOutlined />
@@ -436,16 +465,6 @@ const StatusStep = ({
                     <Typography.Text>
                         <strong>Priority score:</strong> {triage?.priorityScore ?? "-"}
                     </Typography.Text>
-                    {triage?.redFlags && triage.redFlags.length > 0 ? (
-                        <Space orientation="vertical" size={4}>
-                            <Typography.Text strong>Red flags detected</Typography.Text>
-                            {triage.redFlags.map((item) => (
-                                <Tag key={item} icon={<ExclamationCircleOutlined />} color="red">
-                                    {item}
-                                </Tag>
-                            ))}
-                        </Space>
-                    ) : null}
                 </Space>
             </Card>
 

@@ -33,7 +33,7 @@ export const FacilityCreateForm = ({ form, isMutating, adminStyles, onCreateFaci
                     <Input placeholder="Address" />
                 </Form.Item>
             </div>
-            <Button type="primary" htmlType="submit" loading={isMutating}>
+            <Button type="primary" htmlType="submit" loading={isMutating} className={adminStyles.primaryActionButton}>
                 Add Facility
             </Button>
         </Form>

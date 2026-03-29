@@ -2,11 +2,20 @@
 
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
-import { actionFailed, clearError, followUpQuestionsLoaded, initializeStarted, initializeSucceeded, processingStarted, setAnswer, setFreeText, setStep, symptomProcessingSucceeded, toggleSymptom, triageSucceeded, urgentCheckSucceeded } from "./actions";
+import { actionFailed, clearError, followUpQuestionsLoaded, initializeStarted, initializeSucceeded, processingStarted, setAnswer, setFreeText, setSelectedFacilityId, setStep, symptomProcessingSucceeded, toggleSymptom, triageSucceeded, urgentCheckSucceeded } from "./actions";
 import { INITIAL_STATE, IPatientIntakeActionContext, IPatientIntakeStateContext, PatientIntakeActionContext, PatientIntakeStateContext } from "./context";
 import { patientIntakeReducer } from "./reducer";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
 import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ISymptomCaptureRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
+
+interface IFacility {
+    id: number;
+    name: string;
+}
+
+interface IFacilitiesResponse {
+    facilities: IFacility[];
+}
 
 const logIntakeDebug = (message: string, payload?: unknown): void => {
     if (process.env.NODE_ENV === "production") {
@@ -36,6 +45,12 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
     const checkIn = useCallback(async (): Promise<ICheckInResponse> => {
         const response = await fetch(API.PATIENT_INTAKE_CHECKIN_ROUTE, { method: "POST" });
         return parseResponse<ICheckInResponse>(response, "Unable to start patient check-in.");
+    }, []);
+
+    const getActiveFacilities = useCallback(async (): Promise<IFacility[]> => {
+        const response = await fetch(API.ACTIVE_FACILITIES_ROUTE);
+        const body = await parseResponse<IFacilitiesResponse>(response, "Unable to load facilities.");
+        return body.facilities ?? [];
     }, []);
 
     const submitSymptoms = useCallback(async (payload: ISymptomCaptureRequest): Promise<void> => {
@@ -125,13 +140,13 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
     const initializeFlow = useCallback(async (): Promise<void> => {
         dispatch(initializeStarted());
         try {
-            const payload = await checkIn();
-            dispatch(initializeSucceeded(payload));
+            const [payload, facilities] = await Promise.all([checkIn(), getActiveFacilities()]);
+            dispatch(initializeSucceeded(payload, facilities));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unable to initialize patient intake.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn]);
+    }, [checkIn, getActiveFacilities]);
 
     const continueFromSymptoms = useCallback(async (): Promise<void> => {
         if (!state.freeText.trim() && state.selectedSymptoms.length === 0) {
@@ -145,8 +160,8 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             let pathwayKey = state.pathwayKey;
 
             if (!visitId) {
-                const initialized = await checkIn();
-                dispatch(initializeSucceeded(initialized));
+                const [initialized, facilities] = await Promise.all([checkIn(), getActiveFacilities()]);
+                dispatch(initializeSucceeded(initialized, facilities));
                 visitId = initialized.visitId;
                 pathwayKey = initialized.pathwayKey;
             }
@@ -188,7 +203,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to process symptom input.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn, extractSymptoms, loadQuestions, state.answers, state.freeText, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId, submitSymptoms]);
+    }, [checkIn, extractSymptoms, getActiveFacilities, loadQuestions, state.answers, state.freeText, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId, submitSymptoms]);
 
     const continueFromUrgentCheck = useCallback(async (): Promise<void> => {
         if (!state.visitId) {
@@ -306,13 +321,18 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
     }, [assessTriage, state.answers, state.extractedPrimarySymptoms, state.freeText, state.questionSet, state.selectedSymptoms, state.visitId]);
 
     const continueFromCheckIn = useCallback(async (): Promise<void> => {
+        if (!state.selectedFacilityId) {
+            dispatch(actionFailed("Select your hospital before continuing."));
+            return;
+        }
+
         dispatch(processingStarted());
         try {
             let visitId = state.visitId;
             let pathwayKey = state.pathwayKey;
             if (!visitId) {
-                const initialized = await checkIn();
-                dispatch(initializeSucceeded(initialized));
+                const [initialized, facilities] = await Promise.all([checkIn(), getActiveFacilities()]);
+                dispatch(initializeSucceeded(initialized, facilities));
                 visitId = initialized.visitId;
                 pathwayKey = initialized.pathwayKey;
             }
@@ -333,12 +353,13 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to start urgent safety check.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn, runUrgentCheck, state.extractedPrimarySymptoms, state.fallbackSummaryIds, state.freeText, state.intakeMode, state.pathwayKey, state.selectedSymptoms, state.visitId]);
+    }, [checkIn, getActiveFacilities, runUrgentCheck, state.extractedPrimarySymptoms, state.fallbackSummaryIds, state.freeText, state.intakeMode, state.pathwayKey, state.selectedFacilityId, state.selectedSymptoms, state.visitId]);
 
     const actions: IPatientIntakeActionContext = useMemo(
         () => ({
             initializeFlow,
             setFreeText: (value: string) => dispatch(setFreeText(value)),
+            setSelectedFacilityId: (value: number) => dispatch(setSelectedFacilityId(value, state.availableFacilities)),
             toggleSymptom: (value: string) => dispatch(toggleSymptom(value, state.selectedSymptoms)),
             setAnswer: (questionKey, value) => dispatch(setAnswer(questionKey, value, state.answers)),
             continueStep: async () => {
@@ -374,7 +395,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                 await initializeFlow();
             },
         }),
-        [continueFromCheckIn, continueFromFollowUp, continueFromSymptoms, continueFromUrgentCheck, initializeFlow, state.answers, state.currentStep, state.selectedSymptoms]
+        [continueFromCheckIn, continueFromFollowUp, continueFromSymptoms, continueFromUrgentCheck, initializeFlow, state.answers, state.availableFacilities, state.currentStep, state.selectedSymptoms]
     );
 
     return (

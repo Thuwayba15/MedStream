@@ -6,7 +6,7 @@ import { PatientIntakeProvider } from "@/providers/patient-intake";
 
 const PatientHomePage = () => {
     return (
-        <RoleAppShell roleLabel="Patient" activeKey="patient-new-visit" items={[{ key: "patient-new-visit", label: "New Visit", href: "/patient" }]}>
+        <RoleAppShell roleLabel="Patient" activeKey="patient-new-visit" items={[]}>
             <PatientIntakeProvider>
                 <PatientIntakePage />
             </PatientIntakeProvider>

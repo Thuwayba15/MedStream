@@ -24,6 +24,10 @@ export const patientIntakeReducer = handleActions<IPatientIntakeStateContext, IP
             ...state,
             ...action.payload,
         }),
+        [PatientIntakeActionEnums.setSelectedFacilityId]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
         [PatientIntakeActionEnums.toggleSymptom]: (state, action) => ({
             ...state,
             ...action.payload,

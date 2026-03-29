@@ -1,14 +1,13 @@
 "use client";
 
-import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
-import { Button, Drawer, Layout, Menu, Space, Tag } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+import { Avatar, Layout, Menu, Space } from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { LogoutButton } from "@/components/auth/logoutButton";
 import { useRoleShellStyles } from "@/components/layout/style";
 
-const { Sider, Content } = Layout;
+const { Header, Content } = Layout;
 
 export interface IRoleSidebarItem {
     key: string;
@@ -23,82 +22,53 @@ interface IRoleAppShellProps {
     children: React.ReactNode;
 }
 
-const SidebarContent = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps, "roleLabel" | "activeKey" | "items">) => {
+const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps, "roleLabel" | "activeKey" | "items">) => {
     const { styles } = useRoleShellStyles();
 
     return (
-        <div className={styles.sidebar}>
-            <div className={styles.brandBlock} aria-label="MedStream">
-                <span className={styles.brandMark} aria-hidden>
-                    <Image src="/logo_inverted.png" alt="" width={32} height={32} />
-                </span>
-                <span className={styles.brandText}>
-                    Med<span className={styles.brandAccent}>Stream</span>
-                </span>
+        <Header className={styles.topHeader}>
+            <div className={styles.headerInner}>
+                <div className={styles.brandBlock} aria-label={`MedStream ${roleLabel} workspace`}>
+                    <span className={styles.brandMark} aria-hidden>
+                        <Image src="/logo_inverted.png" alt="" width={38} height={38} />
+                    </span>
+                    <span className={styles.brandText}>
+                        Med<span className={styles.brandAccent}>Stream</span>
+                    </span>
+                </div>
+
+                {items.length > 0 ? (
+                    <Menu
+                        mode="horizontal"
+                        selectedKeys={activeKey ? [activeKey] : []}
+                        className={styles.topMenu}
+                        items={items.map((item) => ({
+                            key: item.key,
+                            label: <Link href={item.href}>{item.label}</Link>,
+                        }))}
+                    />
+                ) : (
+                    <div className={styles.menuSpacer} />
+                )}
+
+                <Space size={10} className={styles.actionArea}>
+                    <Avatar icon={<UserOutlined />} className={styles.profileAvatar} />
+                    <LogoutButton className={styles.logoutButton} />
+                </Space>
             </div>
-
-            <Tag className={styles.roleChip}>{roleLabel}</Tag>
-
-            {items.length > 0 ? (
-                <Menu
-                    mode="inline"
-                    selectedKeys={activeKey ? [activeKey] : []}
-                    className={styles.sidebarMenu}
-                    items={items.map((item) => ({
-                        key: item.key,
-                        label: <Link href={item.href}>{item.label}</Link>,
-                    }))}
-                />
-            ) : null}
-
-            <div className={styles.logoutWrap}>
-                <LogoutButton />
-            </div>
-        </div>
+        </Header>
     );
 };
 
 export const RoleAppShell = ({ roleLabel, activeKey, items, children }: IRoleAppShellProps) => {
     const { styles } = useRoleShellStyles();
-    const [drawerOpen, setDrawerOpen] = useState(false);
 
     return (
         <Layout className={styles.root}>
-            <Sider breakpoint="md" width={286} collapsedWidth={0} theme="dark" trigger={null} collapsible className={styles.desktopSider}>
-                <SidebarContent roleLabel={roleLabel} activeKey={activeKey} items={items} />
-            </Sider>
-
-            <Drawer
-                open={drawerOpen}
-                placement="left"
-                onClose={() => setDrawerOpen(false)}
-                closeIcon={false}
-                size="default"
-                rootClassName={styles.mobileDrawer}
-                classNames={{
-                    section: styles.mobileDrawerContent,
-                    body: styles.mobileDrawerBody,
-                }}
-            >
-                <SidebarContent roleLabel={roleLabel} activeKey={activeKey} items={items} />
-            </Drawer>
-
-            <Layout className={styles.contentLayout}>
-                <header className={styles.mobileHeader}>
-                    <Button type="text" icon={drawerOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />} aria-label="Open sidebar menu" onClick={() => setDrawerOpen((value) => !value)} />
-                    <Space size={4} className={styles.mobileBrand}>
-                        <span className={styles.brandMark} aria-hidden>
-                            <Image src="/logo_ms.png" alt="" width={20} height={20} />
-                        </span>
-                        <span>Med</span>
-                        <span className={styles.mobileBrandAccent}>Stream</span>
-                    </Space>
-                    <Tag>{roleLabel}</Tag>
-                </header>
-                <Content className={styles.content}>
-                    <div className={styles.contentInner}>{children}</div>
-                </Content>
-            </Layout>
+            <TopNavigation roleLabel={roleLabel} activeKey={activeKey} items={items} />
+            <Content className={styles.content}>
+                <div className={styles.contentInner}>{children}</div>
+            </Content>
         </Layout>
     );
 };
