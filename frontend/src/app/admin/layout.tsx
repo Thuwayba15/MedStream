@@ -1,7 +1,9 @@
 import type { PropsWithChildren } from "react";
 import { requireRouteAuthState } from "@/lib/server/pageAuthGuard";
 
-export default async function AdminLayout({ children }: PropsWithChildren): Promise<React.JSX.Element> {
+const AdminLayout = async ({ children }: PropsWithChildren) => {
     await requireRouteAuthState(["admin"]);
     return <>{children}</>;
-}
+};
+
+export default AdminLayout;

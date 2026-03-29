@@ -1,6 +1,6 @@
 import { AuthState } from "@/lib/auth/constants";
 
-export function deriveAuthState(roleNames: string[], requestedRegistrationRole: string | null, isClinicianApprovalPending: boolean): AuthState {
+export const deriveAuthState = (roleNames: string[], requestedRegistrationRole: string | null, isClinicianApprovalPending: boolean): AuthState => {
     if (roleNames.includes("Admin")) {
         return "admin";
     }
@@ -14,4 +14,4 @@ export function deriveAuthState(roleNames: string[], requestedRegistrationRole: 
     }
 
     return "patient";
-}
+};

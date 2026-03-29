@@ -4,7 +4,7 @@ import { requireAdminAccessToken } from "@/lib/server/adminAuthGuard";
 import { adminAuthService } from "@/services/auth/adminAuthService";
 import { NextResponse } from "next/server";
 
-export async function GET(): Promise<Response> {
+export const GET = async (): Promise<Response> => {
     try {
         const guardResult = await requireAdminAccessToken();
         if (guardResult.errorResponse || !guardResult.accessToken) {
@@ -22,4 +22,4 @@ export async function GET(): Promise<Response> {
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to load users.") }, { status: 400 });
     }
-}
+};

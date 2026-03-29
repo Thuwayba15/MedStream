@@ -4,7 +4,7 @@ interface JwtPayload {
     [key: string]: unknown;
 }
 
-export function decodeJwtPayload(token: string): JwtPayload | null {
+export const decodeJwtPayload = (token: string): JwtPayload | null => {
     const tokenParts = token.split(".");
     if (tokenParts.length < 2) {
         return null;
@@ -17,9 +17,9 @@ export function decodeJwtPayload(token: string): JwtPayload | null {
     } catch {
         return null;
     }
-}
+};
 
-export function deriveAuthStateFromJwtPayload(payload: JwtPayload): AuthState {
+export const deriveAuthStateFromJwtPayload = (payload: JwtPayload): AuthState => {
     const roleValues = toStringList(payload[ROLE_CLAIM_KEY] ?? payload.role);
     const requestedRole = toSingleString(payload[REQUESTED_ROLE_CLAIM_KEY]);
     const approvalState = toSingleString(payload[APPROVAL_STATE_CLAIM_KEY]);
@@ -37,9 +37,9 @@ export function deriveAuthStateFromJwtPayload(payload: JwtPayload): AuthState {
     }
 
     return "patient";
-}
+};
 
-export function getHomePathForAuthState(state: AuthState): string {
+export const getHomePathForAuthState = (state: AuthState): string => {
     switch (state) {
         case "admin":
             return "/admin";
@@ -50,9 +50,9 @@ export function getHomePathForAuthState(state: AuthState): string {
         default:
             return "/patient";
     }
-}
+};
 
-function toSingleString(value: unknown): string | null {
+const toSingleString = (value: unknown): string | null => {
     if (typeof value === "string") {
         return value;
     }
@@ -62,9 +62,9 @@ function toSingleString(value: unknown): string | null {
     }
 
     return null;
-}
+};
 
-function toStringList(value: unknown): string[] {
+const toStringList = (value: unknown): string[] => {
     if (typeof value === "string") {
         return [value];
     }
@@ -74,4 +74,4 @@ function toStringList(value: unknown): string[] {
     }
 
     return [];
-}
+};

@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
  * Resolves the current authenticated auth-state from the access token cookie.
  * Redirects to login if no valid token exists.
  */
-export async function requireAuthenticatedState(): Promise<AuthState> {
+export const requireAuthenticatedState = async (): Promise<AuthState> => {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
 
@@ -21,24 +21,24 @@ export async function requireAuthenticatedState(): Promise<AuthState> {
     } catch {
         redirect("/login");
     }
-}
+};
 
 /**
  * Ensures the current request is in one of the allowed auth-states.
  * If authenticated but wrong state, redirects to the correct home for that state.
  */
-export async function requireRouteAuthState(allowedStates: AuthState[]): Promise<void> {
+export const requireRouteAuthState = async (allowedStates: AuthState[]): Promise<void> => {
     const authState = await requireAuthenticatedState();
     if (!allowedStates.includes(authState)) {
         redirect(getHomePathForAuthState(authState));
     }
-}
+};
 
 /**
  * Ensures the current route remains guest-only.
  * Authenticated users are redirected to their home path.
  */
-export async function requireGuestRoute(): Promise<void> {
+export const requireGuestRoute = async (): Promise<void> => {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
     if (!accessToken) {
@@ -51,4 +51,4 @@ export async function requireGuestRoute(): Promise<void> {
     } catch {
         return;
     }
-}
+};

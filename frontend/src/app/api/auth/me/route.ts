@@ -3,7 +3,7 @@ import { deriveAuthInfoFromAccessToken } from "@/lib/server/tokenState";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function GET(): Promise<Response> {
+export const GET = async (): Promise<Response> => {
     try {
         const cookieStore = await cookies();
         const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
@@ -32,4 +32,4 @@ export async function GET(): Promise<Response> {
     } catch (error) {
         return NextResponse.json({ message: error instanceof Error ? error.message : "Failed to load current user." }, { status: 401 });
     }
-}
+};

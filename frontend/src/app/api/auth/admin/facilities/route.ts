@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 
 type FacilityBody = Omit<IFacilityListItem, "id">;
 
-export async function GET(): Promise<Response> {
+export const GET = async (): Promise<Response> => {
     try {
         const guardResult = await requireAdminAccessToken();
         if (guardResult.errorResponse || !guardResult.accessToken) {
@@ -18,9 +18,9 @@ export async function GET(): Promise<Response> {
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to load facilities.") }, { status: 400 });
     }
-}
+};
 
-export async function POST(request: Request): Promise<Response> {
+export const POST = async (request: Request): Promise<Response> => {
     try {
         const guardResult = await requireAdminAccessToken();
         if (guardResult.errorResponse || !guardResult.accessToken) {
@@ -43,9 +43,9 @@ export async function POST(request: Request): Promise<Response> {
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to create facility.") }, { status: 400 });
     }
-}
+};
 
-export async function PUT(request: Request): Promise<Response> {
+export const PUT = async (request: Request): Promise<Response> => {
     try {
         const guardResult = await requireAdminAccessToken();
         if (guardResult.errorResponse || !guardResult.accessToken) {
@@ -68,4 +68,4 @@ export async function PUT(request: Request): Promise<Response> {
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to update facility.") }, { status: 400 });
     }
-}
+};

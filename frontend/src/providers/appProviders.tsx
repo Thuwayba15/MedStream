@@ -5,7 +5,7 @@ import type { PropsWithChildren } from "react";
 import { AuthProvider } from "@/providers/auth";
 import { medstreamAntdTheme, medstreamCustomToken, ThemeProvider } from "../theme/theme";
 
-export function AppProviders({ children }: PropsWithChildren): React.JSX.Element {
+export const AppProviders = ({ children }: PropsWithChildren) => {
     return (
         <AntdRegistry>
             <ThemeProvider appearance="light" theme={medstreamAntdTheme} customToken={medstreamCustomToken}>
@@ -13,4 +13,4 @@ export function AppProviders({ children }: PropsWithChildren): React.JSX.Element
             </ThemeProvider>
         </AntdRegistry>
     );
-}
+};

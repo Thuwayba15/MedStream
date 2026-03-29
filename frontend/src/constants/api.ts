@@ -38,6 +38,24 @@ export const API = {
     /** ABP active facilities endpoint for registration dropdowns. */
     ACCOUNT_ACTIVE_FACILITIES_ENDPOINT: "/api/services/app/Account/GetActiveFacilities",
 
+    /** ABP patient intake check-in endpoint. */
+    PATIENT_INTAKE_CHECKIN_ENDPOINT: "/api/services/app/PatientIntake/CheckIn",
+
+    /** ABP patient intake symptom capture endpoint. */
+    PATIENT_INTAKE_CAPTURE_SYMPTOMS_ENDPOINT: "/api/services/app/PatientIntake/CaptureSymptoms",
+
+    /** ABP patient intake primary symptom extraction endpoint. */
+    PATIENT_INTAKE_EXTRACT_SYMPTOMS_ENDPOINT: "/api/services/app/PatientIntake/ExtractSymptoms",
+
+    /** ABP patient intake dynamic question retrieval endpoint. */
+    PATIENT_INTAKE_GET_QUESTIONS_ENDPOINT: "/api/services/app/PatientIntake/LoadQuestions",
+
+    /** ABP patient intake early urgent-check endpoint. */
+    PATIENT_INTAKE_URGENT_CHECK_ENDPOINT: "/api/services/app/PatientIntake/UrgentCheck",
+
+    /** ABP patient intake triage assessment endpoint. */
+    PATIENT_INTAKE_ASSESS_TRIAGE_ENDPOINT: "/api/services/app/PatientIntake/AssessTriage",
+
     /** Internal Next route for auth login. */
     AUTH_LOGIN_ROUTE: "/api/auth/login",
 
@@ -70,4 +88,22 @@ export const API = {
 
     /** Internal Next route for active facilities used in registration forms. */
     ACTIVE_FACILITIES_ROUTE: "/api/auth/facilities/active",
+
+    /** Internal Next route to initialize a patient check-in session. */
+    PATIENT_INTAKE_CHECKIN_ROUTE: "/api/patient-intake/check-in",
+
+    /** Internal Next route to capture patient symptom input payload. */
+    PATIENT_INTAKE_SYMPTOMS_ROUTE: "/api/patient-intake/symptoms",
+
+    /** Internal Next route to extract primary symptoms from free text/chips. */
+    PATIENT_INTAKE_EXTRACT_ROUTE: "/api/patient-intake/extract",
+
+    /** Internal Next route to fetch dynamic follow-up intake questions. */
+    PATIENT_INTAKE_QUESTIONS_ROUTE: "/api/patient-intake/questions",
+
+    /** Internal Next route to run early urgent-check in intake flow. */
+    PATIENT_INTAKE_URGENT_CHECK_ROUTE: "/api/patient-intake/urgent-check",
+
+    /** Internal Next route to assess triage and queue placeholder status. */
+    PATIENT_INTAKE_TRIAGE_ROUTE: "/api/patient-intake/triage",
 } as const;

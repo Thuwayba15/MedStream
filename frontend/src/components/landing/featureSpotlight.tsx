@@ -8,7 +8,7 @@ import { useLandingStyles } from "./style";
 const FEATURE_ROTATION_MS = 3400;
 const FEATURE_TRANSITION_MS = 420;
 
-export function FeatureSpotlight(): React.JSX.Element {
+export const FeatureSpotlight = () => {
     const { styles, cx } = useLandingStyles();
 
     const [displayIndex, setDisplayIndex] = useState<number>(0);
@@ -153,4 +153,4 @@ export function FeatureSpotlight(): React.JSX.Element {
             </div>
         </aside>
     );
-}
+};

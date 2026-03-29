@@ -16,7 +16,7 @@ interface IAbpResponseEnvelope<T> {
     error?: IAbpError;
 }
 
-export function unwrapAbpResponse<T>(payload: IAbpResponseEnvelope<T> | T): T {
+export const unwrapAbpResponse = <T>(payload: IAbpResponseEnvelope<T> | T): T => {
     if (isAbpEnvelope<T>(payload)) {
         if (payload.success === false) {
             throw new Error(buildAbpErrorMessage(payload.error, "Backend request failed."));
@@ -28,9 +28,9 @@ export function unwrapAbpResponse<T>(payload: IAbpResponseEnvelope<T> | T): T {
     }
 
     return payload as T;
-}
+};
 
-export function getAbpErrorMessage(error: unknown, fallbackMessage: string): string {
+export const getAbpErrorMessage = (error: unknown, fallbackMessage: string): string => {
     if (error instanceof AxiosError) {
         const responseData: unknown = error.response?.data;
 
@@ -52,9 +52,9 @@ export function getAbpErrorMessage(error: unknown, fallbackMessage: string): str
     }
 
     return fallbackMessage;
-}
+};
 
-function buildAbpErrorMessage(error: IAbpError | undefined, fallbackMessage: string): string {
+const buildAbpErrorMessage = (error: IAbpError | undefined, fallbackMessage: string): string => {
     if (!error) {
         return fallbackMessage;
     }
@@ -73,12 +73,12 @@ function buildAbpErrorMessage(error: IAbpError | undefined, fallbackMessage: str
     }
 
     return fallbackMessage;
-}
+};
 
-function isAbpEnvelope<T>(payload: IAbpResponseEnvelope<T> | T): payload is IAbpResponseEnvelope<T> {
+const isAbpEnvelope = <T>(payload: IAbpResponseEnvelope<T> | T): payload is IAbpResponseEnvelope<T> => {
     if (!payload || typeof payload !== "object") {
         return false;
     }
 
     return "result" in payload || "success" in payload || "error" in payload;
-}
+};

@@ -14,7 +14,7 @@ interface IBuildApprovalColumnsArgs {
     openDecisionModal: (userId: number, mode: "approve" | "decline") => void;
 }
 
-export function buildApprovalColumns(args: IBuildApprovalColumnsArgs): ColumnsType<IClinicianApplicant> {
+export const buildApprovalColumns = (args: IBuildApprovalColumnsArgs): ColumnsType<IClinicianApplicant> => {
     return [
         {
             title: "Applicant",
@@ -56,6 +56,7 @@ export function buildApprovalColumns(args: IBuildApprovalColumnsArgs): ColumnsTy
                                 data-testid={`assign-facility-select-${row.id}`}
                             />
                             <Button
+                                className={args.adminStyles.primaryActionButton}
                                 loading={args.isMutating}
                                 data-testid={`assign-facility-button-${row.id}`}
                                 onClick={() => {
@@ -101,10 +102,10 @@ export function buildApprovalColumns(args: IBuildApprovalColumnsArgs): ColumnsTy
             render: (_, row) =>
                 row.isClinicianApprovalPending ? (
                     <Space>
-                        <Button type="primary" loading={args.isMutating} onClick={() => args.openDecisionModal(row.id, "approve")}>
+                        <Button className={args.adminStyles.primaryActionButton} loading={args.isMutating} onClick={() => args.openDecisionModal(row.id, "approve")}>
                             Approve
                         </Button>
-                        <Button danger loading={args.isMutating} onClick={() => args.openDecisionModal(row.id, "decline")}>
+                        <Button className={args.adminStyles.secondaryActionButton} danger loading={args.isMutating} onClick={() => args.openDecisionModal(row.id, "decline")}>
                             Decline
                         </Button>
                     </Space>
@@ -113,7 +114,7 @@ export function buildApprovalColumns(args: IBuildApprovalColumnsArgs): ColumnsTy
                 ),
         },
     ];
-}
+};
 
 interface IBuildFacilityColumnsArgs {
     adminStyles: Record<string, string>;
@@ -123,7 +124,7 @@ interface IBuildFacilityColumnsArgs {
     setFacilityActivation: (id: number, isActive: boolean) => Promise<void>;
 }
 
-export function buildFacilityColumns(args: IBuildFacilityColumnsArgs): ColumnsType<IFacility> {
+export const buildFacilityColumns = (args: IBuildFacilityColumnsArgs): ColumnsType<IFacility> => {
     return [
         {
             title: "Facility",
@@ -158,6 +159,7 @@ export function buildFacilityColumns(args: IBuildFacilityColumnsArgs): ColumnsTy
             render: (_, row) => (
                 <Space>
                     <Button
+                        className={args.adminStyles.secondaryActionButton}
                         data-testid={`edit-facility-button-${row.id}`}
                         onClick={() => {
                             args.setEditingFacility(row);
@@ -173,11 +175,16 @@ export function buildFacilityColumns(args: IBuildFacilityColumnsArgs): ColumnsTy
                     >
                         Edit
                     </Button>
-                    <Button loading={args.isMutating} data-testid={`toggle-facility-active-button-${row.id}`} onClick={() => void args.setFacilityActivation(row.id, !row.isActive)}>
+                    <Button
+                        className={args.adminStyles.secondaryActionButton}
+                        loading={args.isMutating}
+                        data-testid={`toggle-facility-active-button-${row.id}`}
+                        onClick={() => void args.setFacilityActivation(row.id, !row.isActive)}
+                    >
                         {row.isActive ? "Deactivate" : "Activate"}
                     </Button>
                 </Space>
             ),
         },
     ];
-}
+};

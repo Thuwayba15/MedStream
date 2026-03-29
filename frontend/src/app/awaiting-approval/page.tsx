@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuthActions } from "@/providers/auth";
 
-export default function AwaitingApprovalPage(): React.JSX.Element {
+const AwaitingApprovalPage = () => {
     const { styles } = useAuthStyles();
     const router = useRouter();
     const { getCurrentHomePath } = useAuthActions();
@@ -52,4 +52,6 @@ export default function AwaitingApprovalPage(): React.JSX.Element {
             </div>
         </main>
     );
-}
+};
+
+export default AwaitingApprovalPage;

@@ -1,11 +1,16 @@
 "use client";
 
 import { Button } from "antd";
+import { LogoutOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuthActions } from "@/providers/auth";
 
-export function LogoutButton(): React.JSX.Element {
+interface ILogoutButtonProps {
+    className?: string;
+}
+
+export const LogoutButton = ({ className }: ILogoutButtonProps) => {
     const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { logout } = useAuthActions();
@@ -21,8 +26,8 @@ export function LogoutButton(): React.JSX.Element {
     };
 
     return (
-        <Button loading={isLoggingOut} onClick={handleLogout}>
-            Logout
+        <Button loading={isLoggingOut} onClick={handleLogout} className={className} icon={<LogoutOutlined />}>
+            Sign Out
         </Button>
     );
-}
+};

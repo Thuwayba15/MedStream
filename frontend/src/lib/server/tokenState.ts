@@ -10,7 +10,7 @@ export interface TokenDerivedAuthInfo {
     homePath: string;
 }
 
-export function deriveAuthInfoFromAccessToken(accessToken: string): TokenDerivedAuthInfo {
+export const deriveAuthInfoFromAccessToken = (accessToken: string): TokenDerivedAuthInfo => {
     const payload = decodeJwtPayload(accessToken);
     const authState = deriveAuthStateFromPayload(payload);
 
@@ -18,9 +18,9 @@ export function deriveAuthInfoFromAccessToken(accessToken: string): TokenDerived
         authState,
         homePath: getHomePathForAuthState(authState),
     };
-}
+};
 
-function decodeJwtPayload(token: string): JwtPayload {
+const decodeJwtPayload = (token: string): JwtPayload => {
     const tokenParts = token.split(".");
     if (tokenParts.length < 2) {
         throw new Error("Invalid access token format.");
@@ -30,9 +30,9 @@ function decodeJwtPayload(token: string): JwtPayload {
     const paddedPayload = normalizedPayload.padEnd(normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4), "=");
     const decodedJson = Buffer.from(paddedPayload, "base64").toString("utf8");
     return JSON.parse(decodedJson) as JwtPayload;
-}
+};
 
-function deriveAuthStateFromPayload(payload: JwtPayload): AuthState {
+const deriveAuthStateFromPayload = (payload: JwtPayload): AuthState => {
     const roleValues = toStringList(payload[ROLE_CLAIM_KEY] ?? payload.role);
     const requestedRole = toSingleString(payload[REQUESTED_ROLE_CLAIM_KEY]);
     const approvalState = toSingleString(payload[APPROVAL_STATE_CLAIM_KEY]);
@@ -50,9 +50,9 @@ function deriveAuthStateFromPayload(payload: JwtPayload): AuthState {
     }
 
     return "patient";
-}
+};
 
-function toSingleString(value: unknown): string | null {
+const toSingleString = (value: unknown): string | null => {
     if (typeof value === "string") {
         return value;
     }
@@ -62,9 +62,9 @@ function toSingleString(value: unknown): string | null {
     }
 
     return null;
-}
+};
 
-function toStringList(value: unknown): string[] {
+const toStringList = (value: unknown): string[] => {
     if (typeof value === "string") {
         return [value];
     }
@@ -74,4 +74,4 @@ function toStringList(value: unknown): string[] {
     }
 
     return [];
-}
+};
