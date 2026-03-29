@@ -201,6 +201,31 @@ F4.2 Generate Intake Summary
 2.1 System must generate:
 Complaint category
 Extracted symptoms
+ 2.2 Patient intake UX must use one guided flow with an inline early urgent-check stage:
+Check-In
+Urgent Check
+Describe Symptoms
+Follow-Up Questions
+Status & Queue
+ 2.3 Intake routing must use deterministic approved JSON pathway classification first
+ 2.4 If no strong approved JSON pathway exists, the system must switch to APC summary fallback mode for temporary subjective intake questions
+ 2.5 AI fallback must only generate bounded subjective intake questions from selected APC summaries and must not return diagnosis or treatment advice
+ 2.6 Deterministic pathway classification must:
+classify only to entry pathways
+return ranked candidate pathways with explainable signal breakdown
+support ambiguity/low-confidence flags for disambiguation
+support multi-complaint candidate routing without forcing premature single-pathway collapse
+ 2.7 If complaint text is low-signal or nonsensical, intake must route to `general_unspecified_complaint` fallback pathway (not respiratory default pathways)
+ 2.8 Urgent-check must run immediately after check-in using global emergency safety questions, and any positive urgent signal must fast-track directly to triage/status
+ 2.9 Intake persistence must include:
+raw free-text complaint
+selected symptoms
+extracted primary symptoms
+mapped pathway input values
+follow-up answers
+subjective summary for SOAP handoff
+ 2.10 Patient-facing intake responses must not expose clinician-only outcomes, recommendations, or rule-trace internals
+ 2.11 Detailed engine behavior and implementation notes are documented in `docs/product/patient-intake-engine.md`
 
 F5. Triage Assessment
 F5.1 Generate Triage
@@ -215,6 +240,7 @@ F6.1 Create Queue Ticket
 
 F6.2 Track Queue State
 2.1 System must log all queue changes via QueueEvent
+ 2.2 In intake UX v1, queue display may show "position pending" placeholder status until full queue ticket orchestration is enabled
 
 F7. Vital Signs
 F7.1 Record Vitals
@@ -232,6 +258,7 @@ Subjective
 Objective
 Assessment
 Plan
+ 1.3 `Subjective` must be seeded from persisted intake data (`SymptomIntake`) including free-text complaint, extracted symptoms, and follow-up answer summary
 
 F8.2 Draft & Finalize
 2.1 Notes must support draft state

@@ -1,7 +1,7 @@
 import { ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME } from "@/lib/auth/constants";
 import { NextResponse } from "next/server";
 
-export async function POST(): Promise<Response> {
+export const POST = async (): Promise<Response> => {
     const response = NextResponse.json({ success: true });
     const cookieNames = [ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME, "Abp.AuthToken", "XSRF-TOKEN"];
 
@@ -19,4 +19,4 @@ export async function POST(): Promise<Response> {
     });
 
     return response;
-}
+};

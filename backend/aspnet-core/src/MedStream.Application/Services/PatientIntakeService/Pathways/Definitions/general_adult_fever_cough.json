@@ -1,0 +1,437 @@
+{
+  "id": "general_adult_fever_cough",
+  "name": "General Adult Fever/Cough",
+  "version": "1.0.0",
+  "status": "active",
+  "source": {
+    "type": "LegacyHardcoded",
+    "document": "PatientIntakeAppService",
+    "pages": [],
+    "notes": "Converted from previous hardcoded question and triage logic for engine parity."
+  },
+  "entry": {
+    "isEntryPathway": false,
+    "complaintKeywords": [
+      "cough",
+      "fever",
+      "breathing difficulty",
+      "chest pain"
+    ],
+    "synonyms": [
+      "shortness of breath",
+      "breathless",
+      "high temperature"
+    ],
+    "commonPhrases": [
+      "i have cough and fever",
+      "i am feeling feverish"
+    ],
+    "excludePhrases": [],
+    "symptomCategory": "respiratory",
+    "bodyRegions": [
+      "chest",
+      "lungs"
+    ],
+    "priority": 4,
+    "complaintCodes": [],
+    "appliesTo": {
+      "minAge": 18
+    }
+  },
+  "visibility": {
+    "patientCanAnswer": true,
+    "patientCanSeeOutcomes": false,
+    "clinicianOnlyRecommendations": true
+  },
+  "stages": [
+    {
+      "id": "patient_intake",
+      "name": "Patient Intake",
+      "type": "intake"
+    },
+    {
+      "id": "clinician_review",
+      "name": "Clinician Review",
+      "type": "consultation"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "durationDays",
+      "label": "How many days have these symptoms been present?",
+      "type": "number",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 1,
+      "tags": [ "subjective" ]
+    },
+    {
+      "id": "hasFever",
+      "label": "Have you had a fever?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 2,
+      "tags": [ "subjective" ]
+    },
+    {
+      "id": "temperatureBand",
+      "label": "What was your highest measured temperature?",
+      "type": "single_select",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 3,
+      "showWhenExpression": "answer:hasFever=true",
+      "tags": [ "subjective" ],
+      "options": [
+        {
+          "value": "under-38",
+          "label": "Below 38 C"
+        },
+        {
+          "value": "38-39",
+          "label": "38 C to 39 C"
+        },
+        {
+          "value": "39-plus",
+          "label": "Above 39 C"
+        }
+      ]
+    },
+    {
+      "id": "breathingDifficulty",
+      "label": "Are you currently experiencing difficulty breathing?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 4,
+      "tags": [ "subjective", "red_flag" ]
+    },
+    {
+      "id": "chestPain",
+      "label": "Do you have chest pain right now?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 5,
+      "tags": [ "subjective", "red_flag" ]
+    },
+    {
+      "id": "dangerSymptoms",
+      "label": "Select any danger symptoms you currently have.",
+      "type": "multi_select",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 6,
+      "tags": [ "subjective", "red_flag" ],
+      "options": [
+        {
+          "value": "confusion",
+          "label": "Confusion"
+        },
+        {
+          "value": "cannot-drink",
+          "label": "Cannot keep fluids down"
+        },
+        {
+          "value": "fainting",
+          "label": "Fainting episodes"
+        },
+        {
+          "value": "none",
+          "label": "None of the above"
+        }
+      ]
+    },
+    {
+      "id": "chronicCondition",
+      "label": "Do you have any chronic condition (asthma, diabetes, heart disease)?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 7,
+      "tags": [ "subjective" ]
+    },
+    {
+      "id": "additionalNotes",
+      "label": "Anything else we should know before triage?",
+      "type": "text",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "displayOrder": 8,
+      "tags": [ "subjective" ]
+    },
+    {
+      "id": "oxygenSaturation",
+      "label": "Oxygen saturation",
+      "type": "number",
+      "unit": "%",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "displayOrder": 1,
+      "tags": [ "objective", "vitals" ]
+    },
+    {
+      "id": "respiratoryRate",
+      "label": "Respiratory rate",
+      "type": "number",
+      "unit": "breaths/min",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "displayOrder": 2,
+      "tags": [ "objective", "vitals" ]
+    }
+  ],
+  "globalChecks": [
+    {
+      "id": "duration_over_3_days",
+      "label": "Duration over three days",
+      "when": {
+        "all": [
+          {
+            "input": "durationDays",
+            "operator": "gt",
+            "value": 3
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "has_fever_score",
+      "label": "Fever increases score",
+      "when": {
+        "all": [
+          {
+            "input": "hasFever",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "very_high_fever",
+      "label": "Very high fever red flag",
+      "when": {
+        "all": [
+          {
+            "input": "temperatureBand",
+            "operator": "equals",
+            "value": "39-plus"
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 20
+        },
+        {
+          "type": "red_flag",
+          "redFlag": "High fever above 39 C"
+        }
+      ]
+    },
+    {
+      "id": "breathing_difficulty_flag",
+      "label": "Breathing difficulty",
+      "when": {
+        "all": [
+          {
+            "input": "breathingDifficulty",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 30
+        },
+        {
+          "type": "red_flag",
+          "redFlag": "Active breathing difficulty"
+        }
+      ]
+    },
+    {
+      "id": "chest_pain_flag",
+      "label": "Chest pain",
+      "when": {
+        "all": [
+          {
+            "input": "chestPain",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 25
+        },
+        {
+          "type": "red_flag",
+          "redFlag": "Current chest pain"
+        }
+      ]
+    },
+    {
+      "id": "danger_confusion",
+      "label": "Danger symptom confusion",
+      "when": {
+        "all": [
+          {
+            "input": "dangerSymptoms",
+            "operator": "contains",
+            "value": "confusion"
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 25
+        },
+        {
+          "type": "red_flag",
+          "redFlag": "Confusion"
+        }
+      ]
+    },
+    {
+      "id": "danger_cannot_drink",
+      "label": "Danger symptom cannot drink",
+      "when": {
+        "all": [
+          {
+            "input": "dangerSymptoms",
+            "operator": "contains",
+            "value": "cannot-drink"
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 20
+        },
+        {
+          "type": "red_flag",
+          "redFlag": "Unable to keep fluids down"
+        }
+      ]
+    },
+    {
+      "id": "danger_fainting",
+      "label": "Danger symptom fainting",
+      "when": {
+        "all": [
+          {
+            "input": "dangerSymptoms",
+            "operator": "contains",
+            "value": "fainting"
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 25
+        },
+        {
+          "type": "red_flag",
+          "redFlag": "Fainting episodes"
+        }
+      ]
+    },
+    {
+      "id": "chronic_condition",
+      "label": "Chronic condition increases score",
+      "when": {
+        "all": [
+          {
+            "input": "chronicCondition",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "effects": [
+        {
+          "type": "score",
+          "value": 10
+        }
+      ]
+    }
+  ],
+  "flows": [],
+  "outcomes": [
+    {
+      "id": "urgent_attention_required",
+      "label": "Urgent attention required",
+      "category": "triage",
+      "severity": "urgent",
+      "patientVisible": false
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "refer_urgently",
+      "label": "Refer urgently / urgent clinician review",
+      "type": "triage_action",
+      "clinicianOnly": true
+    }
+  ],
+  "links": [],
+  "triage": {
+    "baseScore": 20,
+    "priorityThreshold": 45,
+    "urgentThreshold": 75,
+    "routineExplanationTemplate": "Routine triage generated from {symptoms} with no immediate danger signs detected.",
+    "priorityExplanationTemplate": "Priority triage based on symptom severity profile for {symptoms}.",
+    "urgentExplanationTemplate": "Urgent triage because {redFlags} with {symptoms}."
+  },
+  "soapMapping": {
+    "subjective": [
+      "durationDays",
+      "hasFever",
+      "temperatureBand",
+      "breathingDifficulty",
+      "chestPain",
+      "dangerSymptoms",
+      "chronicCondition",
+      "additionalNotes"
+    ],
+    "objective": [
+      "oxygenSaturation",
+      "respiratoryRate"
+    ],
+    "assessmentFromOutcomes": [],
+    "planFromRecommendations": []
+  }
+}

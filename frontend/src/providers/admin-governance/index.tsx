@@ -33,17 +33,17 @@ interface IFacilitiesResponse {
     facilities: IFacility[];
 }
 
-export function AdminGovernanceProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+export const AdminGovernanceProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(adminGovernanceReducer, INITIAL_STATE);
 
-    async function parseResponse<TResponse>(response: Response, fallbackMessage: string): Promise<TResponse> {
+    const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
         const body = (await response.json()) as TResponse & IMessageResponse;
         if (!response.ok) {
             throw new Error(body.message ?? fallbackMessage);
         }
 
         return body;
-    }
+    };
 
     const getApplicants = async (): Promise<IClinicianApplicant[]> => {
         const response = await fetch(API.ADMIN_USERS_ROUTE);
@@ -180,17 +180,17 @@ export function AdminGovernanceProvider({ children }: { children: React.ReactNod
             <AdminGovernanceActionContext.Provider value={actions}>{children}</AdminGovernanceActionContext.Provider>
         </AdminGovernanceStateContext.Provider>
     );
-}
+};
 
-export function useAdminGovernanceState(): IAdminGovernanceStateContext {
+export const useAdminGovernanceState = (): IAdminGovernanceStateContext => {
     return useContext(AdminGovernanceStateContext);
-}
+};
 
-export function useAdminGovernanceActions(): IAdminGovernanceActionContext {
+export const useAdminGovernanceActions = (): IAdminGovernanceActionContext => {
     const context = useContext(AdminGovernanceActionContext);
     if (!context) {
         throw new Error("useAdminGovernanceActions must be used within an AdminGovernanceProvider.");
     }
 
     return context;
-}
+};

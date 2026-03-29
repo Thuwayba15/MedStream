@@ -8,11 +8,12 @@ interface IEditFacilityModalProps {
     editingFacility: IFacility | null;
     isMutating: boolean;
     editFacilityForm: FormInstance<IFacilityFormValues>;
+    adminStyles: Record<string, string>;
     onUpdateFacility: (values: IFacilityFormValues) => Promise<void>;
     setEditingFacility: React.Dispatch<React.SetStateAction<IFacility | null>>;
 }
 
-export function EditFacilityModal({ editingFacility, isMutating, editFacilityForm, onUpdateFacility, setEditingFacility }: IEditFacilityModalProps): React.JSX.Element {
+export const EditFacilityModal = ({ editingFacility, isMutating, editFacilityForm, adminStyles, onUpdateFacility, setEditingFacility }: IEditFacilityModalProps) => {
     return (
         <Modal title="Edit Facility" open={editingFacility !== null} onCancel={() => setEditingFacility(null)} footer={null} destroyOnHidden>
             <Form<IFacilityFormValues> form={editFacilityForm} layout="vertical" onFinish={(values) => void onUpdateFacility(values)}>
@@ -35,12 +36,14 @@ export function EditFacilityModal({ editingFacility, isMutating, editFacilityFor
                     <Input.TextArea rows={3} />
                 </Form.Item>
                 <Space>
-                    <Button onClick={() => setEditingFacility(null)}>Cancel</Button>
-                    <Button type="primary" htmlType="submit" loading={isMutating}>
+                    <Button onClick={() => setEditingFacility(null)} className={adminStyles.secondaryActionButton}>
+                        Cancel
+                    </Button>
+                    <Button type="primary" htmlType="submit" loading={isMutating} className={adminStyles.primaryActionButton}>
                         Save
                     </Button>
                 </Space>
             </Form>
         </Modal>
     );
-}
+};

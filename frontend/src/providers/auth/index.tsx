@@ -20,17 +20,17 @@ interface ICurrentUserResponse {
     };
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(authReducer, INITIAL_STATE);
 
-    async function parseResponse<TResponse>(response: Response, fallbackMessage: string): Promise<TResponse> {
+    const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
         const body = (await response.json()) as TResponse & IMessageResponse;
         if (!response.ok) {
             throw new Error(body.message ?? fallbackMessage);
         }
 
         return body;
-    }
+    };
 
     const actions: IAuthActionContext = {
         login: async (payload) => {
@@ -102,17 +102,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
             <AuthActionContext.Provider value={actions}>{children}</AuthActionContext.Provider>
         </AuthStateContext.Provider>
     );
-}
+};
 
-export function useAuthState(): IAuthStateContext {
+export const useAuthState = (): IAuthStateContext => {
     return useContext(AuthStateContext);
-}
+};
 
-export function useAuthActions(): IAuthActionContext {
+export const useAuthActions = (): IAuthActionContext => {
     const context = useContext(AuthActionContext);
     if (!context) {
         throw new Error("useAuthActions must be used within an AuthProvider.");
     }
 
     return context;
-}
+};

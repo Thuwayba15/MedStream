@@ -21,7 +21,7 @@ interface RegisterRequestBody {
     requestedFacilityId?: number;
 }
 
-export async function POST(request: Request): Promise<Response> {
+export const POST = async (request: Request): Promise<Response> => {
     try {
         const body = (await request.json()) as RegisterRequestBody;
         if (!body.firstName || !body.lastName || !body.emailAddress || !body.phoneNumber || !body.password || !body.confirmPassword || !body.accountType) {
@@ -93,9 +93,9 @@ export async function POST(request: Request): Promise<Response> {
             { status: 400 }
         );
     }
-}
+};
 
-function sanitizeRegistrationErrorMessage(message: string, debugCode: string): string {
+const sanitizeRegistrationErrorMessage = (message: string, debugCode: string): string => {
     if (!message) {
         return `Registration failed. Please review your details and try again. (${debugCode})`;
     }
@@ -109,4 +109,4 @@ function sanitizeRegistrationErrorMessage(message: string, debugCode: string): s
     }
 
     return message;
-}
+};

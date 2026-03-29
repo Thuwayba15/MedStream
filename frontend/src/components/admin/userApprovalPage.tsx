@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Alert, Empty, Input, Select, Space, Table, Tabs, Tag, Typography } from "antd";
+import { Alert, Empty, Input, Select, Space, Table, Tabs, Tag } from "antd";
 import { useAuthStyles } from "@/components/auth/style";
 import { useAdminStyles } from "@/components/admin/style";
 import { type ApprovalFilter, type IClinicianApplicant, type IFacility } from "@/providers/admin-governance/context";
@@ -12,7 +12,7 @@ import { DecisionModal } from "@/components/admin/decisionModal";
 import { EditFacilityModal } from "@/components/admin/editFacilityModal";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 
-export function UserApprovalPage(): React.JSX.Element {
+export const UserApprovalPage = () => {
     const { styles } = useAuthStyles();
     const { styles: adminStyles } = useAdminStyles();
     const viewModel = useAdminGovernancePage();
@@ -54,27 +54,16 @@ export function UserApprovalPage(): React.JSX.Element {
     return (
         <RoleAppShell roleLabel="Admin" items={[]}>
             {viewModel.messageContextHolder}
-            <section className={`${styles.dashboardCard} ${adminStyles.heroCard}`}>
-                <div className={adminStyles.headerRow}>
-                    <div>
-                        <Typography.Title level={1} className={adminStyles.heroHeading}>
-                            Admin Governance
-                        </Typography.Title>
-                        <Typography.Paragraph className={adminStyles.heroText}>Manage clinician approvals, assignments, and facility governance from one workspace.</Typography.Paragraph>
-                    </div>
-                    <div className={adminStyles.headerActions}>
-                        <Tag className={adminStyles.pendingBadge} color={viewModel.pendingCount > 0 ? "gold" : "green"}>
-                            {viewModel.pendingCount} pending requests
-                        </Tag>
-                    </div>
-                </div>
-            </section>
-
             {viewModel.successMessage ? <Alert type="success" title={viewModel.successMessage} showIcon /> : null}
             {viewModel.errorMessage ? <Alert type="error" title={viewModel.errorMessage} showIcon /> : null}
 
             <section className={`${styles.dashboardCard} ${adminStyles.panelCard} ${adminStyles.tableCard}`}>
                 <Tabs
+                    tabBarExtraContent={
+                        <Tag className={adminStyles.pendingBadge} color={viewModel.pendingCount > 0 ? "gold" : "green"}>
+                            {viewModel.pendingCount} pending requests
+                        </Tag>
+                    }
                     items={[
                         {
                             key: "approvals",
@@ -155,9 +144,10 @@ export function UserApprovalPage(): React.JSX.Element {
                 editingFacility={viewModel.editingFacility}
                 isMutating={viewModel.isMutating}
                 editFacilityForm={viewModel.editFacilityForm}
+                adminStyles={adminStyles}
                 onUpdateFacility={viewModel.onUpdateFacility}
                 setEditingFacility={viewModel.setEditingFacility}
             />
         </RoleAppShell>
     );
-}
+};

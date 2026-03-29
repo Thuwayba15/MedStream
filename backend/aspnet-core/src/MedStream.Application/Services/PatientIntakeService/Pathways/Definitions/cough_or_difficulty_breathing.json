@@ -1,0 +1,481 @@
+{
+  "id": "cough_or_difficulty_breathing",
+  "name": "Cough or Difficulty Breathing",
+  "version": "1.0.0",
+  "status": "active",
+  "source": {
+    "type": "APC",
+    "document": "APC 2023 Clinical Tool",
+    "pages": [38],
+    "notes": "Derived manually from APC; reviewed before activation."
+  },
+  "entry": {
+    "isEntryPathway": true,
+    "complaintKeywords": [
+      "cough",
+      "difficulty breathing",
+      "shortness of breath",
+      "breathlessness"
+    ],
+    "synonyms": [
+      "trouble breathing",
+      "cannot breathe properly",
+      "chest tightness"
+    ],
+    "commonPhrases": [
+      "i have a cough",
+      "i cant breathe properly",
+      "i'm short of breath"
+    ],
+    "excludePhrases": [
+      "pain only when turning neck"
+    ],
+    "symptomCategory": "respiratory",
+    "bodyRegions": [
+      "chest",
+      "lungs",
+      "respiratory"
+    ],
+    "priority": 1,
+    "complaintCodes": [],
+    "appliesTo": {
+      "minAge": 18
+    }
+  },
+  "visibility": {
+    "patientCanAnswer": true,
+    "patientCanSeeOutcomes": false,
+    "clinicianOnlyRecommendations": true
+  },
+  "stages": [
+    {
+      "id": "urgent_check",
+      "name": "Urgent Check",
+      "type": "intake"
+    },
+    {
+      "id": "patient_intake",
+      "name": "Patient Intake",
+      "type": "intake"
+    },
+    {
+      "id": "clinician_review",
+      "name": "Clinician Review",
+      "type": "consultation"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "urgentDifficultyBreathingNow",
+      "label": "Are you struggling to breathe right now?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 1,
+      "tags": ["subjective", "red_flag", "urgent_check"]
+    },
+    {
+      "id": "urgentChestPainNow",
+      "label": "Do you have severe chest pain right now?",
+      "type": "boolean",
+      "stage": "urgent_check",
+      "enteredBy": "patient",
+      "required": true,
+      "displayOrder": 2,
+      "tags": ["subjective", "red_flag", "urgent_check"]
+    },
+    {
+      "id": "coughDurationWeeks",
+      "label": "How long have you had the cough?",
+      "type": "number",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "tags": ["subjective", "duration"]
+    },
+    {
+      "id": "hasDifficultyBreathing",
+      "label": "Do you have difficulty breathing or shortness of breath?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "tags": ["subjective", "red_flag"]
+    },
+    {
+      "id": "isCoughingBlood",
+      "label": "Are you coughing up blood?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "tags": ["subjective", "red_flag"]
+    },
+    {
+      "id": "hasChestPain",
+      "label": "Do you have chest pain?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "tags": ["subjective", "red_flag"]
+    },
+    {
+      "id": "hasSputum",
+      "label": "Are you coughing up sputum/phlegm?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "tags": ["subjective"]
+    },
+    {
+      "id": "hasFever",
+      "label": "Do you have fever or feel feverish?",
+      "type": "boolean",
+      "stage": "patient_intake",
+      "enteredBy": "patient",
+      "required": false,
+      "tags": ["subjective"]
+    },
+    {
+      "id": "oxygenSaturation",
+      "label": "Oxygen saturation",
+      "type": "number",
+      "unit": "%",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "tags": ["objective", "vitals", "red_flag"]
+    },
+    {
+      "id": "respiratoryRate",
+      "label": "Respiratory rate",
+      "type": "number",
+      "unit": "breaths/min",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "tags": ["objective", "vitals", "red_flag"]
+    },
+    {
+      "id": "pulseRate",
+      "label": "Pulse rate",
+      "type": "number",
+      "unit": "bpm",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "tags": ["objective", "vitals", "red_flag"]
+    },
+    {
+      "id": "systolicBP",
+      "label": "Systolic blood pressure",
+      "type": "number",
+      "unit": "mmHg",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "tags": ["objective", "vitals", "red_flag"]
+    },
+    {
+      "id": "temperatureCelsius",
+      "label": "Temperature",
+      "type": "number",
+      "unit": "C",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "tags": ["objective", "vitals"]
+    },
+    {
+      "id": "hasWheezeOrTightChest",
+      "label": "Wheeze or tight chest",
+      "type": "boolean",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "tags": ["subjective", "link_trigger"]
+    },
+    {
+      "id": "isRecurrent",
+      "label": "Is this recurrent?",
+      "type": "boolean",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false,
+      "tags": ["history"]
+    },
+    {
+      "id": "recentURTI",
+      "label": "Recent upper respiratory tract infection?",
+      "type": "boolean",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false
+    },
+    {
+      "id": "isSmoker",
+      "label": "Smoker or recently stopped smoking?",
+      "type": "boolean",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false
+    },
+    {
+      "id": "hasWeightLoss",
+      "label": "Weight loss present?",
+      "type": "boolean",
+      "stage": "clinician_review",
+      "enteredBy": "clinician",
+      "required": false
+    }
+  ],
+  "globalChecks": [
+    {
+      "id": "urgent_respiratory_red_flags",
+      "label": "Urgent respiratory red flags",
+      "severity": "urgent",
+      "when": {
+        "any": [
+          { "input": "urgentDifficultyBreathingNow", "operator": "equals", "value": true },
+          { "input": "urgentChestPainNow", "operator": "equals", "value": true },
+          { "input": "isCoughingBlood", "operator": "equals", "value": true },
+          { "input": "hasChestPain", "operator": "equals", "value": true },
+          { "input": "hasDifficultyBreathing", "operator": "equals", "value": true },
+          { "input": "oxygenSaturation", "operator": "lt", "value": 92 },
+          { "input": "respiratoryRate", "operator": "gte", "value": 30 },
+          { "input": "pulseRate", "operator": "gt", "value": 120 },
+          { "input": "systolicBP", "operator": "lt", "value": 90 }
+        ]
+      },
+      "effects": [
+        {
+          "type": "flag",
+          "flag": "urgent_attention_required"
+        },
+        {
+          "type": "recommendation",
+          "recommendationId": "refer_urgently"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "acute_cough_branch",
+      "when": {
+        "all": [
+          { "input": "coughDurationWeeks", "operator": "lt", "value": 2 }
+        ]
+      },
+      "rules": [
+        {
+          "id": "possible_pneumonia",
+          "when": {
+            "all": [
+              { "input": "hasSputum", "operator": "equals", "value": true },
+              {
+                "any": [
+                  { "input": "pulseRate", "operator": "gte", "value": 100 },
+                  { "input": "respiratoryRate", "operator": "gte", "value": 20 },
+                  { "input": "temperatureCelsius", "operator": "gte", "value": 38 }
+                ]
+              }
+            ]
+          },
+          "effects": [
+            {
+              "type": "outcome",
+              "outcomeId": "pneumonia_likely"
+            },
+            {
+              "type": "recommendation",
+              "recommendationId": "consider_pneumonia_management"
+            }
+          ]
+        },
+        {
+          "id": "possible_viral_infection",
+          "when": {
+            "all": [
+              { "input": "hasSputum", "operator": "equals", "value": false }
+            ]
+          },
+          "effects": [
+            {
+              "type": "outcome",
+              "outcomeId": "acute_viral_infection_likely"
+            },
+            {
+              "type": "recommendation",
+              "recommendationId": "supportive_care"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chronic_or_recurrent_branch",
+      "when": {
+        "any": [
+          { "input": "coughDurationWeeks", "operator": "gte", "value": 2 },
+          { "input": "isRecurrent", "operator": "equals", "value": true }
+        ]
+      },
+      "rules": [
+        {
+          "id": "possible_post_infectious_cough",
+          "when": {
+            "all": [
+              { "input": "recentURTI", "operator": "equals", "value": true },
+              { "input": "hasDifficultyBreathing", "operator": "equals", "value": false }
+            ]
+          },
+          "effects": [
+            {
+              "type": "outcome",
+              "outcomeId": "post_infectious_cough_likely"
+            }
+          ]
+        },
+        {
+          "id": "possible_lung_cancer",
+          "when": {
+            "all": [
+              { "input": "isSmoker", "operator": "equals", "value": true },
+              { "input": "hasWeightLoss", "operator": "equals", "value": true }
+            ]
+          },
+          "effects": [
+            {
+              "type": "outcome",
+              "outcomeId": "lung_cancer_possible"
+            },
+            {
+              "type": "link",
+              "targetPathwayId": "weight_loss"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "urgent_attention_required",
+      "label": "Urgent attention required",
+      "category": "triage",
+      "severity": "urgent",
+      "patientVisible": false
+    },
+    {
+      "id": "pneumonia_likely",
+      "label": "Pneumonia likely",
+      "category": "assessment_hint",
+      "severity": "high",
+      "patientVisible": false
+    },
+    {
+      "id": "acute_viral_infection_likely",
+      "label": "Acute viral infection likely",
+      "category": "assessment_hint",
+      "severity": "moderate",
+      "patientVisible": false
+    },
+    {
+      "id": "post_infectious_cough_likely",
+      "label": "Post-infectious cough likely",
+      "category": "assessment_hint",
+      "severity": "moderate",
+      "patientVisible": false
+    },
+    {
+      "id": "lung_cancer_possible",
+      "label": "Consider lung cancer",
+      "category": "assessment_hint",
+      "severity": "high",
+      "patientVisible": false
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "refer_urgently",
+      "label": "Refer urgently / urgent clinician review",
+      "type": "triage_action",
+      "clinicianOnly": true
+    },
+    {
+      "id": "supportive_care",
+      "label": "Supportive care and return precautions",
+      "type": "plan_suggestion",
+      "clinicianOnly": true
+    },
+    {
+      "id": "consider_pneumonia_management",
+      "label": "Consider pneumonia management per guideline",
+      "type": "plan_suggestion",
+      "clinicianOnly": true
+    }
+  ],
+  "links": [
+    {
+      "id": "wheeze_tight_chest_link",
+      "label": "Wheeze / tight chest",
+      "when": {
+        "all": [
+          { "input": "hasWheezeOrTightChest", "operator": "equals", "value": true }
+        ]
+      },
+      "targetPathwayId": "wheeze_tight_chest",
+      "linkType": "subpathway",
+      "sourceReference": {
+        "page": 39
+      }
+    },
+    {
+      "id": "tb_diagnosis_link",
+      "label": "TB diagnosis",
+      "when": {
+        "all": [
+          { "input": "coughDurationWeeks", "operator": "gte", "value": 2 }
+        ]
+      },
+      "targetPathwayId": "tb_diagnosis",
+      "linkType": "supporting_reference",
+      "sourceReference": {
+        "page": 92
+      }
+    }
+  ],
+  "soapMapping": {
+    "subjective": [
+      "coughDurationWeeks",
+      "hasDifficultyBreathing",
+      "isCoughingBlood",
+      "hasChestPain",
+      "hasSputum",
+      "hasFever"
+    ],
+    "objective": [
+      "oxygenSaturation",
+      "respiratoryRate",
+      "pulseRate",
+      "systolicBP",
+      "temperatureCelsius"
+    ],
+    "assessmentFromOutcomes": [
+      "urgent_attention_required",
+      "pneumonia_likely",
+      "acute_viral_infection_likely",
+      "post_infectious_cough_likely",
+      "lung_cancer_possible"
+    ],
+    "planFromRecommendations": [
+      "refer_urgently",
+      "supportive_care",
+      "consider_pneumonia_management"
+    ]
+  }
+}

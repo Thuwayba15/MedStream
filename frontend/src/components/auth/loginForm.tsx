@@ -12,7 +12,7 @@ interface LoginFormValues {
     password: string;
 }
 
-export function LoginForm(): React.JSX.Element {
+export const LoginForm = () => {
     const router = useRouter();
     const { styles } = useAuthStyles();
     const { login, clearError } = useAuthActions();
@@ -82,4 +82,4 @@ export function LoginForm(): React.JSX.Element {
             </div>
         </main>
     );
-}
+};

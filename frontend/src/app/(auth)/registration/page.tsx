@@ -1,10 +1,12 @@
 import { RegistrationForm } from "@/components/auth/registrationForm";
 import { RegistrationProvider } from "@/providers/registration";
 
-export default function RegistrationPage() {
+const RegistrationPage = () => {
     return (
         <RegistrationProvider>
             <RegistrationForm />
         </RegistrationProvider>
     );
-}
+};
+
+export default RegistrationPage;

@@ -6,7 +6,7 @@ import { useAdminGovernanceActions, useAdminGovernanceState } from "@/providers/
 import { type ApprovalFilter, type IFacility } from "@/providers/admin-governance/context";
 import { type IDecisionFormValues, type IFacilityFormValues } from "@/components/admin/types";
 
-export function useAdminGovernancePage() {
+export const useAdminGovernancePage = () => {
     const { users, facilities, isLoadingUsers, isLoadingFacilities, isMutating, errorMessage, successMessage, searchText, approvalFilter } = useAdminGovernanceState();
 
     const { loadGovernanceData, setSearchText, setApprovalFilter, clearMessages, approveClinician, declineClinician, createFacility, updateFacility, setFacilityActivation, assignClinicianFacility } =
@@ -145,4 +145,4 @@ export function useAdminGovernancePage() {
         setAssigningFacilityByUserId,
         setFacilityActivation,
     };
-}
+};

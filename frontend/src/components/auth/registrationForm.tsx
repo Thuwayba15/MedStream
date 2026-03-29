@@ -34,7 +34,7 @@ interface RegistrationFormValues {
     requestedFacilityId?: number;
 }
 
-export function RegistrationForm(): React.JSX.Element {
+export const RegistrationForm = () => {
     const router = useRouter();
     const { styles } = useAuthStyles();
     const [form] = Form.useForm<RegistrationFormValues>();
@@ -311,4 +311,4 @@ export function RegistrationForm(): React.JSX.Element {
             </div>
         </main>
     );
-}
+};

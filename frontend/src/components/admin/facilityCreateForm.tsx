@@ -10,7 +10,7 @@ interface IFacilityCreateFormProps {
     onCreateFacility: (values: IFacilityFormValues) => Promise<void>;
 }
 
-export function FacilityCreateForm({ form, isMutating, adminStyles, onCreateFacility }: IFacilityCreateFormProps): React.JSX.Element {
+export const FacilityCreateForm = ({ form, isMutating, adminStyles, onCreateFacility }: IFacilityCreateFormProps) => {
     return (
         <Form<IFacilityFormValues> form={form} layout="vertical" onFinish={(values) => void onCreateFacility(values)}>
             <div className={adminStyles.facilityFormGrid}>
@@ -33,9 +33,9 @@ export function FacilityCreateForm({ form, isMutating, adminStyles, onCreateFaci
                     <Input placeholder="Address" />
                 </Form.Item>
             </div>
-            <Button type="primary" htmlType="submit" loading={isMutating}>
+            <Button type="primary" htmlType="submit" loading={isMutating} className={adminStyles.primaryActionButton}>
                 Add Facility
             </Button>
         </Form>
     );
-}
+};

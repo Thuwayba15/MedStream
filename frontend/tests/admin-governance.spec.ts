@@ -138,7 +138,7 @@ test.describe("admin governance", () => {
         });
 
         await page.goto("/admin");
-        await expect(page.getByRole("heading", { level: 1, name: "Admin Governance" })).toBeVisible();
+        await expect(page.getByText("pending requests")).toBeVisible();
 
         await page.getByRole("button", { name: "Approve" }).click();
         await page.getByLabel("Decision reason").fill("Credentials verified.");

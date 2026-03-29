@@ -8,7 +8,7 @@ interface AssignBody {
     facilityId: number;
 }
 
-export async function POST(request: Request): Promise<Response> {
+export const POST = async (request: Request): Promise<Response> => {
     try {
         const guardResult = await requireAdminAccessToken();
         if (guardResult.errorResponse || !guardResult.accessToken) {
@@ -25,4 +25,4 @@ export async function POST(request: Request): Promise<Response> {
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to assign clinician to facility.") }, { status: 400 });
     }
-}
+};
