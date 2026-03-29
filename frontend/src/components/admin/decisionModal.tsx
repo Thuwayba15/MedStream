@@ -11,7 +11,7 @@ interface IDecisionModalProps {
     setDecisionTargetUserId: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
-export function DecisionModal({ decisionMode, decisionTargetUserId, isMutating, decisionForm, onSubmitDecision, setDecisionTargetUserId }: IDecisionModalProps): React.JSX.Element {
+export const DecisionModal = ({ decisionMode, decisionTargetUserId, isMutating, decisionForm, onSubmitDecision, setDecisionTargetUserId }: IDecisionModalProps) => {
     return (
         <Modal
             title={decisionMode === "approve" ? "Approve Clinician" : "Decline Clinician"}
@@ -41,4 +41,4 @@ export function DecisionModal({ decisionMode, decisionTargetUserId, isMutating, 
             </Form>
         </Modal>
     );
-}
+};

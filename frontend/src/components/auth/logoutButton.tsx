@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuthActions } from "@/providers/auth";
 
-export function LogoutButton(): React.JSX.Element {
+export const LogoutButton = () => {
     const router = useRouter();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { logout } = useAuthActions();
@@ -25,4 +25,4 @@ export function LogoutButton(): React.JSX.Element {
             Logout
         </Button>
     );
-}
+};

@@ -9,7 +9,7 @@ interface LoginRequestBody {
     password: string;
 }
 
-export async function POST(request: Request): Promise<Response> {
+export const POST = async (request: Request): Promise<Response> => {
     try {
         const body = (await request.json()) as LoginRequestBody;
         if (!body.userNameOrEmailAddress || !body.password) {
@@ -49,4 +49,4 @@ export async function POST(request: Request): Promise<Response> {
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Login failed.") }, { status: 401 });
     }
-}
+};

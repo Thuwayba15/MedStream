@@ -12,7 +12,7 @@ import { DecisionModal } from "@/components/admin/decisionModal";
 import { EditFacilityModal } from "@/components/admin/editFacilityModal";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 
-export function UserApprovalPage(): React.JSX.Element {
+export const UserApprovalPage = () => {
     const { styles } = useAuthStyles();
     const { styles: adminStyles } = useAdminStyles();
     const viewModel = useAdminGovernancePage();
@@ -160,4 +160,4 @@ export function UserApprovalPage(): React.JSX.Element {
             />
         </RoleAppShell>
     );
-}
+};

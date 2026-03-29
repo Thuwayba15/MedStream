@@ -5,7 +5,7 @@ import { Button } from "antd";
 import { FeatureSpotlight } from "./featureSpotlight";
 import { useLandingStyles } from "./style";
 
-export function LandingPage(): React.JSX.Element {
+export const LandingPage = () => {
     const { styles } = useLandingStyles();
 
     return (
@@ -48,4 +48,4 @@ export function LandingPage(): React.JSX.Element {
             </div>
         </main>
     );
-}
+};

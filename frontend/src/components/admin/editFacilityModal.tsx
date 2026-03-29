@@ -12,7 +12,7 @@ interface IEditFacilityModalProps {
     setEditingFacility: React.Dispatch<React.SetStateAction<IFacility | null>>;
 }
 
-export function EditFacilityModal({ editingFacility, isMutating, editFacilityForm, onUpdateFacility, setEditingFacility }: IEditFacilityModalProps): React.JSX.Element {
+export const EditFacilityModal = ({ editingFacility, isMutating, editFacilityForm, onUpdateFacility, setEditingFacility }: IEditFacilityModalProps) => {
     return (
         <Modal title="Edit Facility" open={editingFacility !== null} onCancel={() => setEditingFacility(null)} footer={null} destroyOnHidden>
             <Form<IFacilityFormValues> form={editFacilityForm} layout="vertical" onFinish={(values) => void onUpdateFacility(values)}>
@@ -43,4 +43,4 @@ export function EditFacilityModal({ editingFacility, isMutating, editFacilityFor
             </Form>
         </Modal>
     );
-}
+};

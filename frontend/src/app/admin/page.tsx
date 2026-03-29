@@ -1,10 +1,12 @@
 import { UserApprovalPage } from "@/components/admin/userApprovalPage";
 import { AdminGovernanceProvider } from "@/providers/admin-governance";
 
-export default function AdminPage(): React.JSX.Element {
+const AdminPage = () => {
     return (
         <AdminGovernanceProvider>
             <UserApprovalPage />
         </AdminGovernanceProvider>
     );
-}
+};
+
+export default AdminPage;

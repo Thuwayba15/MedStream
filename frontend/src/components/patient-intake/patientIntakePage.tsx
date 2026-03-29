@@ -43,7 +43,7 @@ interface IExtendedWindow extends Window {
     webkitSpeechRecognition?: SpeechRecognitionConstructor;
 }
 
-export const PatientIntakePage = (): React.JSX.Element => {
+export const PatientIntakePage = () => {
     const { styles } = usePatientIntakeStyles();
     const state = usePatientIntakeState();
     const actions = usePatientIntakeActions();
@@ -61,7 +61,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
 
         hasInitializedRef.current = true;
         void initializeFlowEvent();
-    }, [initializeFlowEvent]);
+    }, []);
 
     const speechSupported = useMemo(() => Boolean(resolveSpeechRecognitionApi()), []);
 

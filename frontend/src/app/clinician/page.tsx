@@ -4,7 +4,7 @@ import { useAuthStyles } from "@/components/auth/style";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 import { Card, Space, Typography } from "antd";
 
-export default function ClinicianHomePage(): React.JSX.Element {
+const ClinicianHomePage = () => {
     const { styles } = useAuthStyles();
 
     return (
@@ -19,4 +19,6 @@ export default function ClinicianHomePage(): React.JSX.Element {
             </Card>
         </RoleAppShell>
     );
-}
+};
+
+export default ClinicianHomePage;

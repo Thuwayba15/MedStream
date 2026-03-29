@@ -14,7 +14,7 @@ interface IBuildApprovalColumnsArgs {
     openDecisionModal: (userId: number, mode: "approve" | "decline") => void;
 }
 
-export function buildApprovalColumns(args: IBuildApprovalColumnsArgs): ColumnsType<IClinicianApplicant> {
+export const buildApprovalColumns = (args: IBuildApprovalColumnsArgs): ColumnsType<IClinicianApplicant> => {
     return [
         {
             title: "Applicant",
@@ -113,7 +113,7 @@ export function buildApprovalColumns(args: IBuildApprovalColumnsArgs): ColumnsTy
                 ),
         },
     ];
-}
+};
 
 interface IBuildFacilityColumnsArgs {
     adminStyles: Record<string, string>;
@@ -123,7 +123,7 @@ interface IBuildFacilityColumnsArgs {
     setFacilityActivation: (id: number, isActive: boolean) => Promise<void>;
 }
 
-export function buildFacilityColumns(args: IBuildFacilityColumnsArgs): ColumnsType<IFacility> {
+export const buildFacilityColumns = (args: IBuildFacilityColumnsArgs): ColumnsType<IFacility> => {
     return [
         {
             title: "Facility",
@@ -180,4 +180,4 @@ export function buildFacilityColumns(args: IBuildFacilityColumnsArgs): ColumnsTy
             ),
         },
     ];
-}
+};

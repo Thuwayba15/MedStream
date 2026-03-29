@@ -7,7 +7,7 @@ interface AdminAuthGuardResult {
     errorResponse: Response | null;
 }
 
-export async function requireAdminAccessToken(): Promise<AdminAuthGuardResult> {
+export const requireAdminAccessToken = async (): Promise<AdminAuthGuardResult> => {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
     if (!accessToken) {
@@ -36,4 +36,4 @@ export async function requireAdminAccessToken(): Promise<AdminAuthGuardResult> {
             errorResponse: Response.json({ message: "Invalid authentication token." }, { status: 401 }),
         };
     }
-}
+};

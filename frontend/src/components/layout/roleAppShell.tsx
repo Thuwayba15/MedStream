@@ -23,7 +23,7 @@ interface IRoleAppShellProps {
     children: React.ReactNode;
 }
 
-function SidebarContent({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps, "roleLabel" | "activeKey" | "items">): React.JSX.Element {
+const SidebarContent = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps, "roleLabel" | "activeKey" | "items">) => {
     const { styles } = useRoleShellStyles();
 
     return (
@@ -56,9 +56,9 @@ function SidebarContent({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps
             </div>
         </div>
     );
-}
+};
 
-export function RoleAppShell({ roleLabel, activeKey, items, children }: IRoleAppShellProps): React.JSX.Element {
+export const RoleAppShell = ({ roleLabel, activeKey, items, children }: IRoleAppShellProps) => {
     const { styles } = useRoleShellStyles();
     const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -73,10 +73,10 @@ export function RoleAppShell({ roleLabel, activeKey, items, children }: IRoleApp
                 placement="left"
                 onClose={() => setDrawerOpen(false)}
                 closeIcon={false}
-                width={286}
+                size="default"
                 rootClassName={styles.mobileDrawer}
                 classNames={{
-                    content: styles.mobileDrawerContent,
+                    section: styles.mobileDrawerContent,
                     body: styles.mobileDrawerBody,
                 }}
             >
@@ -101,4 +101,4 @@ export function RoleAppShell({ roleLabel, activeKey, items, children }: IRoleApp
             </Layout>
         </Layout>
     );
-}
+};
