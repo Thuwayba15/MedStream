@@ -10,7 +10,7 @@ interface IPatientAuthGuardResult {
 /**
  * Resolves and validates a patient-scoped access token for patient-only route handlers.
  */
-export async function requirePatientAccessToken(): Promise<IPatientAuthGuardResult> {
+export const requirePatientAccessToken = async (): Promise<IPatientAuthGuardResult> => {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
     if (!accessToken) {
@@ -39,4 +39,4 @@ export async function requirePatientAccessToken(): Promise<IPatientAuthGuardResu
             errorResponse: Response.json({ message: "Invalid authentication token." }, { status: 401 }),
         };
     }
-}
+};

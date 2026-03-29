@@ -4,7 +4,7 @@ import { decodeJwtPayload, deriveAuthStateFromJwtPayload, getHomePathForAuthStat
 
 const authPages = ["/login", "/registration"];
 
-function isProtectedPath(pathname: string): boolean {
+const isProtectedPath = (pathname: string): boolean => {
     return (
         pathname === "/patient" ||
         pathname.startsWith("/patient/") ||
@@ -15,9 +15,9 @@ function isProtectedPath(pathname: string): boolean {
         pathname === "/awaiting-approval" ||
         pathname.startsWith("/awaiting-approval/")
     );
-}
+};
 
-export function proxy(request: NextRequest): NextResponse {
+export const proxy = (request: NextRequest): NextResponse => {
     const { pathname } = request.nextUrl;
 
     if (pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname === "/favicon.ico") {
@@ -64,16 +64,16 @@ export function proxy(request: NextRequest): NextResponse {
     }
 
     return NextResponse.next();
-}
+};
 
 export const config = {
     matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
 
-function parseAuthStateCookie(value: string | undefined): AuthState | null {
+const parseAuthStateCookie = (value: string | undefined): AuthState | null => {
     if (value === "admin" || value === "clinician_approved" || value === "clinician_pending_approval" || value === "patient") {
         return value;
     }
 
     return null;
-}
+};

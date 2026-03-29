@@ -3,11 +3,11 @@ import { unwrapAbpResponse } from "@/lib/api/abp";
 import { apiClient } from "@/lib/api/client";
 import { IBackendPagedUsers, IBackendUserListItem, IFacilityListItem } from "./types";
 
-function getAuthorizationHeader(accessToken: string): { Authorization: string } {
+const getAuthorizationHeader = (accessToken: string): { Authorization: string } => {
     return { Authorization: `Bearer ${accessToken}` };
-}
+};
 
-async function getUsers(accessToken: string): Promise<IBackendPagedUsers> {
+const getUsers = async (accessToken: string): Promise<IBackendPagedUsers> => {
     const response = await apiClient.get(API.USERS_GET_CLINICIAN_APPLICANTS_ENDPOINT, {
         headers: getAuthorizationHeader(accessToken),
     });
@@ -16,9 +16,9 @@ async function getUsers(accessToken: string): Promise<IBackendPagedUsers> {
     return {
         items: listResult.items ?? [],
     };
-}
+};
 
-async function decideClinician(userId: number, decisionReason: string, isApprove: boolean, accessToken: string): Promise<IBackendUserListItem> {
+const decideClinician = async (userId: number, decisionReason: string, isApprove: boolean, accessToken: string): Promise<IBackendUserListItem> => {
     const endpoint = isApprove ? API.USERS_APPROVE_CLINICIAN_ENDPOINT : API.USERS_DECLINE_CLINICIAN_ENDPOINT;
     const response = await apiClient.post(
         endpoint,
@@ -32,32 +32,32 @@ async function decideClinician(userId: number, decisionReason: string, isApprove
     );
 
     return unwrapAbpResponse<IBackendUserListItem>(response.data);
-}
+};
 
-async function getFacilities(accessToken: string): Promise<IFacilityListItem[]> {
+const getFacilities = async (accessToken: string): Promise<IFacilityListItem[]> => {
     const response = await apiClient.get(API.FACILITIES_GET_ALL_ENDPOINT, {
         params: { skipCount: 0, maxResultCount: 200 },
         headers: getAuthorizationHeader(accessToken),
     });
     const result = unwrapAbpResponse<{ items: IFacilityListItem[] }>(response.data);
     return result.items ?? [];
-}
+};
 
-async function createFacility(facility: Omit<IFacilityListItem, "id">, accessToken: string): Promise<IFacilityListItem> {
+const createFacility = async (facility: Omit<IFacilityListItem, "id">, accessToken: string): Promise<IFacilityListItem> => {
     const response = await apiClient.post(API.FACILITIES_CREATE_ENDPOINT, facility, {
         headers: getAuthorizationHeader(accessToken),
     });
     return unwrapAbpResponse<IFacilityListItem>(response.data);
-}
+};
 
-async function updateFacility(facility: IFacilityListItem, accessToken: string): Promise<IFacilityListItem> {
+const updateFacility = async (facility: IFacilityListItem, accessToken: string): Promise<IFacilityListItem> => {
     const response = await apiClient.put(API.FACILITIES_UPDATE_ENDPOINT, facility, {
         headers: getAuthorizationHeader(accessToken),
     });
     return unwrapAbpResponse<IFacilityListItem>(response.data);
-}
+};
 
-async function setFacilityActivation(id: number, isActive: boolean, accessToken: string): Promise<IFacilityListItem> {
+const setFacilityActivation = async (id: number, isActive: boolean, accessToken: string): Promise<IFacilityListItem> => {
     const response = await apiClient.post(
         API.FACILITIES_SET_ACTIVATION_ENDPOINT,
         {
@@ -69,9 +69,9 @@ async function setFacilityActivation(id: number, isActive: boolean, accessToken:
         }
     );
     return unwrapAbpResponse<IFacilityListItem>(response.data);
-}
+};
 
-async function assignClinicianFacility(clinicianUserId: number, facilityId: number, accessToken: string): Promise<void> {
+const assignClinicianFacility = async (clinicianUserId: number, facilityId: number, accessToken: string): Promise<void> => {
     await apiClient.post(
         API.FACILITIES_ASSIGN_CLINICIAN_ENDPOINT,
         {
@@ -82,13 +82,13 @@ async function assignClinicianFacility(clinicianUserId: number, facilityId: numb
             headers: getAuthorizationHeader(accessToken),
         }
     );
-}
+};
 
-async function getActiveFacilitiesForRegistration(): Promise<IFacilityListItem[]> {
+const getActiveFacilitiesForRegistration = async (): Promise<IFacilityListItem[]> => {
     const response = await apiClient.get(API.ACCOUNT_ACTIVE_FACILITIES_ENDPOINT);
     const result = unwrapAbpResponse<IFacilityListItem[]>(response.data);
     return result ?? [];
-}
+};
 
 export const adminAuthService = {
     getUsers,

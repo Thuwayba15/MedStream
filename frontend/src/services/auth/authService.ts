@@ -3,7 +3,7 @@ import { unwrapAbpResponse } from "@/lib/api/abp";
 import { apiClient } from "@/lib/api/client";
 import { IAuthenticateResponse, ILoginRequest, IRegisterRequest, IRegisterResponse } from "./types";
 
-async function login(request: ILoginRequest): Promise<IAuthenticateResponse> {
+const login = async (request: ILoginRequest): Promise<IAuthenticateResponse> => {
     const response = await apiClient.post(API.TOKEN_AUTH_ENDPOINT, {
         userNameOrEmailAddress: request.userNameOrEmailAddress.trim(),
         password: request.password,
@@ -12,9 +12,9 @@ async function login(request: ILoginRequest): Promise<IAuthenticateResponse> {
     });
 
     return unwrapAbpResponse<IAuthenticateResponse>(response.data);
-}
+};
 
-async function register(request: IRegisterRequest): Promise<IRegisterResponse> {
+const register = async (request: IRegisterRequest): Promise<IRegisterResponse> => {
     const response = await apiClient.post(API.REGISTER_ENDPOINT, {
         firstName: request.firstName.trim(),
         lastName: request.lastName.trim(),
@@ -33,7 +33,7 @@ async function register(request: IRegisterRequest): Promise<IRegisterResponse> {
     });
 
     return unwrapAbpResponse<IRegisterResponse>(response.data);
-}
+};
 
 export const authService = {
     login,
