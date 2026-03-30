@@ -112,7 +112,6 @@ export interface ITriageAssessRequest {
 export interface ITriageResponse {
     triage: {
         urgencyLevel: TUrgencyLevel;
-        priorityScore: number;
         explanation: string;
         redFlags: string[];
     };
