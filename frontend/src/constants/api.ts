@@ -59,6 +59,12 @@ export const API = {
     /** ABP clinician queue dashboard listing endpoint. */
     QUEUE_OPERATIONS_GET_CLINICIAN_QUEUE_ENDPOINT: "/api/services/app/QueueOperations/GetClinicianQueue",
 
+    /** ABP clinician queue review-details endpoint. */
+    QUEUE_OPERATIONS_GET_QUEUE_REVIEW_ENDPOINT: "/api/services/app/QueueOperations/GetQueueTicketForReview",
+
+    /** ABP clinician queue status-update endpoint. */
+    QUEUE_OPERATIONS_UPDATE_QUEUE_STATUS_ENDPOINT: "/api/services/app/QueueOperations/UpdateQueueTicketStatus",
+
     /** Internal Next route for auth login. */
     AUTH_LOGIN_ROUTE: "/api/auth/login",
 
@@ -112,4 +118,7 @@ export const API = {
 
     /** Internal Next route for clinician queue dashboard data. */
     CLINICIAN_QUEUE_ROUTE: "/api/clinician/queue",
+
+    /** Internal Next route prefix for clinician queue ticket details/status. */
+    CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX: "/api/clinician/queue",
 } as const;

@@ -1,7 +1,7 @@
 import { API } from "@/constants/api";
 import { unwrapAbpResponse } from "@/lib/api/abp";
 import { apiClient } from "@/lib/api/client";
-import type { IClinicianQueueResponse, IGetClinicianQueueRequest } from "./types";
+import type { IClinicianQueueResponse, IClinicianQueueReview, IGetClinicianQueueRequest, IUpdateQueueStatusRequest, IUpdateQueueStatusResponse } from "./types";
 
 const getAuthorizationHeader = (accessToken: string): { Authorization: string } => {
     return { Authorization: `Bearer ${accessToken}` };
@@ -25,6 +25,33 @@ const getClinicianQueue = async (payload: IGetClinicianQueueRequest, accessToken
     return unwrapAbpResponse<IClinicianQueueResponse>(response.data);
 };
 
+const getQueueTicketForReview = async (queueTicketId: number, accessToken: string): Promise<IClinicianQueueReview> => {
+    const response = await apiClient.get(API.QUEUE_OPERATIONS_GET_QUEUE_REVIEW_ENDPOINT, {
+        params: { id: queueTicketId },
+        headers: getAuthorizationHeader(accessToken),
+    });
+
+    return unwrapAbpResponse<IClinicianQueueReview>(response.data);
+};
+
+const updateQueueTicketStatus = async (payload: IUpdateQueueStatusRequest, accessToken: string): Promise<IUpdateQueueStatusResponse> => {
+    const response = await apiClient.post(
+        API.QUEUE_OPERATIONS_UPDATE_QUEUE_STATUS_ENDPOINT,
+        {
+            queueTicketId: payload.queueTicketId,
+            newStatus: payload.newStatus,
+            note: payload.note ?? "",
+        },
+        {
+            headers: getAuthorizationHeader(accessToken),
+        }
+    );
+
+    return unwrapAbpResponse<IUpdateQueueStatusResponse>(response.data);
+};
+
 export const queueOperationsService = {
     getClinicianQueue,
+    getQueueTicketForReview,
+    updateQueueTicketStatus,
 };
