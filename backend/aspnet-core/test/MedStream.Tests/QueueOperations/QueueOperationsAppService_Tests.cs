@@ -87,6 +87,31 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
         byQueueNumber.Items.Any(item => item.QueueNumber == urgentResult.Queue.QueueNumber).ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task GetClinicianQueue_Should_Order_By_PriorityScore_Within_Same_Urgency()
+    {
+        var clinicianEmail = await RegisterAndApproveClinicianWithFacilityAsync();
+
+        var lowerPriority = await CreateQueuedVisitForPatientAsync($"queue-priority-low-{Guid.NewGuid():N}@medstream.test", isUrgent: false);
+        var higherPriority = await CreateQueuedVisitForPatientAsync($"queue-priority-high-{Guid.NewGuid():N}@medstream.test", isUrgent: false);
+
+        await UpdatePriorityScoreByQueueTicketIdAsync(lowerPriority.Queue.QueueTicketId, 25m);
+        await UpdatePriorityScoreByQueueTicketIdAsync(higherPriority.Queue.QueueTicketId, 80m);
+
+        LoginAsTenant(AbpTenantBase.DefaultTenantName, clinicianEmail);
+        var result = await _queueOperationsAppService.GetClinicianQueue(new GetClinicianQueueInput
+        {
+            UrgencyLevels = new List<string> { "Routine" },
+            MaxResultCount = 20
+        });
+
+        result.TotalCount.ShouldBe(2);
+        result.Items[0].QueueTicketId.ShouldBe(higherPriority.Queue.QueueTicketId);
+        result.Items[0].PriorityScore.ShouldBe(80m);
+        result.Items[1].QueueTicketId.ShouldBe(lowerPriority.Queue.QueueTicketId);
+        result.Items[1].PriorityScore.ShouldBe(25m);
+    }
+
     private async Task<string> RegisterAndApproveClinicianWithFacilityAsync()
     {
         var clinicianEmail = $"queue-clinician-{Guid.NewGuid():N}@medstream.test";
@@ -174,6 +199,17 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
                 { "urgentSevereChestPain", isUrgent },
                 { "urgentSevereBreathing", isUrgent }
             }
+        });
+    }
+
+    private async Task UpdatePriorityScoreByQueueTicketIdAsync(long queueTicketId, decimal priorityScore)
+    {
+        await UsingDbContextAsync(async context =>
+        {
+            var queueTicket = await context.QueueTickets.SingleAsync(item => item.Id == queueTicketId);
+            var triageAssessment = await context.TriageAssessments.SingleAsync(item => item.Id == queueTicket.TriageAssessmentId);
+            triageAssessment.PriorityScore = priorityScore;
+            await context.SaveChangesAsync();
         });
     }
 }

@@ -35,11 +35,6 @@ public class TriageResultDto
     public string UrgencyLevel { get; set; }
 
     /// <summary>
-    /// Gets or sets priority score.
-    /// </summary>
-    public decimal PriorityScore { get; set; }
-
-    /// <summary>
     /// Gets or sets explanation text.
     /// </summary>
     public string Explanation { get; set; }
