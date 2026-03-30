@@ -308,6 +308,9 @@ Behavioral notes:
 - belongs to Visit
 - is referenced by QueueTicket
 
+**Implementation notes**
+- `PriorityScore` is used for clinician/system queue ordering logic and should not be exposed in patient-facing queue status views.
+
 ---
 
 ## 11. QueueTicket
