@@ -203,6 +203,9 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
             throw new UserFriendlyException("Queue ticket was not found in your facility context.");
         }
 
+        var selectedSymptoms = DeserializeStringList(queueProjection.SelectedSymptoms);
+        var extractedPrimarySymptoms = DeserializeStringList(queueProjection.ExtractedPrimarySymptoms);
+        var chiefComplaint = BuildChiefComplaint(queueProjection.ChiefComplaint, selectedSymptoms, extractedPrimarySymptoms);
         var nowUtc = DateTime.UtcNow;
         return new ClinicianQueueReviewDto
         {
@@ -219,9 +222,9 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
             PriorityScore = queueProjection.PriorityScore,
             TriageExplanation = queueProjection.Explanation,
             RedFlags = DeserializeStringList(queueProjection.RedFlagsDetected),
-            ChiefComplaint = queueProjection.ChiefComplaint ?? string.Empty,
-            SelectedSymptoms = DeserializeStringList(queueProjection.SelectedSymptoms),
-            ExtractedPrimarySymptoms = DeserializeStringList(queueProjection.ExtractedPrimarySymptoms),
+            ChiefComplaint = chiefComplaint,
+            SelectedSymptoms = selectedSymptoms,
+            ExtractedPrimarySymptoms = extractedPrimarySymptoms,
             SubjectiveSummary = queueProjection.SubjectiveSummary ?? string.Empty,
             ConsultationPath = $"/clinician/consultation?visitId={queueProjection.VisitId}&queueTicketId={queueProjection.Id}",
             PatientHistoryPath = $"/clinician/history?patientUserId={queueProjection.PatientUserId}&visitId={queueProjection.VisitId}",
@@ -369,6 +372,28 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .Select(item => item.Trim().ToLowerInvariant())
             .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private static string BuildChiefComplaint(string freeTextComplaint, IReadOnlyList<string> selectedSymptoms, IReadOnlyList<string> extractedPrimarySymptoms)
+    {
+        if (!string.IsNullOrWhiteSpace(freeTextComplaint))
+        {
+            return freeTextComplaint.Trim();
+        }
+
+        var firstSelectedSymptom = selectedSymptoms?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item));
+        if (!string.IsNullOrWhiteSpace(firstSelectedSymptom))
+        {
+            return firstSelectedSymptom.Trim();
+        }
+
+        var firstExtractedSymptom = extractedPrimarySymptoms?.FirstOrDefault(item => !string.IsNullOrWhiteSpace(item));
+        if (!string.IsNullOrWhiteSpace(firstExtractedSymptom))
+        {
+            return firstExtractedSymptom.Trim();
+        }
+
+        return string.Empty;
     }
 
     private static List<string> DeserializeStringList(string serializedList)

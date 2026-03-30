@@ -261,6 +261,7 @@ F6.3 Clinician Queue Visibility
 F6.4 Clinician Triage Review and Handoff
 4.1 Clinician must be able to open a queue ticket and view combined triage + intake context for that visit
  4.2 Review context must include at least queue identity/status, urgency, triage explanation/red flags, and intake symptom summary
+ 4.2.1 If free-text chief complaint is missing, clinician review should derive a fallback chief complaint from captured symptom selections/extractions
  4.3 Clinician must be able to execute queue transitions from review context using the constrained status model in F6.2
  4.4 Review context must provide explicit handoff links into consultation and patient history views for the currently selected visit/patient
 

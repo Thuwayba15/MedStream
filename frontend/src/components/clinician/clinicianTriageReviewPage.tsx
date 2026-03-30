@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, HistoryOutlined, PhoneOutlined, StopOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, HistoryOutlined, PhoneOutlined, StopOutlined, WarningOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Empty, Modal, Skeleton, Space, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,54 @@ const getUrgencyClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string,
     return styles.urgencyRoutine;
 };
 
+const getHumanStatus = (status: TQueueStatus): string => {
+    return status.replace("_", " ");
+};
+
+const normalizeFollowUpValue = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "[]" || trimmed === "{}") {
+        return "Not provided";
+    }
+
+    if (trimmed.toLowerCase() === "true") {
+        return "Yes";
+    }
+
+    if (trimmed.toLowerCase() === "false") {
+        return "No";
+    }
+
+    return trimmed;
+};
+
+const parseFollowUpAnswers = (subjectiveSummary: string): Array<{ label: string; value: string }> => {
+    const marker = "Follow-up answers:";
+    const markerIndex = subjectiveSummary.indexOf(marker);
+    if (markerIndex < 0) {
+        return [];
+    }
+
+    const answerSection = subjectiveSummary.slice(markerIndex + marker.length).trim();
+    if (!answerSection) {
+        return [];
+    }
+
+    return answerSection
+        .split(";")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0 && entry.includes(":"))
+        .map((entry) => {
+            const separatorIndex = entry.indexOf(":");
+            const label = entry.slice(0, separatorIndex).trim();
+            const value = entry.slice(separatorIndex + 1).trim();
+            return {
+                label: label.length > 0 ? label : "Follow-up",
+                value: normalizeFollowUpValue(value),
+            };
+        });
+};
+
 interface IClinicianTriageReviewPageProps {
     queueTicketId: number;
 }
@@ -33,48 +81,63 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     useEffect(() => {
-        void actions.loadReview(queueTicketId);
+        if (queueTicketId > 0) {
+            void actions.loadReview(queueTicketId);
+        }
     }, [actions, queueTicketId]);
 
     const review = state.review;
     const status = review?.queueStatus;
 
-    const statusActions = useMemo((): Array<{ label: string; status: TQueueStatus; icon: React.ReactNode; type: "primary" | "default" }> => {
+    const followUpAnswers = useMemo(() => {
+        return review ? parseFollowUpAnswers(review.subjectiveSummary) : [];
+    }, [review]);
+
+    const actionConfig = useMemo((): { status: TQueueStatus; label: string; icon: React.ReactNode } | null => {
         if (!status) {
-            return [];
+            return null;
         }
 
         if (status === "waiting") {
-            return [{ label: "Call In", status: "called", icon: <PhoneOutlined />, type: "primary" }];
+            return {
+                status: "called",
+                label: "Call In",
+                icon: <PhoneOutlined />,
+            };
         }
 
         if (status === "called") {
-            return [
-                { label: "Back to Waiting", status: "waiting", icon: <ClockCircleOutlined />, type: "default" },
-                { label: "Start Consultation", status: "in_consultation", icon: <FileTextOutlined />, type: "primary" },
-            ];
+            return {
+                status: "in_consultation",
+                label: "Confirm & Start Consultation",
+                icon: <FileTextOutlined />,
+            };
         }
 
         if (status === "in_consultation") {
-            return [{ label: "Mark Completed", status: "completed", icon: <CheckCircleOutlined />, type: "primary" }];
+            return {
+                status: "completed",
+                label: "Mark Consultation Completed",
+                icon: <CheckCircleOutlined />,
+            };
         }
 
-        return [];
+        return null;
     }, [status]);
 
     const canCancel = status === "waiting" || status === "called" || status === "in_consultation";
 
-    const handleStatusUpdate = async (newStatus: TQueueStatus): Promise<void> => {
-        if (!review) {
+    const handlePrimaryAction = async (): Promise<void> => {
+        if (!review || !actionConfig) {
             return;
         }
 
-        const updateResult = await actions.updateQueueStatus(review.queueTicketId, newStatus);
+        const updateResult = await actions.updateQueueStatus(review.queueTicketId, actionConfig.status);
         if (!updateResult) {
             return;
         }
 
-        if (newStatus === "in_consultation") {
+        if (actionConfig.status === "in_consultation") {
             router.push(review.consultationPath);
         }
     };
@@ -87,22 +150,41 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
         const updateResult = await actions.updateQueueStatus(review.queueTicketId, "cancelled", "Queue entry cancelled by clinician during triage review.");
         if (updateResult) {
             setIsCancelModalOpen(false);
+            router.push("/clinician");
         }
     };
 
+    const patientSummary = review
+        ? review.selectedSymptoms.length > 0
+            ? `Reported symptoms: ${review.selectedSymptoms.join(", ")}`
+            : "No additional symptom tags were captured."
+        : "";
+
     return (
         <section className={styles.page}>
-            <div className={styles.topBar}>
+            <header className={styles.topBar}>
                 <div className={styles.topBarLeft}>
                     <Link href="/clinician">
-                        <Button icon={<ArrowLeftOutlined />}>Back to Queue</Button>
+                        <Button icon={<ArrowLeftOutlined />} className={styles.backButton}>
+                            Back
+                        </Button>
                     </Link>
                     <Typography.Title level={2} className={styles.reviewTitle}>
                         Triage Review
                     </Typography.Title>
                     {review ? <Tag className={styles.queueBadge}>#{review.queueNumber}</Tag> : null}
                 </div>
-            </div>
+                <Space size={10} wrap>
+                    <Button className={styles.secondaryAction} disabled>
+                        Override Urgency
+                    </Button>
+                    {actionConfig ? (
+                        <Button type="primary" icon={actionConfig.icon} className={styles.primaryAction} loading={state.isUpdatingStatus} onClick={() => void handlePrimaryAction()}>
+                            {actionConfig.label}
+                        </Button>
+                    ) : null}
+                </Space>
+            </header>
 
             {state.errorMessage ? (
                 <Alert
@@ -132,7 +214,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
 
             {state.isLoadingReview && !review ? (
                 <Card className={styles.sectionCard}>
-                    <Skeleton active paragraph={{ rows: 6 }} />
+                    <Skeleton active paragraph={{ rows: 7 }} />
                 </Card>
             ) : !review ? (
                 <Card className={styles.sectionCard}>
@@ -143,19 +225,23 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                     <Space orientation="vertical" size={14}>
                         <Card className={styles.sectionCard}>
                             <Space orientation="vertical" size={10}>
-                                <Typography.Title level={3} className={styles.patientName}>
-                                    {review.patientName}
-                                </Typography.Title>
-                                <div className={styles.metaRow}>
-                                    <Tag className={getUrgencyClassName(review.urgencyLevel, styles)}>{review.urgencyLevel}</Tag>
-                                    <Tag className={styles.statusTag}>{review.queueStatus.replace("_", " ")}</Tag>
-                                    <span>Waiting {review.waitingMinutes} min</span>
-                                    <span>Stage: {review.currentStage}</span>
+                                <div className={styles.patientHeaderRow}>
+                                    <Typography.Title level={3} className={styles.patientName}>
+                                        {review.patientName}
+                                    </Typography.Title>
                                 </div>
-                                <Typography.Paragraph className={styles.chiefComplaint}>{review.chiefComplaint || "No chief complaint captured."}</Typography.Paragraph>
-                                <Typography.Paragraph className={styles.bodyText}>
-                                    {review.subjectiveSummary || "No subjective summary was captured during intake."}
-                                </Typography.Paragraph>
+                                <div className={styles.metaRow}>
+                                    <Tag className={styles.statusTag}>{getHumanStatus(review.queueStatus)}</Tag>
+                                    <Tag className={getUrgencyClassName(review.urgencyLevel, styles)}>{review.urgencyLevel}</Tag>
+                                    <span>
+                                        <ClockCircleOutlined /> Queue #{review.queueNumber}
+                                    </span>
+                                </div>
+                                <Card className={styles.chiefComplaintCard} variant="borderless">
+                                    <Typography.Text className={styles.fieldLabel}>Chief Complaint</Typography.Text>
+                                    <Typography.Paragraph className={styles.chiefComplaint}>{review.chiefComplaint || "Not captured."}</Typography.Paragraph>
+                                </Card>
+                                <Typography.Paragraph className={styles.bodyText}>{patientSummary}</Typography.Paragraph>
                             </Space>
                         </Card>
 
@@ -173,24 +259,46 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                                         <Tag key={`primary-${item}`}>{item}</Tag>
                                     ))}
                                 </div>
+                                {followUpAnswers.length > 0 ? (
+                                    <>
+                                        <Typography.Text strong>Follow-up Answers</Typography.Text>
+                                        <div className={styles.followUpList}>
+                                            {followUpAnswers.map((answer, index) => (
+                                                <div key={`${answer.label}-${index}`} className={styles.followUpItem}>
+                                                    <Typography.Text className={styles.followUpLabel}>{answer.label}</Typography.Text>
+                                                    <Typography.Text className={styles.followUpValue}>{answer.value}</Typography.Text>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : null}
                             </Space>
                         </Card>
                     </Space>
 
                     <Space orientation="vertical" size={14}>
                         <Card className={styles.sectionCard}>
-                            <Space orientation="vertical" size={10}>
+                            <Space orientation="vertical" size={12}>
+                                <div className={styles.assessmentIconWrap}>
+                                    <WarningOutlined />
+                                </div>
                                 <Typography.Title level={4} className={styles.sideSectionTitle}>
                                     System Assessment
                                 </Typography.Title>
-                                <Tag className={getUrgencyClassName(review.urgencyLevel, styles)}>{review.urgencyLevel}</Tag>
+                                <Typography.Title level={2} className={styles.assessmentUrgency}>
+                                    {review.urgencyLevel.toUpperCase()}
+                                </Typography.Title>
                                 <Typography.Paragraph className={styles.bodyText}>{review.triageExplanation || "No triage explanation is available."}</Typography.Paragraph>
+                                <Typography.Text strong>Rule-Based Logic Applied</Typography.Text>
                                 {review.redFlags.length > 0 ? (
-                                    <ul>
+                                    <div className={styles.redFlagList}>
                                         {review.redFlags.map((flag) => (
-                                            <li key={flag}>{flag}</li>
+                                            <div key={flag} className={styles.redFlagItem}>
+                                                <span className={styles.redDot} />
+                                                <Typography.Text>{flag}</Typography.Text>
+                                            </div>
                                         ))}
-                                    </ul>
+                                    </div>
                                 ) : (
                                     <Typography.Text type="secondary">No explicit red flags captured.</Typography.Text>
                                 )}
@@ -200,31 +308,16 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
 
                         <Card className={styles.sectionCard}>
                             <Space orientation="vertical" size={10} className={styles.actionStack}>
-                                {statusActions.map((actionItem) => (
-                                    <Button
-                                        key={actionItem.status}
-                                        type={actionItem.type}
-                                        icon={actionItem.icon}
-                                        className={actionItem.type === "primary" ? styles.primaryAction : styles.secondaryAction}
-                                        loading={state.isUpdatingStatus}
-                                        onClick={() => void handleStatusUpdate(actionItem.status)}
-                                    >
-                                        {actionItem.label}
-                                    </Button>
-                                ))}
-
                                 <Link href={review.consultationPath}>
                                     <Button icon={<FileTextOutlined />} className={styles.secondaryAction} block>
-                                        Consultation Page
+                                        Consultation
                                     </Button>
                                 </Link>
-
                                 <Link href={review.patientHistoryPath}>
                                     <Button icon={<HistoryOutlined />} className={styles.secondaryAction} block>
-                                        Patient History
+                                        Patient Timeline
                                     </Button>
                                 </Link>
-
                                 {canCancel ? (
                                     <Button icon={<StopOutlined />} className={styles.cancelAction} loading={state.isUpdatingStatus} onClick={() => setIsCancelModalOpen(true)}>
                                         Cancel Queue Entry

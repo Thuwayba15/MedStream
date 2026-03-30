@@ -23,6 +23,10 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         flex-wrap: wrap;
     `,
 
+    backButton: css`
+        border-radius: ${radius.sm}px !important;
+    `,
+
     reviewTitle: css`
         margin: 0 !important;
         color: ${colors.navy} !important;
@@ -40,7 +44,7 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
     contentGrid: css`
         display: grid;
         gap: 14px;
-        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        grid-template-columns: minmax(0, 2fr) minmax(290px, 1fr);
 
         @media (max-width: 960px) {
             grid-template-columns: 1fr;
@@ -52,6 +56,14 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         border: 1px solid rgba(13, 27, 46, 0.1);
         box-shadow: ${shadows.soft};
         background: ${colors.white};
+    `,
+
+    patientHeaderRow: css`
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
     `,
 
     patientName: css`
@@ -69,10 +81,24 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         font-weight: 600;
     `,
 
+    chiefComplaintCard: css`
+        background: #f7f5f2;
+        border-radius: ${radius.sm}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+    `,
+
+    fieldLabel: css`
+        color: #8190a9;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.74rem;
+    `,
+
     chiefComplaint: css`
-        margin: 0 !important;
+        margin: 6px 0 0 !important;
         color: ${colors.navy};
-        font-size: 1.12rem;
+        font-size: 1.15rem;
         font-weight: 700;
     `,
 
@@ -85,6 +111,31 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
+    `,
+
+    followUpList: css`
+        display: grid;
+        gap: 8px;
+    `,
+
+    followUpItem: css`
+        display: grid;
+        gap: 2px;
+        padding: 8px 10px;
+        border-radius: ${radius.sm}px;
+        background: #f8fafc;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+    `,
+
+    followUpLabel: css`
+        color: #73839d;
+        font-size: 0.8rem;
+        font-weight: 700;
+    `,
+
+    followUpValue: css`
+        color: ${colors.navy};
+        font-weight: 600;
     `,
 
     urgencyUrgent: css`
@@ -121,6 +172,7 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
     `,
 
     actionStack: css`
+        width: 100%;
         display: grid;
         gap: 10px;
     `,
@@ -144,8 +196,48 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         font-weight: 700;
     `,
 
+    assessmentIconWrap: css`
+        width: 72px;
+        height: 72px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: ${colors.urgent};
+        background: rgba(201, 64, 64, 0.1);
+        font-size: 1.75rem;
+    `,
+
     sideSectionTitle: css`
         margin: 0 !important;
-        color: ${colors.navy} !important;
+        color: #7486a7 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        font-size: 0.78rem !important;
+    `,
+
+    assessmentUrgency: css`
+        margin: 0 !important;
+        color: ${colors.urgent} !important;
+        font-family: ${typography.fontDisplay};
+    `,
+
+    redFlagList: css`
+        display: grid;
+        gap: 8px;
+    `,
+
+    redFlagItem: css`
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    `,
+
+    redDot: css`
+        width: 7px;
+        height: 7px;
+        margin-top: 8px;
+        border-radius: 999px;
+        background: ${colors.urgent};
+        flex-shrink: 0;
     `,
 }));
