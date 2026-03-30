@@ -54,7 +54,14 @@ export const POST = async (request: Request): Promise<Response> => {
 
     try {
         const result = await patientIntakeService.assessTriage(payload, guardResult.accessToken);
-        return NextResponse.json(result);
+        return NextResponse.json({
+            ...result,
+            triage: {
+                urgencyLevel: result.triage.urgencyLevel,
+                explanation: result.triage.explanation,
+                redFlags: result.triage.redFlags,
+            },
+        });
     } catch {
         return NextResponse.json({ message: "Unable to assess triage." }, { status: 400 });
     }

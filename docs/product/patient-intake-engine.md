@@ -57,7 +57,8 @@ This document defines the current MedStream intake engine behavior:
    - approved JSON questions in `approved_json` mode
    - APC summary-based subjective questions in `apc_fallback` mode
 5. **Status & Queue**
-   - deterministic triage result + queue placeholder output
+   - deterministic triage result + persistent queue ticket creation
+   - patient receives assigned queue number and waiting status metadata
 
 ## APC Fallback Rules
 

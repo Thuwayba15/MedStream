@@ -14,7 +14,7 @@ public class AssessTriageOutput
     public TriageResultDto Triage { get; set; }
 
     /// <summary>
-    /// Gets or sets queue placeholder output.
+    /// Gets or sets queue status output.
     /// </summary>
     public QueueStatusDto Queue { get; set; }
 
@@ -35,11 +35,6 @@ public class TriageResultDto
     public string UrgencyLevel { get; set; }
 
     /// <summary>
-    /// Gets or sets priority score.
-    /// </summary>
-    public decimal PriorityScore { get; set; }
-
-    /// <summary>
     /// Gets or sets explanation text.
     /// </summary>
     public string Explanation { get; set; }
@@ -56,6 +51,26 @@ public class TriageResultDto
 public class QueueStatusDto
 {
     /// <summary>
+    /// Gets or sets queue ticket id.
+    /// </summary>
+    public long QueueTicketId { get; set; }
+
+    /// <summary>
+    /// Gets or sets queue number assigned for facility/date.
+    /// </summary>
+    public int QueueNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets queue status code.
+    /// </summary>
+    public string QueueStatus { get; set; }
+
+    /// <summary>
+    /// Gets or sets stage label.
+    /// </summary>
+    public string CurrentStage { get; set; }
+
+    /// <summary>
     /// Gets or sets whether queue position assignment is pending.
     /// </summary>
     public bool PositionPending { get; set; }
@@ -69,4 +84,9 @@ public class QueueStatusDto
     /// Gets or sets queue status update timestamp.
     /// </summary>
     public DateTime LastUpdatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets when patient entered queue.
+    /// </summary>
+    public DateTime EnteredQueueAt { get; set; }
 }

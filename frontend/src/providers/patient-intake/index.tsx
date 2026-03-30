@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useContext, useMemo, useReducer } from "react";
+import { useCallback, useContext, useEffect, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
+import { subscribeToQueueRealtime } from "@/services/realtime/queueRealtimeClient";
 import {
     actionFailed,
     clearError,
@@ -9,6 +10,7 @@ import {
     initializeStarted,
     initializeSucceeded,
     processingStarted,
+    queuedVisitRestored,
     setAnswer,
     setFreeText,
     setSelectedFacilityId,
@@ -22,6 +24,16 @@ import { INITIAL_STATE, IPatientIntakeActionContext, IPatientIntakeStateContext,
 import { patientIntakeReducer } from "./reducer";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
 import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ISymptomCaptureRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
+
+const PATIENT_QUEUE_STORAGE_KEY = "medstream.patient.queue";
+
+interface IPersistedQueuedVisit {
+    visitId: number;
+    facilityName: string;
+    selectedFacilityId: number | null;
+    startedAt: string | null;
+    pathwayKey: string;
+}
 
 interface IFacility {
     id: number;
@@ -47,6 +59,39 @@ const logIntakeDebug = (message: string, payload?: unknown): void => {
 
 export const PatientIntakeProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(patientIntakeReducer, INITIAL_STATE);
+
+    const readPersistedQueuedVisit = useCallback((): IPersistedQueuedVisit | null => {
+        if (typeof window === "undefined") {
+            return null;
+        }
+
+        try {
+            const rawValue = window.localStorage.getItem(PATIENT_QUEUE_STORAGE_KEY);
+            if (!rawValue) {
+                return null;
+            }
+
+            return JSON.parse(rawValue) as IPersistedQueuedVisit;
+        } catch {
+            return null;
+        }
+    }, []);
+
+    const clearPersistedQueuedVisit = useCallback((): void => {
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        window.localStorage.removeItem(PATIENT_QUEUE_STORAGE_KEY);
+    }, []);
+
+    const persistQueuedVisit = useCallback((queuedVisit: IPersistedQueuedVisit): void => {
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        window.localStorage.setItem(PATIENT_QUEUE_STORAGE_KEY, JSON.stringify(queuedVisit));
+    }, []);
 
     const parseResponse = async <T,>(response: Response, fallbackMessage: string): Promise<T> => {
         const body = (await response.json()) as T & { message?: string };
@@ -152,16 +197,49 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
         []
     );
 
+    const getCurrentQueueStatus = useCallback(async (visitId: number): Promise<ITriageResponse> => {
+        const response = await fetch(`${API.PATIENT_INTAKE_QUEUE_STATUS_ROUTE}?visitId=${visitId}`);
+        return parseResponse<ITriageResponse>(response, "Unable to load current queue status.");
+    }, []);
+
     const initializeFlow = useCallback(async (): Promise<void> => {
         dispatch(initializeStarted());
         try {
-            const [payload, facilities] = await Promise.all([checkIn(), getActiveFacilities()]);
+            const facilities = await getActiveFacilities();
+            const persistedQueuedVisit = readPersistedQueuedVisit();
+
+            if (persistedQueuedVisit?.visitId) {
+                try {
+                    const currentQueueStatus = await getCurrentQueueStatus(persistedQueuedVisit.visitId);
+                    if (currentQueueStatus.queue) {
+                        dispatch(
+                            queuedVisitRestored(
+                                {
+                                    visitId: persistedQueuedVisit.visitId,
+                                    facilityName: persistedQueuedVisit.facilityName,
+                                    selectedFacilityId: persistedQueuedVisit.selectedFacilityId,
+                                    startedAt: persistedQueuedVisit.startedAt,
+                                    pathwayKey: persistedQueuedVisit.pathwayKey,
+                                    triage: currentQueueStatus.triage,
+                                    queue: currentQueueStatus.queue,
+                                },
+                                facilities
+                            )
+                        );
+                        return;
+                    }
+                } catch {
+                    clearPersistedQueuedVisit();
+                }
+            }
+
+            const payload = await checkIn();
             dispatch(initializeSucceeded(payload, facilities));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unable to initialize patient intake.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn, getActiveFacilities]);
+    }, [checkIn, clearPersistedQueuedVisit, getActiveFacilities, getCurrentQueueStatus, readPersistedQueuedVisit]);
 
     const continueFromSymptoms = useCallback(async (): Promise<void> => {
         if (!state.freeText.trim() && state.selectedSymptoms.length === 0) {
@@ -419,13 +497,63 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                 dispatch(setStep(state.currentStep - 1));
             },
             clearError: () => dispatch(clearError()),
+            goToStep: (step: number) => dispatch(setStep(step)),
             resetFlow: async () => {
+                clearPersistedQueuedVisit();
                 dispatch(setStep(0));
                 await initializeFlow();
             },
         }),
-        [continueFromCheckIn, continueFromFollowUp, continueFromSymptoms, continueFromUrgentCheck, initializeFlow, state.answers, state.availableFacilities, state.currentStep, state.selectedSymptoms]
+        [
+            clearPersistedQueuedVisit,
+            continueFromCheckIn,
+            continueFromFollowUp,
+            continueFromSymptoms,
+            continueFromUrgentCheck,
+            initializeFlow,
+            state.answers,
+            state.availableFacilities,
+            state.currentStep,
+            state.selectedSymptoms,
+        ]
     );
+
+    useEffect(() => {
+        if (state.currentStep !== 4 || !state.visitId) {
+            return;
+        }
+
+        const unsubscribe = subscribeToQueueRealtime((event) => {
+            if (event.scope !== "patient" || event.visitId !== state.visitId) {
+                return;
+            }
+
+            void getCurrentQueueStatus(state.visitId)
+                .then((result) => dispatch(triageSucceeded(result)))
+                .catch(() => undefined);
+        });
+
+        return unsubscribe;
+    }, [getCurrentQueueStatus, state.currentStep, state.visitId]);
+
+    useEffect(() => {
+        if (state.currentStep !== 4 || !state.visitId || !state.queue) {
+            return;
+        }
+
+        if (state.queue.queueStatus === "completed" || state.queue.queueStatus === "cancelled") {
+            clearPersistedQueuedVisit();
+            return;
+        }
+
+        persistQueuedVisit({
+            visitId: state.visitId,
+            facilityName: state.facilityName,
+            selectedFacilityId: state.selectedFacilityId,
+            startedAt: state.startedAt,
+            pathwayKey: state.pathwayKey,
+        });
+    }, [clearPersistedQueuedVisit, persistQueuedVisit, state.currentStep, state.facilityName, state.pathwayKey, state.queue, state.selectedFacilityId, state.startedAt, state.visitId]);
 
     return (
         <PatientIntakeStateContext.Provider value={state}>

@@ -6,6 +6,8 @@ using MedStream.Authorization.Users;
 using MedStream.Facilities;
 using MedStream.PatientIntake.Dto;
 using MedStream.PatientIntake.Pathways;
+using MedStream.QueueOperations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
@@ -24,6 +26,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
     private readonly IRepository<Visit, long> _visitRepository;
     private readonly IRepository<SymptomIntake, long> _symptomIntakeRepository;
     private readonly IRepository<TriageAssessment, long> _triageAssessmentRepository;
+    private readonly IRepository<QueueTicket, long> _queueTicketRepository;
+    private readonly IRepository<QueueEvent, long> _queueEventRepository;
     private readonly IRepository<Facility, int> _facilityRepository;
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
@@ -31,22 +35,28 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
     private readonly IPathwayExecutionEngine _pathwayExecutionEngine;
     private readonly IPathwayExtractionService _pathwayExtractionService;
     private readonly IApcFallbackQuestionService _apcFallbackQuestionService;
+    private readonly IQueueRealtimeNotifier _queueRealtimeNotifier;
 
     public PatientIntakeAppService(
         IRepository<Visit, long> visitRepository,
         IRepository<SymptomIntake, long> symptomIntakeRepository,
         IRepository<TriageAssessment, long> triageAssessmentRepository,
+        IRepository<QueueTicket, long> queueTicketRepository,
+        IRepository<QueueEvent, long> queueEventRepository,
         IRepository<Facility, int> facilityRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
         IPathwayDefinitionProvider pathwayDefinitionProvider,
         IPathwayExecutionEngine pathwayExecutionEngine,
         IPathwayExtractionService pathwayExtractionService,
-        IApcFallbackQuestionService apcFallbackQuestionService)
+        IApcFallbackQuestionService apcFallbackQuestionService,
+        IQueueRealtimeNotifier queueRealtimeNotifier)
     {
         _visitRepository = visitRepository;
         _symptomIntakeRepository = symptomIntakeRepository;
         _triageAssessmentRepository = triageAssessmentRepository;
+        _queueTicketRepository = queueTicketRepository;
+        _queueEventRepository = queueEventRepository;
         _facilityRepository = facilityRepository;
         _userRepository = userRepository;
         _userManager = userManager;
@@ -54,6 +64,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         _pathwayExecutionEngine = pathwayExecutionEngine;
         _pathwayExtractionService = pathwayExtractionService;
         _apcFallbackQuestionService = apcFallbackQuestionService;
+        _queueRealtimeNotifier = queueRealtimeNotifier;
     }
 
     /// <inheritdoc />
@@ -310,12 +321,10 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         var triage = new TriageResultDto
         {
             UrgencyLevel = resolvedUrgency,
-            PriorityScore = resolvedPriorityScore,
             Explanation = resolvedExplanation,
             RedFlags = resolvedRedFlags
         };
 
-        var queueMessage = BuildQueueStatus(triage.UrgencyLevel);
         var assessedAt = DateTime.UtcNow;
         intake.FollowUpAnswersJson = JsonConvert.SerializeObject(input.Answers ?? new Dictionary<string, object>());
         intake.SubjectiveSummary = BuildSubjectiveSummary(visit.PathwayKey, intake, input.Answers ?? new Dictionary<string, object>());
@@ -326,41 +335,62 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             TenantId = visit.TenantId,
             VisitId = visit.Id,
             UrgencyLevel = triage.UrgencyLevel,
-            PriorityScore = triage.PriorityScore,
+            PriorityScore = resolvedPriorityScore,
             Explanation = triage.Explanation,
             RedFlagsDetected = SerializeStringList(triage.RedFlags),
-            PositionPending = true,
-            QueueMessage = queueMessage,
+            PositionPending = false,
+            QueueMessage = string.Empty,
             LastQueueUpdatedAt = assessedAt,
             AssessedAt = assessedAt
         };
 
-        visit.Status = PatientIntakeConstants.VisitStatusTriageCompleted;
-
         await _symptomIntakeRepository.UpdateAsync(intake);
-        await _triageAssessmentRepository.InsertAsync(triageEntity);
-        await _visitRepository.UpdateAsync(visit);
+        triageEntity = await _triageAssessmentRepository.InsertAsync(triageEntity);
         await CurrentUnitOfWork.SaveChangesAsync();
 
-        return new AssessTriageOutput
+        var queueTicket = await GetOrCreateActiveQueueTicketAsync(visit, triageEntity, assessedAt);
+        var queueMessage = BuildQueueStatus(queueTicket, triage.UrgencyLevel);
+        triageEntity.QueueMessage = queueMessage;
+        triageEntity.LastQueueUpdatedAt = queueTicket.LastStatusChangedAt;
+        triageEntity.PositionPending = false;
+
+        visit.Status = PatientIntakeConstants.VisitStatusQueued;
+        await _visitRepository.UpdateAsync(visit);
+        await _triageAssessmentRepository.UpdateAsync(triageEntity);
+        await CurrentUnitOfWork.SaveChangesAsync();
+        return BuildPatientQueueStatusOutput(triageEntity, queueTicket, pathwayExecution);
+    }
+
+    /// <inheritdoc />
+    public async Task<AssessTriageOutput> GetCurrentQueueStatus(GetCurrentQueueStatusInput input)
+    {
+        if (input.VisitId <= 0)
         {
-            Triage = triage,
-            Queue = new QueueStatusDto
-            {
-                PositionPending = true,
-                Message = queueMessage,
-                LastUpdatedAt = assessedAt
-            },
-            Execution = new PathwayExecutionSummaryDto
-            {
-                TriggeredRedFlags = pathwayExecution.TriggeredRedFlags,
-                TriageIndicators = pathwayExecution.TriageIndicators,
-                TriggeredOutcomeIds = new List<string>(),
-                TriggeredRecommendationIds = new List<string>(),
-                TriggeredLinks = new List<PathwayTriggeredLinkDto>(),
-                RuleTrace = new List<PathwayRuleTraceDto>()
-            }
-        };
+            throw new UserFriendlyException("Visit id is required.");
+        }
+
+        var visit = await GetVisitForCurrentPatientAsync(input.VisitId);
+        var triageAssessment = await _triageAssessmentRepository.FirstOrDefaultAsync(item =>
+            item.TenantId == visit.TenantId &&
+            item.VisitId == visit.Id &&
+            !item.IsDeleted);
+        if (triageAssessment == null)
+        {
+            throw new UserFriendlyException("Triage assessment was not found for this visit.");
+        }
+
+        var queueTicket = await _queueTicketRepository.GetAll()
+            .Where(item => item.TenantId == visit.TenantId &&
+                           item.VisitId == visit.Id &&
+                           !item.IsDeleted)
+            .OrderByDescending(item => item.LastStatusChangedAt)
+            .FirstOrDefaultAsync();
+        if (queueTicket == null)
+        {
+            throw new UserFriendlyException("Queue ticket was not found for this visit.");
+        }
+
+        return BuildPatientQueueStatusOutput(triageAssessment, queueTicket);
     }
 
     private async Task<User> EnsureCurrentPatientUserAsync()
@@ -420,6 +450,187 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         await _symptomIntakeRepository.InsertAsync(intake);
         await CurrentUnitOfWork.SaveChangesAsync();
         return intake;
+    }
+
+    private async Task<QueueTicket> GetOrCreateActiveQueueTicketAsync(Visit visit, TriageAssessment triageAssessment, DateTime assessedAt)
+    {
+        var activeTicket = await _queueTicketRepository.FirstOrDefaultAsync(item =>
+            item.TenantId == visit.TenantId &&
+            item.VisitId == visit.Id &&
+            item.IsActive &&
+            !item.IsDeleted);
+        if (activeTicket != null)
+        {
+            return activeTicket;
+        }
+
+        var facilityId = await ResolveFacilityIdAsync(visit);
+        await SupersedePreviousActiveQueueTicketsAsync(visit, facilityId, assessedAt);
+        var queueDate = assessedAt.Date;
+        var nextQueueNumber = await GetNextQueueNumberAsync(visit.TenantId, facilityId, queueDate);
+        var queueTicket = new QueueTicket
+        {
+            TenantId = visit.TenantId,
+            FacilityId = facilityId,
+            VisitId = visit.Id,
+            TriageAssessmentId = triageAssessment.Id,
+            QueueDate = queueDate,
+            QueueNumber = nextQueueNumber,
+            QueueStatus = PatientIntakeConstants.QueueStatusWaiting,
+            CurrentStage = "Waiting",
+            IsActive = true,
+            EnteredQueueAt = assessedAt,
+            LastStatusChangedAt = assessedAt
+        };
+
+        queueTicket = await _queueTicketRepository.InsertAsync(queueTicket);
+        await CurrentUnitOfWork.SaveChangesAsync();
+
+        await _queueEventRepository.InsertAsync(new QueueEvent
+        {
+            TenantId = visit.TenantId,
+            QueueTicketId = queueTicket.Id,
+            EventType = PatientIntakeConstants.QueueEventEntered,
+            OldStatus = null,
+            NewStatus = queueTicket.QueueStatus,
+            Notes = "Queue ticket created after triage completion.",
+            EventAt = assessedAt
+        });
+
+        await CurrentUnitOfWork.SaveChangesAsync();
+        if (_queueRealtimeNotifier != null)
+        {
+            await _queueRealtimeNotifier.NotifyFacilityQueueChangedAsync(queueTicket.FacilityId);
+            await _queueRealtimeNotifier.NotifyPatientQueueChangedAsync(visit.PatientUserId, visit.Id, queueTicket.Id);
+        }
+        return queueTicket;
+    }
+
+    private async Task SupersedePreviousActiveQueueTicketsAsync(Visit visit, int facilityId, DateTime supersededAt)
+    {
+        var previousActiveTickets = await (
+            from queueTicket in _queueTicketRepository.GetAll()
+            join existingVisit in _visitRepository.GetAll() on queueTicket.VisitId equals existingVisit.Id
+            where queueTicket.TenantId == visit.TenantId &&
+                  queueTicket.FacilityId == facilityId &&
+                  existingVisit.PatientUserId == visit.PatientUserId &&
+                  queueTicket.VisitId != visit.Id &&
+                  queueTicket.IsActive &&
+                  !queueTicket.IsDeleted
+            select new
+            {
+                QueueTicket = queueTicket,
+                Visit = existingVisit
+            }).ToListAsync();
+
+        foreach (var previousTicketEntry in previousActiveTickets)
+        {
+            var previousStatus = previousTicketEntry.QueueTicket.QueueStatus;
+            previousTicketEntry.QueueTicket.QueueStatus = PatientIntakeConstants.QueueStatusCancelled;
+            previousTicketEntry.QueueTicket.CurrentStage = "Cancelled";
+            previousTicketEntry.QueueTicket.IsActive = false;
+            previousTicketEntry.QueueTicket.CancelledAt = supersededAt;
+            previousTicketEntry.QueueTicket.LastStatusChangedAt = supersededAt;
+
+            previousTicketEntry.Visit.Status = "Cancelled";
+
+            await _queueTicketRepository.UpdateAsync(previousTicketEntry.QueueTicket);
+            await _visitRepository.UpdateAsync(previousTicketEntry.Visit);
+
+            await _queueEventRepository.InsertAsync(new QueueEvent
+            {
+                TenantId = visit.TenantId,
+                QueueTicketId = previousTicketEntry.QueueTicket.Id,
+                EventType = PatientIntakeConstants.QueueEventStatusChanged,
+                OldStatus = previousStatus,
+                NewStatus = PatientIntakeConstants.QueueStatusCancelled,
+                Notes = $"Queue ticket superseded by new visit {visit.Id}.",
+                EventAt = supersededAt
+            });
+
+            if (_queueRealtimeNotifier != null)
+            {
+                await _queueRealtimeNotifier.NotifyFacilityQueueChangedAsync(previousTicketEntry.QueueTicket.FacilityId);
+                await _queueRealtimeNotifier.NotifyPatientQueueChangedAsync(previousTicketEntry.Visit.PatientUserId, previousTicketEntry.Visit.Id, previousTicketEntry.QueueTicket.Id);
+            }
+        }
+    }
+
+    private async Task<int> ResolveFacilityIdAsync(Visit visit)
+    {
+        if (visit.FacilityId.HasValue)
+        {
+            return visit.FacilityId.Value;
+        }
+
+        var fallbackFacility = await _facilityRepository.FirstOrDefaultAsync(item => item.TenantId == visit.TenantId && item.IsActive);
+        if (fallbackFacility == null)
+        {
+            throw new UserFriendlyException("No active facility is available for queue assignment.");
+        }
+
+        visit.FacilityId = fallbackFacility.Id;
+        await _visitRepository.UpdateAsync(visit);
+        await CurrentUnitOfWork.SaveChangesAsync();
+        return fallbackFacility.Id;
+    }
+
+    private async Task<int> GetNextQueueNumberAsync(int tenantId, int facilityId, DateTime queueDate)
+    {
+        var queueDateStart = queueDate.Date;
+        var queueDateEndExclusive = queueDateStart.AddDays(1);
+
+        var currentMax = await _queueTicketRepository.GetAll()
+            .Where(item => item.TenantId == tenantId &&
+                           item.FacilityId == facilityId &&
+                           item.QueueDate >= queueDateStart &&
+                           item.QueueDate < queueDateEndExclusive &&
+                           !item.IsDeleted)
+            .OrderByDescending(item => item.QueueNumber)
+            .Select(item => item.QueueNumber)
+            .FirstOrDefaultAsync();
+
+        return currentMax + 1;
+    }
+
+    private AssessTriageOutput BuildPatientQueueStatusOutput(
+        TriageAssessment triageAssessment,
+        QueueTicket queueTicket,
+        PathwayExecutionResult pathwayExecution = null)
+    {
+        return new AssessTriageOutput
+        {
+            Triage = new TriageResultDto
+            {
+                UrgencyLevel = triageAssessment.UrgencyLevel,
+                Explanation = triageAssessment.Explanation,
+                RedFlags = DeserializeList(triageAssessment.RedFlagsDetected)
+            },
+            Queue = new QueueStatusDto
+            {
+                QueueTicketId = queueTicket.Id,
+                QueueNumber = queueTicket.QueueNumber,
+                QueueStatus = queueTicket.QueueStatus,
+                CurrentStage = queueTicket.CurrentStage,
+                PositionPending = triageAssessment.PositionPending,
+                Message = BuildQueueStatus(queueTicket, triageAssessment.UrgencyLevel),
+                LastUpdatedAt = queueTicket.LastStatusChangedAt,
+                EnteredQueueAt = queueTicket.EnteredQueueAt
+            },
+            Execution = new PathwayExecutionSummaryDto
+            {
+                TriggeredRedFlags = pathwayExecution?.TriggeredRedFlags ?? DeserializeList(triageAssessment.RedFlagsDetected),
+                TriageIndicators = pathwayExecution?.TriageIndicators ?? new Dictionary<string, string>
+                {
+                    ["urgencyLevel"] = triageAssessment.UrgencyLevel,
+                    ["explanation"] = triageAssessment.Explanation
+                },
+                TriggeredOutcomeIds = new List<string>(),
+                TriggeredRecommendationIds = new List<string>(),
+                TriggeredLinks = new List<PathwayTriggeredLinkDto>(),
+                RuleTrace = new List<PathwayRuleTraceDto>()
+            }
+        };
     }
 
     private static string SerializeStringList(IEnumerable<string> values)
@@ -695,18 +906,38 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         return false;
     }
 
-    private static string BuildQueueStatus(string urgencyLevel)
+    private static string BuildQueueStatus(QueueTicket queueTicket, string urgencyLevel)
     {
+        if (string.Equals(queueTicket.QueueStatus, PatientIntakeConstants.QueueStatusCalled, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Queue #{queueTicket.QueueNumber}: clinician is ready to see you.";
+        }
+
+        if (string.Equals(queueTicket.QueueStatus, PatientIntakeConstants.QueueStatusInConsultation, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Queue #{queueTicket.QueueNumber}: consultation is in progress.";
+        }
+
+        if (string.Equals(queueTicket.QueueStatus, PatientIntakeConstants.QueueStatusCompleted, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Queue #{queueTicket.QueueNumber}: consultation completed.";
+        }
+
+        if (string.Equals(queueTicket.QueueStatus, PatientIntakeConstants.QueueStatusCancelled, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Queue #{queueTicket.QueueNumber}: queue entry cancelled.";
+        }
+
         if (string.Equals(urgencyLevel, "Urgent", StringComparison.Ordinal))
         {
-            return "You have been flagged for immediate clinical attention. Queue position will be assigned shortly.";
+            return $"Queue #{queueTicket.QueueNumber}: urgent case flagged for immediate clinical attention.";
         }
 
         if (string.Equals(urgencyLevel, "Priority", StringComparison.Ordinal))
         {
-            return "You have been marked as priority. Queue position is being prepared.";
+            return $"Queue #{queueTicket.QueueNumber}: marked as priority and currently waiting.";
         }
 
-        return "You have been checked in. Queue position will appear once assignment is completed.";
+        return $"Queue #{queueTicket.QueueNumber}: checked in and waiting for clinician call.";
     }
 }

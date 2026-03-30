@@ -112,7 +112,6 @@ export interface ITriageAssessRequest {
 export interface ITriageResponse {
     triage: {
         urgencyLevel: TUrgencyLevel;
-        priorityScore: number;
         explanation: string;
         redFlags: string[];
     };
@@ -120,5 +119,11 @@ export interface ITriageResponse {
         positionPending: boolean;
         message: string;
         lastUpdatedAt: string;
+        queueNumber?: number;
+        queueStatus?: "waiting" | "called" | "in_consultation" | "completed" | "cancelled";
     };
+}
+
+export interface ICurrentQueueStatusRequest {
+    visitId: number;
 }

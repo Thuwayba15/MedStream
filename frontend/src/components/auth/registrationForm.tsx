@@ -241,62 +241,58 @@ export const RegistrationForm = () => {
                                 <Input type="date" />
                             </Form.Item>
 
-                            <Form.Item noStyle shouldUpdate={(previous, current) => previous.accountType !== current.accountType}>
-                                {({ getFieldValue }) =>
-                                    getFieldValue("accountType") === "Clinician" ? (
-                                        <>
-                                            <Form.Item label="Profession type" name="professionType" rules={[{ required: true, message: "Select profession type." }]}>
-                                                <Radio.Group>
-                                                    <Radio value="Doctor">Doctor</Radio>
-                                                    <Radio value="Nurse">Nurse</Radio>
-                                                    <Radio value="AlliedHealth">Allied health</Radio>
-                                                    <Radio value="Other">Other</Radio>
-                                                </Radio.Group>
-                                            </Form.Item>
+                            {accountType === "Clinician" ? (
+                                <>
+                                    <Form.Item label="Profession type" name="professionType" rules={[{ required: true, message: "Select profession type." }]}>
+                                        <Radio.Group>
+                                            <Radio value="Doctor">Doctor</Radio>
+                                            <Radio value="Nurse">Nurse</Radio>
+                                            <Radio value="AlliedHealth">Allied health</Radio>
+                                            <Radio value="Other">Other</Radio>
+                                        </Radio.Group>
+                                    </Form.Item>
 
-                                            <Form.Item label="Regulatory body" name="regulatoryBody" rules={[{ required: true, message: "Select regulatory body." }]}>
-                                                <Radio.Group>
-                                                    <Radio value="HPCSA">HPCSA</Radio>
-                                                    <Radio value="SANC">SANC</Radio>
-                                                    <Radio value="Other">Other</Radio>
-                                                </Radio.Group>
-                                            </Form.Item>
+                                    <Form.Item label="Regulatory body" name="regulatoryBody" rules={[{ required: true, message: "Select regulatory body." }]}>
+                                        <Radio.Group>
+                                            <Radio value="HPCSA">HPCSA</Radio>
+                                            <Radio value="SANC">SANC</Radio>
+                                            <Radio value="Other">Other</Radio>
+                                        </Radio.Group>
+                                    </Form.Item>
 
-                                            <Form.Item
-                                                label="Registration number"
-                                                name="registrationNumber"
-                                                rules={[
-                                                    { required: true, message: "Enter registration number." },
-                                                    {
-                                                        validator(_, value: string) {
-                                                            if (!value || SOUTH_AFRICAN_REGISTRATION_PATTERN.test(value)) {
-                                                                return Promise.resolve();
-                                                            }
+                                    <Form.Item
+                                        label="Registration number"
+                                        name="registrationNumber"
+                                        rules={[
+                                            { required: true, message: "Enter registration number." },
+                                            {
+                                                validator(_, value: string) {
+                                                    if (!value || SOUTH_AFRICAN_REGISTRATION_PATTERN.test(value)) {
+                                                        return Promise.resolve();
+                                                    }
 
-                                                            return Promise.reject(new Error("Use a valid SA registration number format."));
-                                                        },
-                                                    },
-                                                ]}
-                                            >
-                                                <Input placeholder="Registration number" />
-                                            </Form.Item>
+                                                    return Promise.reject(new Error("Use a valid SA registration number format."));
+                                                },
+                                            },
+                                        ]}
+                                    >
+                                        <Input placeholder="Registration number" />
+                                    </Form.Item>
 
-                                            <Form.Item label="Requested facility" name="requestedFacilityId" rules={[{ required: true, message: "Select requested facility." }]}>
-                                                <Select
-                                                    placeholder="Select requested facility"
-                                                    loading={isLoadingFacilities}
-                                                    options={activeFacilities.map((facility) => ({
-                                                        label: facility.name,
-                                                        value: facility.id,
-                                                    }))}
-                                                />
-                                            </Form.Item>
+                                    <Form.Item label="Requested facility" name="requestedFacilityId" rules={[{ required: true, message: "Select requested facility." }]}>
+                                        <Select
+                                            placeholder="Select requested facility"
+                                            loading={isLoadingFacilities}
+                                            options={activeFacilities.map((facility) => ({
+                                                label: facility.name,
+                                                value: facility.id,
+                                            }))}
+                                        />
+                                    </Form.Item>
 
-                                            {facilityLoadError ? <Alert type="warning" title={facilityLoadError} showIcon className={styles.alertBlock} /> : null}
-                                        </>
-                                    ) : null
-                                }
-                            </Form.Item>
+                                    {facilityLoadError ? <Alert type="warning" title={facilityLoadError} showIcon className={styles.alertBlock} /> : null}
+                                </>
+                            ) : null}
 
                             <Button type="primary" htmlType="submit" loading={isPending} block className={styles.submitButton}>
                                 Create Account

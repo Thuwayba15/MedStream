@@ -15,6 +15,8 @@ public class MedStreamDbContext : AbpZeroDbContext<Tenant, Role, User, MedStream
     public DbSet<Visit> Visits { get; set; }
     public DbSet<SymptomIntake> SymptomIntakes { get; set; }
     public DbSet<TriageAssessment> TriageAssessments { get; set; }
+    public DbSet<QueueTicket> QueueTickets { get; set; }
+    public DbSet<QueueEvent> QueueEvents { get; set; }
 
     public MedStreamDbContext(DbContextOptions<MedStreamDbContext> options)
         : base(options)
@@ -57,6 +59,35 @@ public class MedStreamDbContext : AbpZeroDbContext<Tenant, Role, User, MedStream
             entity.HasOne<Visit>()
                 .WithMany()
                 .HasForeignKey(item => item.VisitId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QueueTicket>(entity =>
+        {
+            entity.ToTable("QueueTickets");
+            entity.HasIndex(item => new { item.TenantId, item.FacilityId, item.QueueDate, item.QueueNumber })
+                .IsUnique();
+            entity.HasIndex(item => new { item.TenantId, item.VisitId, item.IsActive })
+                .HasFilter("\"IsDeleted\" = false AND \"IsActive\" = true")
+                .IsUnique();
+            entity.HasIndex(item => new { item.TenantId, item.FacilityId, item.QueueStatus, item.EnteredQueueAt });
+            entity.HasOne<Visit>()
+                .WithMany()
+                .HasForeignKey(item => item.VisitId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<TriageAssessment>()
+                .WithMany()
+                .HasForeignKey(item => item.TriageAssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QueueEvent>(entity =>
+        {
+            entity.ToTable("QueueEvents");
+            entity.HasIndex(item => new { item.TenantId, item.QueueTicketId, item.EventAt });
+            entity.HasOne<QueueTicket>()
+                .WithMany()
+                .HasForeignKey(item => item.QueueTicketId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

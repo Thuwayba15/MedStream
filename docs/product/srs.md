@@ -233,14 +233,48 @@ F5.1 Generate Triage
  1.2 Must include:
 Urgency level
 Priority score
+ 1.3 Patient-facing status views must not expose raw `priorityScore`; this value is clinician/system-facing only
 
 F6. Queue Management
 F6.1 Create Queue Ticket
 1.1 System must generate a queue ticket per Visit
+ 1.2 Queue ticket creation must happen automatically after triage completion
+ 1.3 Queue ticket must include facility-scoped daily queue numbering
 
 F6.2 Track Queue State
 2.1 System must log all queue changes via QueueEvent
- 2.2 In intake UX v1, queue display may show "position pending" placeholder status until full queue ticket orchestration is enabled
+ 2.2 Queue state must be persisted with `waiting`, `called`, `in_consultation`, `completed`, and `cancelled`
+ 2.3 System must prevent duplicate active queue tickets for the same Visit
+ 2.3.1 When a patient completes intake for a newer Visit while an older queue ticket is still active, the older active queue ticket must be superseded and cancelled so the patient remains in the live queue only once
+ 2.4 Queue status transitions must be constrained to:
+`waiting -> called|in_consultation|cancelled`
+`called -> waiting|in_consultation|cancelled`
+`in_consultation -> completed|cancelled`
+`completed` and `cancelled` are terminal states
+ 2.5 Queue state transitions must persist workflow timestamps and clinician linkage where relevant (for example `CalledAt`, `ConsultationStartedAt`, `ConsultationStartedByClinicianUserId`, `CompletedAt`, `CancelledAt`, `LastStatusChangedAt`)
+
+F6.3 Clinician Queue Visibility
+3.1 Clinician queue view must return facility-scoped queue rows for the signed-in clinician
+3.2 Queue ordering must prioritize urgency first, then higher priority score, then oldest waiting time
+3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
+3.4 Live queue dashboard must show active queue tickets only; completed and cancelled tickets must leave active queue view
+ 3.4.1 Queue dashboard updates must be pushed via websocket/SignalR events rather than interval polling
+ 3.5 Clinician triage review must show clinician-friendly reasoning and a readable intake summary; internal rule ids or raw intake payload keys must not be shown directly in the UI
+ 3.6 If AI summarization is available, clinician review may use it to generate a concise intake handoff summary, with deterministic fallback when AI is unavailable
+
+F6.4 Clinician Triage Review and Handoff
+4.1 Clinician must be able to open a queue ticket and view combined triage + intake context for that visit
+ 4.2 Review context must include at least queue identity/status, urgency, triage explanation/red flags, and intake symptom summary
+ 4.2.1 If free-text chief complaint is missing, clinician review should derive a fallback chief complaint from captured symptom selections/extractions
+ 4.3 Clinician must be able to execute queue transitions from review context using the constrained status model in F6.2
+ 4.4 Review context must provide explicit handoff links into consultation and patient history views for the currently selected visit/patient
+ 4.5 Clinician must be able to override urgency during review, and the override must persist back to `TriageAssessment` so queue ranking updates accordingly
+
+F6.5 Patient Queue Status Visibility
+5.1 After intake and triage, the patient must be able to view their current queue number and workflow status for the active visit
+ 5.2 Patient queue status updates must be pushed via websocket/SignalR events rather than interval polling
+ 5.3 Patient-facing queue state must remain friendly and operational, and must not expose clinician-only ranking fields such as `priorityScore`
+ 5.4 If the patient refreshes the page while an active queue entry still exists for the current visit, the patient workspace should restore the queue status view instead of starting a fresh intake flow
 
 F7. Vital Signs
 F7.1 Record Vitals

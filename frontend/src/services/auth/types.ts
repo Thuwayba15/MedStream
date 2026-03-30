@@ -22,6 +22,7 @@ export interface IRegisterRequest {
 
 export interface IAuthenticateResponse {
     accessToken: string;
+    encryptedAccessToken: string;
     expireInSeconds: number;
 }
 
