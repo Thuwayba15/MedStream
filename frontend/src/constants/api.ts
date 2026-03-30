@@ -56,6 +56,9 @@ export const API = {
     /** ABP patient intake triage assessment endpoint. */
     PATIENT_INTAKE_ASSESS_TRIAGE_ENDPOINT: "/api/services/app/PatientIntake/AssessTriage",
 
+    /** ABP clinician queue dashboard listing endpoint. */
+    QUEUE_OPERATIONS_GET_CLINICIAN_QUEUE_ENDPOINT: "/api/services/app/QueueOperations/GetClinicianQueue",
+
     /** Internal Next route for auth login. */
     AUTH_LOGIN_ROUTE: "/api/auth/login",
 
@@ -106,4 +109,7 @@ export const API = {
 
     /** Internal Next route to assess triage and queue placeholder status. */
     PATIENT_INTAKE_TRIAGE_ROUTE: "/api/patient-intake/triage",
+
+    /** Internal Next route for clinician queue dashboard data. */
+    CLINICIAN_QUEUE_ROUTE: "/api/clinician/queue",
 } as const;
