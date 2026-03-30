@@ -510,16 +510,20 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
 
     private async Task<int> GetNextQueueNumberAsync(int tenantId, int facilityId, DateTime queueDate)
     {
+        var queueDateStart = queueDate.Date;
+        var queueDateEndExclusive = queueDateStart.AddDays(1);
+
         var currentMax = await _queueTicketRepository.GetAll()
             .Where(item => item.TenantId == tenantId &&
                            item.FacilityId == facilityId &&
-                           item.QueueDate == queueDate &&
+                           item.QueueDate >= queueDateStart &&
+                           item.QueueDate < queueDateEndExclusive &&
                            !item.IsDeleted)
-            .Select(item => (int?)item.QueueNumber)
-            .DefaultIfEmpty(0)
-            .MaxAsync();
+            .OrderByDescending(item => item.QueueNumber)
+            .Select(item => item.QueueNumber)
+            .FirstOrDefaultAsync();
 
-        return (currentMax ?? 0) + 1;
+        return currentMax + 1;
     }
 
     private static string SerializeStringList(IEnumerable<string> values)
