@@ -59,7 +59,11 @@ const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps,
                     </span>
                 </div>
 
-                {navigationItems.length > 0 ? <Menu mode="horizontal" selectedKeys={activeKey ? [activeKey] : []} className={styles.topMenu} items={navigationItems} /> : <div className={styles.menuSpacer} />}
+                {navigationItems.length > 0 ? (
+                    <Menu mode="horizontal" selectedKeys={activeKey ? [activeKey] : []} className={styles.topMenu} items={navigationItems} />
+                ) : (
+                    <div className={styles.menuSpacer} />
+                )}
 
                 <Space size={10} className={styles.actionArea}>
                     <Avatar icon={<UserOutlined />} className={styles.profileAvatar} />
@@ -70,14 +74,7 @@ const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps,
                 <Button type="text" className={styles.mobileMenuButton} icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setIsDrawerOpen(true)} />
             </div>
 
-            <Drawer
-                title="Navigation"
-                placement="right"
-                open={isDrawerOpen}
-                size="default"
-                onClose={() => setIsDrawerOpen(false)}
-                className={styles.mobileDrawer}
-            >
+            <Drawer title="Navigation" placement="right" open={isDrawerOpen} size="default" onClose={() => setIsDrawerOpen(false)} className={styles.mobileDrawer}>
                 {navigationItems.length > 0 ? <Menu mode="inline" selectedKeys={activeKey ? [activeKey] : []} items={navigationItems} /> : null}
                 <div className={styles.mobileDrawerFooter}>
                     <Typography.Text type="secondary">Signed in as {roleLabel}</Typography.Text>
@@ -100,4 +97,3 @@ export const RoleAppShell = ({ roleLabel, activeKey, items, children }: IRoleApp
         </Layout>
     );
 };
-

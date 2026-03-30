@@ -210,4 +210,3 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         background: transparent;
     `,
 }));
-

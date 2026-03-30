@@ -358,4 +358,3 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         gap: 10px;
     `,
 }));
-

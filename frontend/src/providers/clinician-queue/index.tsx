@@ -49,12 +49,7 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
     };
 
     const loadQueueByFilters = useCallback(
-        async (
-            searchText: string,
-            queueStatusFilter: IClinicianQueueStateContext["queueStatusFilter"],
-            urgencyTabFilter: TQueueTabFilter,
-            mode: "initial" | "refresh"
-        ): Promise<void> => {
+        async (searchText: string, queueStatusFilter: IClinicianQueueStateContext["queueStatusFilter"], urgencyTabFilter: TQueueTabFilter, mode: "initial" | "refresh"): Promise<void> => {
             dispatch(loadStarted(mode));
 
             try {

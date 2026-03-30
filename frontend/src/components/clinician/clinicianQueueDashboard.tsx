@@ -188,7 +188,9 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                     <Typography.Title level={2} className={styles.liveQueueTitle}>
                         Live Queue
                     </Typography.Title>
-                    <Typography.Text type="secondary">Showing {state.totalCount} patient{state.totalCount === 1 ? "" : "s"}</Typography.Text>
+                    <Typography.Text type="secondary">
+                        Showing {state.totalCount} patient{state.totalCount === 1 ? "" : "s"}
+                    </Typography.Text>
                 </div>
 
                 {state.isLoading ? (
@@ -254,4 +256,3 @@ const QueueRow = ({ item }: { item: IClinicianQueueItem }): React.JSX.Element =>
         </article>
     );
 };
-
