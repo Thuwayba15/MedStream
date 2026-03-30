@@ -62,10 +62,7 @@ test.describe("auth state routing", () => {
         await page.goto("/login");
         await page.getByLabel("Username or Email").fill("patient-user");
         await page.getByLabel("Password").fill("Password1");
-        await Promise.all([
-            page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.status() === 200),
-            page.getByRole("button", { name: "Sign In" }).click(),
-        ]);
+        await Promise.all([page.waitForResponse((response) => response.url().includes("/api/auth/login") && response.status() === 200), page.getByRole("button", { name: "Sign In" }).click()]);
 
         await context.addCookies([
             {

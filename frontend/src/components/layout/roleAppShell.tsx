@@ -1,10 +1,10 @@
 ﻿"use client";
 
-import { ClockCircleOutlined, MenuOutlined, UserOutlined } from "@ant-design/icons";
+import { MenuOutlined, UserOutlined } from "@ant-design/icons";
 import { Avatar, Button, Drawer, Layout, Menu, Space, Typography } from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LogoutButton } from "@/components/auth/logoutButton";
 import { useRoleShellStyles } from "@/components/layout/style";
 
@@ -26,17 +26,6 @@ interface IRoleAppShellProps {
 const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps, "roleLabel" | "activeKey" | "items">) => {
     const { styles } = useRoleShellStyles();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [clockValue, setClockValue] = useState<string>("--:--:--");
-
-    useEffect(() => {
-        const timer = window.setInterval(() => {
-            setClockValue(new Date().toLocaleTimeString());
-        }, 1000);
-
-        return () => {
-            window.clearInterval(timer);
-        };
-    }, []);
 
     const navigationItems = useMemo(
         () =>

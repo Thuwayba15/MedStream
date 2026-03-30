@@ -1,7 +1,15 @@
 import { API } from "@/constants/api";
 import { unwrapAbpResponse } from "@/lib/api/abp";
 import { apiClient } from "@/lib/api/client";
-import type { IClinicianQueueResponse, IClinicianQueueReview, IGetClinicianQueueRequest, IOverrideQueueUrgencyRequest, IOverrideQueueUrgencyResponse, IUpdateQueueStatusRequest, IUpdateQueueStatusResponse } from "./types";
+import type {
+    IClinicianQueueResponse,
+    IClinicianQueueReview,
+    IGetClinicianQueueRequest,
+    IOverrideQueueUrgencyRequest,
+    IOverrideQueueUrgencyResponse,
+    IUpdateQueueStatusRequest,
+    IUpdateQueueStatusResponse,
+} from "./types";
 
 const getAuthorizationHeader = (accessToken: string): { Authorization: string } => {
     return { Authorization: `Bearer ${accessToken}` };

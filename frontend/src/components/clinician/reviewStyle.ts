@@ -118,11 +118,13 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         border-radius: ${radius.sm}px;
         border: 2px solid ${colors.amberMuted};
         background: ${colors.white};
-        box-shadow: 0 0 8px 2px ${colors.amber}80, 0 0 0 0 ${colors.amber};
+        box-shadow:
+            0 0 8px 2px ${colors.amber}80,
+            0 0 0 0 ${colors.amber};
         animation: summaryGlow 1.8s infinite alternate;
     `,
 
-    '@keyframes summaryGlow': {
+    "@keyframes summaryGlow": {
         from: {
             boxShadow: `0 0 8px 2px ${colors.amberMuted}80, 0 0 0 0 ${colors.amberMuted}`,
         },

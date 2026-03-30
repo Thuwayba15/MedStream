@@ -45,13 +45,10 @@ export const updateStatusStarted = createAction<IClinicianQueueReviewStatePayloa
     successMessage: undefined,
 }));
 
-export const updateStatusSucceeded = createAction<IClinicianQueueReviewStatePayload, TQueueStatus, string>(
-    ClinicianQueueReviewActionEnums.updateStatusSucceeded,
-    (newStatus, currentStage) => ({
-        isUpdatingStatus: false,
-        successMessage: `Queue status updated to ${newStatus.replace("_", " ")} (${currentStage}).`,
-    })
-);
+export const updateStatusSucceeded = createAction<IClinicianQueueReviewStatePayload, TQueueStatus, string>(ClinicianQueueReviewActionEnums.updateStatusSucceeded, (newStatus, currentStage) => ({
+    isUpdatingStatus: false,
+    successMessage: `Queue status updated to ${newStatus.replace("_", " ")} (${currentStage}).`,
+}));
 
 export const updateStatusFailed = createAction<IClinicianQueueReviewStatePayload, string>(ClinicianQueueReviewActionEnums.updateStatusFailed, (message) => ({
     isUpdatingStatus: false,

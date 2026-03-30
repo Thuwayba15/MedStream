@@ -3,7 +3,18 @@
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
 import type { IClinicianQueueReview, IOverrideQueueUrgencyResponse, IUpdateQueueStatusResponse, TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
-import { clearMessages, loadReviewFailed, loadReviewStarted, loadReviewSucceeded, overrideUrgencyFailed, overrideUrgencyStarted, overrideUrgencySucceeded, updateStatusFailed, updateStatusStarted, updateStatusSucceeded } from "./actions";
+import {
+    clearMessages,
+    loadReviewFailed,
+    loadReviewStarted,
+    loadReviewSucceeded,
+    overrideUrgencyFailed,
+    overrideUrgencyStarted,
+    overrideUrgencySucceeded,
+    updateStatusFailed,
+    updateStatusStarted,
+    updateStatusSucceeded,
+} from "./actions";
 import { ClinicianQueueReviewActionContext, ClinicianQueueReviewStateContext, INITIAL_STATE, type IClinicianQueueReviewActionContext, type IClinicianQueueReviewStateContext } from "./context";
 import { clinicianQueueReviewReducer } from "./reducer";
 
@@ -35,55 +46,61 @@ export const ClinicianQueueReviewProvider = ({ children }: { children: React.Rea
         }
     }, []);
 
-    const updateQueueStatus = useCallback(async (queueTicketId: number, newStatus: TQueueStatus, note?: string): Promise<IUpdateQueueStatusResponse | null> => {
-        dispatch(updateStatusStarted());
-        try {
-            const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/status`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    newStatus,
-                    note: note ?? "",
-                }),
-            });
+    const updateQueueStatus = useCallback(
+        async (queueTicketId: number, newStatus: TQueueStatus, note?: string): Promise<IUpdateQueueStatusResponse | null> => {
+            dispatch(updateStatusStarted());
+            try {
+                const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/status`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        newStatus,
+                        note: note ?? "",
+                    }),
+                });
 
-            const updateResult = await parseResponse<IUpdateQueueStatusResponse>(response, "Unable to update queue status.");
-            dispatch(updateStatusSucceeded(updateResult.newStatus, updateResult.currentStage));
-            await loadReview(queueTicketId);
-            return updateResult;
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "Unable to update queue status.";
-            dispatch(updateStatusFailed(message));
-            return null;
-        }
-    }, [loadReview]);
+                const updateResult = await parseResponse<IUpdateQueueStatusResponse>(response, "Unable to update queue status.");
+                dispatch(updateStatusSucceeded(updateResult.newStatus, updateResult.currentStage));
+                await loadReview(queueTicketId);
+                return updateResult;
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unable to update queue status.";
+                dispatch(updateStatusFailed(message));
+                return null;
+            }
+        },
+        [loadReview]
+    );
 
-    const overrideUrgency = useCallback(async (queueTicketId: number, urgencyLevel: TUrgencyLevel, note?: string): Promise<IOverrideQueueUrgencyResponse | null> => {
-        dispatch(overrideUrgencyStarted());
-        try {
-            const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/urgency`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    urgencyLevel,
-                    note: note ?? "",
-                }),
-            });
+    const overrideUrgency = useCallback(
+        async (queueTicketId: number, urgencyLevel: TUrgencyLevel, note?: string): Promise<IOverrideQueueUrgencyResponse | null> => {
+            dispatch(overrideUrgencyStarted());
+            try {
+                const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/urgency`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        urgencyLevel,
+                        note: note ?? "",
+                    }),
+                });
 
-            const result = await parseResponse<IOverrideQueueUrgencyResponse>(response, "Unable to override urgency.");
-            dispatch(overrideUrgencySucceeded(result.urgencyLevel));
-            await loadReview(queueTicketId);
-            return result;
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "Unable to override urgency.";
-            dispatch(overrideUrgencyFailed(message));
-            return null;
-        }
-    }, [loadReview]);
+                const result = await parseResponse<IOverrideQueueUrgencyResponse>(response, "Unable to override urgency.");
+                dispatch(overrideUrgencySucceeded(result.urgencyLevel));
+                await loadReview(queueTicketId);
+                return result;
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unable to override urgency.";
+                dispatch(overrideUrgencyFailed(message));
+                return null;
+            }
+        },
+        [loadReview]
+    );
 
     const actions: IClinicianQueueReviewActionContext = useMemo(
         () => ({

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, HistoryOutlined, StopOutlined, WarningOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Empty, Input, Modal, Select, Skeleton, Space, Tag, Typography } from "antd";
+import { Alert, Button, Card, Empty, Modal, Select, Skeleton, Space, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -82,11 +82,19 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
 
     const canCancel = status === "waiting" || status === "called" || status === "in_consultation";
 
-    useEffect(() => {
+    const openOverrideModal = (): void => {
         if (review) {
             setOverrideUrgencyLevel(review.urgencyLevel);
         }
-    }, [review]);
+
+        setOverrideNote("");
+        setIsOverrideModalOpen(true);
+    };
+
+    const closeOverrideModal = (): void => {
+        setIsOverrideModalOpen(false);
+        setOverrideNote("");
+    };
 
     const handlePrimaryAction = async (): Promise<void> => {
         if (!review || !actionConfig) {
@@ -122,16 +130,11 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
 
         const result = await actions.overrideUrgency(review.queueTicketId, overrideUrgencyLevel, overrideNote);
         if (result) {
-            setIsOverrideModalOpen(false);
-            setOverrideNote("");
+            closeOverrideModal();
         }
     };
 
-    const patientSummary = review
-        ? review.selectedSymptoms.length > 0
-            ? `Reported symptoms: ${review.selectedSymptoms.join(", ")}`
-            : "No additional symptom tags were captured."
-        : "";
+    const patientSummary = review ? (review.selectedSymptoms.length > 0 ? `Reported symptoms: ${review.selectedSymptoms.join(", ")}` : "No additional symptom tags were captured.") : "";
 
     return (
         <section className={styles.page}>
@@ -148,7 +151,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                     {review ? <Tag className={styles.queueBadge}>#{review.queueNumber}</Tag> : null}
                 </div>
                 <Space size={10} wrap>
-                    <Button className={styles.secondaryAction} onClick={() => setIsOverrideModalOpen(true)}>
+                    <Button className={styles.secondaryAction} onClick={openOverrideModal}>
                         Override Urgency
                     </Button>
                     {actionConfig ? (
@@ -234,9 +237,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                                 </div>
                                 <Typography.Text strong>AI Summary</Typography.Text>
                                 <div className={styles.summaryPanel}>
-                                    <Typography.Paragraph className={styles.bodyText}>
-                                        {review.clinicianSummary || "A clinician-ready summary is not available yet."}
-                                    </Typography.Paragraph>
+                                    <Typography.Paragraph className={styles.bodyText}>{review.clinicianSummary || "A clinician-ready summary is not available yet."}</Typography.Paragraph>
                                 </div>
                             </Space>
                         </Card>
@@ -285,7 +286,13 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                                     </Button>
                                 </Link>
                                 {canCancel ? (
-                                    <Button icon={<StopOutlined />} className={`${styles.secondaryAction} ${styles.centeredAction}`} loading={state.isUpdatingStatus} onClick={() => setIsCancelModalOpen(true)} block>
+                                    <Button
+                                        icon={<StopOutlined />}
+                                        className={`${styles.secondaryAction} ${styles.centeredAction}`}
+                                        loading={state.isUpdatingStatus}
+                                        onClick={() => setIsCancelModalOpen(true)}
+                                        block
+                                    >
                                         Cancel Queue Entry
                                     </Button>
                                 ) : null}
@@ -310,7 +317,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
             <Modal
                 title="Override urgency"
                 open={isOverrideModalOpen}
-                onCancel={() => setIsOverrideModalOpen(false)}
+                onCancel={closeOverrideModal}
                 onOk={() => void handleUrgencyOverride()}
                 okText="Save urgency"
                 confirmLoading={state.isUpdatingStatus}

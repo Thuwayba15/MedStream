@@ -197,13 +197,10 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
         []
     );
 
-    const getCurrentQueueStatus = useCallback(
-        async (visitId: number): Promise<ITriageResponse> => {
-            const response = await fetch(`${API.PATIENT_INTAKE_QUEUE_STATUS_ROUTE}?visitId=${visitId}`);
-            return parseResponse<ITriageResponse>(response, "Unable to load current queue status.");
-        },
-        []
-    );
+    const getCurrentQueueStatus = useCallback(async (visitId: number): Promise<ITriageResponse> => {
+        const response = await fetch(`${API.PATIENT_INTAKE_QUEUE_STATUS_ROUTE}?visitId=${visitId}`);
+        return parseResponse<ITriageResponse>(response, "Unable to load current queue status.");
+    }, []);
 
     const initializeFlow = useCallback(async (): Promise<void> => {
         dispatch(initializeStarted());
@@ -215,18 +212,20 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                 try {
                     const currentQueueStatus = await getCurrentQueueStatus(persistedQueuedVisit.visitId);
                     if (currentQueueStatus.queue) {
-                        dispatch(queuedVisitRestored(
-                            {
-                                visitId: persistedQueuedVisit.visitId,
-                                facilityName: persistedQueuedVisit.facilityName,
-                                selectedFacilityId: persistedQueuedVisit.selectedFacilityId,
-                                startedAt: persistedQueuedVisit.startedAt,
-                                pathwayKey: persistedQueuedVisit.pathwayKey,
-                                triage: currentQueueStatus.triage,
-                                queue: currentQueueStatus.queue,
-                            },
-                            facilities
-                        ));
+                        dispatch(
+                            queuedVisitRestored(
+                                {
+                                    visitId: persistedQueuedVisit.visitId,
+                                    facilityName: persistedQueuedVisit.facilityName,
+                                    selectedFacilityId: persistedQueuedVisit.selectedFacilityId,
+                                    startedAt: persistedQueuedVisit.startedAt,
+                                    pathwayKey: persistedQueuedVisit.pathwayKey,
+                                    triage: currentQueueStatus.triage,
+                                    queue: currentQueueStatus.queue,
+                                },
+                                facilities
+                            )
+                        );
                         return;
                     }
                 } catch {
@@ -505,7 +504,18 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                 await initializeFlow();
             },
         }),
-        [clearPersistedQueuedVisit, continueFromCheckIn, continueFromFollowUp, continueFromSymptoms, continueFromUrgentCheck, initializeFlow, state.answers, state.availableFacilities, state.currentStep, state.selectedSymptoms]
+        [
+            clearPersistedQueuedVisit,
+            continueFromCheckIn,
+            continueFromFollowUp,
+            continueFromSymptoms,
+            continueFromUrgentCheck,
+            initializeFlow,
+            state.answers,
+            state.availableFacilities,
+            state.currentStep,
+            state.selectedSymptoms,
+        ]
     );
 
     useEffect(() => {
