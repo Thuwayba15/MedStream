@@ -1,30 +1,25 @@
-﻿"use client";
+import { ClinicianTriageReviewPage } from "@/components/clinician/clinicianTriageReviewPage";
+import { clinicianNavigationItems } from "@/components/clinician/navigation";
+import { RoleAppShell } from "@/components/layout/roleAppShell";
+import { ClinicianQueueReviewProvider } from "@/providers/clinician-queue-review";
 
-import { ArrowLeftOutlined, FileSearchOutlined } from "@ant-design/icons";
-import { Button, Card, Space, Typography } from "antd";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+interface IClinicianReviewPageProps {
+    params: Promise<{
+        queueTicketId: string;
+    }>;
+}
 
-const ClinicianTriageReviewPage = (): React.JSX.Element => {
-    const params = useParams<{ queueTicketId: string }>();
-    const queueTicketId = params.queueTicketId ?? "-";
+const ClinicianReviewPage = async ({ params }: IClinicianReviewPageProps): Promise<React.JSX.Element> => {
+    const { queueTicketId } = await params;
+    const parsedQueueTicketId = Number(queueTicketId);
 
     return (
-        <Card>
-            <Space orientation="vertical" size={14}>
-                <Typography.Title level={3}>Triage Review</Typography.Title>
-                <Typography.Paragraph type="secondary">Queue ticket #{queueTicketId} selected. Full triage review and consultation handoff screen lands in the next issue.</Typography.Paragraph>
-                <Space>
-                    <Link href="/clinician">
-                        <Button icon={<ArrowLeftOutlined />}>Back to Queue</Button>
-                    </Link>
-                    <Button type="primary" icon={<FileSearchOutlined />} disabled>
-                        Confirm & Start Consultation
-                    </Button>
-                </Space>
-            </Space>
-        </Card>
+        <RoleAppShell roleLabel="Clinician" activeKey="clinician-queue-dashboard" items={clinicianNavigationItems}>
+            <ClinicianQueueReviewProvider>
+                <ClinicianTriageReviewPage queueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : 0} />
+            </ClinicianQueueReviewProvider>
+        </RoleAppShell>
     );
 };
 
-export default ClinicianTriageReviewPage;
+export default ClinicianReviewPage;

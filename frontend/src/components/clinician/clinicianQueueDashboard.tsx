@@ -112,7 +112,7 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                         Queue Dashboard
                     </Typography.Title>
                 </div>
-                <Tag className={styles.liveTag}>Live - Manual Refresh</Tag>
+                <Tag className={styles.liveTag}>Live - Auto-updating</Tag>
             </header>
 
             {state.errorMessage ? (

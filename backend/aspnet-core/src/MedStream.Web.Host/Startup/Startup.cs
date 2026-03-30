@@ -5,6 +5,7 @@ using Abp.Castle.Logging.Log4Net;
 using Abp.Extensions;
 using MedStream.Configuration;
 using MedStream.Identity;
+using MedStream.Web.Host.SignalR;
 using Castle.Facilities.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -99,6 +100,7 @@ namespace MedStream.Web.Host.Startup
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHub<AbpCommonHub>("/signalr");
+                endpoints.MapHub<QueueHub>("/signalr/queue");
                 endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapControllerRoute("defaultWithArea", "{area}/{controller=Home}/{action=Index}/{id?}");
             });

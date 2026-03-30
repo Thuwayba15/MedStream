@@ -231,6 +231,112 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
         });
     }
 
+    [Fact]
+    public async Task AssessTriage_Should_Supersede_Previous_Active_QueueTicket_For_Same_Patient()
+    {
+        await RegisterAndLoginPatientAsync();
+
+        var firstVisit = await _patientIntakeAppService.CheckIn();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = firstVisit.VisitId,
+            FreeText = "I have persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" }
+        });
+        await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = firstVisit.VisitId,
+            FreeText = "persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough" },
+            Answers = new Dictionary<string, object>
+            {
+                { "durationDays", 3 },
+                { "hasFever", false },
+                { "breathingDifficulty", false }
+            }
+        });
+
+        var secondVisit = await _patientIntakeAppService.CheckIn();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = secondVisit.VisitId,
+            FreeText = "I have chest pain",
+            SelectedSymptoms = new List<string> { "Chest Pain" }
+        });
+        await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = secondVisit.VisitId,
+            FreeText = "chest pain",
+            SelectedSymptoms = new List<string> { "Chest Pain" },
+            ExtractedPrimarySymptoms = new List<string> { "Chest Pain" },
+            Answers = new Dictionary<string, object>
+            {
+                { "durationDays", 1 },
+                { "urgentSevereChestPain", true },
+                { "urgentSevereBreathing", false }
+            }
+        });
+
+        await UsingDbContextAsync(async context =>
+        {
+            var activeTickets = await context.Set<QueueTicket>()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .ToListAsync();
+            activeTickets.Count.ShouldBe(1);
+            activeTickets[0].VisitId.ShouldBe(secondVisit.VisitId);
+
+            var firstVisitTicket = await context.Set<QueueTicket>().SingleAsync(item => item.VisitId == firstVisit.VisitId);
+            firstVisitTicket.QueueStatus.ShouldBe(PatientIntakeConstants.QueueStatusCancelled);
+            firstVisitTicket.IsActive.ShouldBeFalse();
+
+            var supersedeEvent = await context.Set<QueueEvent>()
+                .Where(item => item.QueueTicketId == firstVisitTicket.Id)
+                .OrderByDescending(item => item.Id)
+                .FirstAsync();
+            supersedeEvent.NewStatus.ShouldBe(PatientIntakeConstants.QueueStatusCancelled);
+            supersedeEvent.Notes.ToLowerInvariant().ShouldContain("superseded by new visit");
+        });
+    }
+
+    [Fact]
+    public async Task GetCurrentQueueStatus_Should_Return_Latest_Status_For_Current_Patient_Visit()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await _patientIntakeAppService.CheckIn();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "I have persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" }
+        });
+
+        await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough" },
+            Answers = new Dictionary<string, object>
+            {
+                { "durationDays", 3 },
+                { "hasFever", false },
+                { "breathingDifficulty", false }
+            }
+        });
+
+        var currentStatus = await _patientIntakeAppService.GetCurrentQueueStatus(new GetCurrentQueueStatusInput
+        {
+            VisitId = checkIn.VisitId
+        });
+
+        currentStatus.Triage.ShouldNotBeNull();
+        currentStatus.Queue.ShouldNotBeNull();
+        currentStatus.Queue.QueueStatus.ShouldBe(PatientIntakeConstants.QueueStatusWaiting);
+        currentStatus.Queue.QueueNumber.ShouldBeGreaterThan(0);
+        currentStatus.Queue.Message.ShouldContain("#");
+    }
+
     private async Task<string> RegisterAndLoginPatientAsync()
     {
         var email = $"patient-intake-{Guid.NewGuid():N}@medstream.test";

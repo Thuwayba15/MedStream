@@ -229,6 +229,7 @@ Behavioral notes:
 - `MappedInputValues` stores deterministic/AI-assisted pre-mapped pathway input key-values.
 - `FollowUpAnswersJson` stores structured follow-up responses used by triage and SOAP handoff.
 - `SubjectiveSummary` stores clinician-readable subjective text intended to seed SOAP `S`.
+- Clinician queue review may additionally derive a clinician-facing intake summary and friendly reasoning view from `FollowUpAnswersJson`, triage explanation, and red-flag outcomes; these review helpers are generated read-model fields rather than separate persisted columns.
 - Intake routing mode (`approved_json` vs `apc_fallback`) is currently computed at runtime and not persisted as a dedicated column.
 
 ---
@@ -310,6 +311,7 @@ Behavioral notes:
 
 **Implementation notes**
 - `PriorityScore` is used for clinician/system queue ordering logic and should not be exposed in patient-facing queue status views.
+- clinician review may override `UrgencyLevel`; when this happens the persisted `PriorityScore` should be recalibrated so queue ordering remains consistent with the override
 
 ---
 
@@ -342,6 +344,18 @@ Behavioral notes:
 - based on TriageAssessment
 - has many QueueEvents
 
+**Implementation notes**
+- `QueueStatus` follows constrained transitions:
+`waiting -> called|in_consultation|cancelled`,
+`called -> waiting|in_consultation|cancelled`,
+`in_consultation -> completed|cancelled`
+- `completed` and `cancelled` are terminal states and should set `IsActive = false`
+- queue listing for live clinician operations should be based on active (`IsActive = true`) tickets only
+- when a newer visit is queued for the same patient, older active queue tickets for that patient should be superseded and cancelled so only one live queue ticket remains active per patient
+- `QueueNumber` is facility-scoped and resets by `QueueDate`, so numbering starts again each day per facility
+- queue changes may emit realtime SignalR notifications to facility-scoped clinician subscribers and patient-scoped subscribers; these notifications are transport behavior and are not persisted as separate entities
+- patient-facing workspace state may cache the active queued `VisitId` client-side so queue status can be restored after refresh, but the source of truth remains the persisted `QueueTicket` and `TriageAssessment`
+
 ---
 
 ## 12. QueueEvent
@@ -353,13 +367,16 @@ Behavioral notes:
 - EventType
 - OldStatus
 - NewStatus
-- ChangedByClinicianId
+- ChangedByClinicianUserId
 - Notes
 - EventAt
 
 **Relationships**
 - belongs to QueueTicket
 - may be changed by a Clinician
+
+**Implementation notes**
+- `EventType` should distinguish generic status changes from consultation-start transitions so timeline/audit views can render queue progression correctly
 
 ---
 

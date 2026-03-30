@@ -1,9 +1,9 @@
-import { ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME } from "@/lib/auth/constants";
+import { ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME, SIGNALR_TOKEN_COOKIE_NAME } from "@/lib/auth/constants";
 import { NextResponse } from "next/server";
 
 export const POST = async (): Promise<Response> => {
     const response = NextResponse.json({ success: true });
-    const cookieNames = [ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME, "Abp.AuthToken", "XSRF-TOKEN"];
+    const cookieNames = [ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME, SIGNALR_TOKEN_COOKIE_NAME, "Abp.AuthToken", "XSRF-TOKEN"];
 
     cookieNames.forEach((cookieName) => {
         response.cookies.set({

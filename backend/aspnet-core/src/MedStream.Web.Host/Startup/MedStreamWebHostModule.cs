@@ -1,6 +1,9 @@
-﻿using Abp.Modules;
+using Abp.Dependency;
+using Abp.Modules;
 using Abp.Reflection.Extensions;
 using MedStream.Configuration;
+using MedStream.QueueOperations;
+using MedStream.Web.Host.SignalR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
@@ -22,6 +25,7 @@ namespace MedStream.Web.Host.Startup
         public override void Initialize()
         {
             IocManager.RegisterAssemblyByConvention(typeof(MedStreamWebHostModule).GetAssembly());
+            IocManager.Register<IQueueRealtimeNotifier, QueueRealtimeNotifier>(DependencyLifeStyle.Transient);
         }
     }
 }

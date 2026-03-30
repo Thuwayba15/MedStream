@@ -7,8 +7,10 @@ using Abp.TestBase;
 using Abp.Zero.Configuration;
 using Abp.Zero.EntityFrameworkCore;
 using MedStream.EntityFrameworkCore;
+using MedStream.QueueOperations;
 using MedStream.Tests.DependencyInjection;
 using Castle.MicroKernel.Registration;
+using Microsoft.Extensions.Configuration;
 using NSubstitute;
 using System;
 
@@ -43,10 +45,16 @@ public class MedStreamTestModule : AbpModule
         RegisterFakeService<AbpZeroDbMigrator<MedStreamDbContext>>();
 
         Configuration.ReplaceService<IEmailSender, NullEmailSender>(DependencyLifeStyle.Transient);
+        Configuration.ReplaceService<IQueueRealtimeNotifier, NullQueueRealtimeNotifier>(DependencyLifeStyle.Transient);
     }
 
     public override void Initialize()
     {
+        IocManager.IocContainer.Register(
+            Component.For<IConfiguration>()
+                .Instance(new ConfigurationBuilder().Build())
+                .LifestyleSingleton());
+
         ServiceCollectionRegistrar.Register(IocManager);
     }
 

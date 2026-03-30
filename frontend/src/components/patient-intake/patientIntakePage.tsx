@@ -68,6 +68,8 @@ export const PatientIntakePage = () => {
     const progressPercent = Math.round(((state.currentStep + 1) / PATIENT_INTAKE_STEPS.length) * 100);
     const currentStepDetails = PATIENT_INTAKE_STEPS[state.currentStep];
     const visibleQuestions = useMemo(() => getVisibleQuestions(state.questionSet, state.answers, state.extractedPrimarySymptoms), [state.questionSet, state.answers, state.extractedPrimarySymptoms]);
+    const hasQueueStatus = Boolean(state.visitId && state.queue);
+    const activeBottomNav = state.currentStep === 4 && hasQueueStatus ? "my-queue" : "new-visit";
 
     const startSpeechCapture = (): void => {
         const Recognition = resolveSpeechRecognitionApi();
@@ -195,10 +197,20 @@ export const PatientIntakePage = () => {
                         block
                         options={[
                             { label: "New Visit", value: "new-visit" },
-                            { label: "My Queue", value: "my-queue", disabled: true },
+                            { label: "My Queue", value: "my-queue", disabled: !hasQueueStatus },
                             { label: "History", value: "history", disabled: true },
                         ]}
-                        value="new-visit"
+                        value={activeBottomNav}
+                        onChange={(value) => {
+                            if (value === "my-queue" && hasQueueStatus) {
+                                actions.goToStep(4);
+                                return;
+                            }
+
+                            if (value === "new-visit" && state.currentStep === 4) {
+                                void actions.resetFlow();
+                            }
+                        }}
                     />
                 </div>
                 {state.currentStep < 4 ? (

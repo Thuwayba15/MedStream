@@ -123,7 +123,8 @@ namespace MedStream.Controllers
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.Now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
                 new Claim(UserClaimTypes.ApprovalState, user.IsClinicianApprovalPending ? "pending" : "approved"),
-                new Claim(UserClaimTypes.RequestedRegistrationRole, user.RequestedRegistrationRole ?? string.Empty)
+                new Claim(UserClaimTypes.RequestedRegistrationRole, user.RequestedRegistrationRole ?? string.Empty),
+                new Claim(UserClaimTypes.ClinicianFacilityId, user.ClinicianFacilityId?.ToString() ?? string.Empty)
             });
 
             return claims;

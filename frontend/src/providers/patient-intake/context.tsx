@@ -39,6 +39,7 @@ export interface IPatientIntakeActionContext {
     setAnswer: (questionKey: string, value: string | number | boolean | string[]) => void;
     continueStep: () => Promise<void>;
     backStep: () => void;
+    goToStep: (step: number) => void;
     clearError: () => void;
     resetFlow: () => Promise<void>;
 }
@@ -79,6 +80,7 @@ export const INITIAL_ACTIONS: IPatientIntakeActionContext = {
     setAnswer: () => undefined,
     continueStep: async () => Promise.resolve(),
     backStep: () => undefined,
+    goToStep: () => undefined,
     clearError: () => undefined,
     resetFlow: async () => Promise.resolve(),
 };

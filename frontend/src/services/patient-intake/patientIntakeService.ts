@@ -12,6 +12,7 @@ import type {
     IUrgentCheckResponse,
     ITriageAssessRequest,
     ITriageResponse,
+    ICurrentQueueStatusRequest,
 } from "./types";
 
 const getAuthorizationHeader = (accessToken: string): { Authorization: string } => {
@@ -79,6 +80,15 @@ const assessTriage = async (payload: ITriageAssessRequest, accessToken: string):
     return unwrapAbpResponse<ITriageResponse>(response.data);
 };
 
+const getCurrentQueueStatus = async (payload: ICurrentQueueStatusRequest, accessToken: string): Promise<ITriageResponse> => {
+    const response = await apiClient.get(API.PATIENT_INTAKE_CURRENT_QUEUE_STATUS_ENDPOINT, {
+        params: { visitId: payload.visitId },
+        headers: getAuthorizationHeader(accessToken),
+    });
+
+    return unwrapAbpResponse<ITriageResponse>(response.data);
+};
+
 export const patientIntakeService = {
     checkIn,
     captureSymptoms,
@@ -86,4 +96,5 @@ export const patientIntakeService = {
     getQuestions,
     urgentCheck,
     assessTriage,
+    getCurrentQueueStatus,
 };
