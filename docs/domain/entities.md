@@ -352,6 +352,9 @@ Behavioral notes:
 - `completed` and `cancelled` are terminal states and should set `IsActive = false`
 - queue listing for live clinician operations should be based on active (`IsActive = true`) tickets only
 - when a newer visit is queued for the same patient, older active queue tickets for that patient should be superseded and cancelled so only one live queue ticket remains active per patient
+- `QueueNumber` is facility-scoped and resets by `QueueDate`, so numbering starts again each day per facility
+- queue changes may emit realtime SignalR notifications to facility-scoped clinician subscribers and patient-scoped subscribers; these notifications are transport behavior and are not persisted as separate entities
+- patient-facing workspace state may cache the active queued `VisitId` client-side so queue status can be restored after refresh, but the source of truth remains the persisted `QueueTicket` and `TriageAssessment`
 
 ---
 
