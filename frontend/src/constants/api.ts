@@ -56,6 +56,9 @@ export const API = {
     /** ABP patient intake triage assessment endpoint. */
     PATIENT_INTAKE_ASSESS_TRIAGE_ENDPOINT: "/api/services/app/PatientIntake/AssessTriage",
 
+    /** ABP patient intake current queue-status endpoint. */
+    PATIENT_INTAKE_CURRENT_QUEUE_STATUS_ENDPOINT: "/api/services/app/PatientIntake/GetCurrentQueueStatus",
+
     /** ABP clinician queue dashboard listing endpoint. */
     QUEUE_OPERATIONS_GET_CLINICIAN_QUEUE_ENDPOINT: "/api/services/app/QueueOperations/GetClinicianQueue",
 
@@ -79,6 +82,9 @@ export const API = {
 
     /** Internal Next route for current auth state. */
     AUTH_ME_ROUTE: "/api/auth/me",
+
+    /** Internal Next route to resolve a SignalR access token for the current session. */
+    AUTH_SIGNALR_TOKEN_ROUTE: "/api/auth/signalr-token",
 
     /** Internal Next admin route for clinician applicant listing. */
     ADMIN_USERS_ROUTE: "/api/auth/admin/users",
@@ -119,9 +125,15 @@ export const API = {
     /** Internal Next route to assess triage and queue placeholder status. */
     PATIENT_INTAKE_TRIAGE_ROUTE: "/api/patient-intake/triage",
 
+    /** Internal Next route to read the current patient's queue status for a visit. */
+    PATIENT_INTAKE_QUEUE_STATUS_ROUTE: "/api/patient-intake/queue-status",
+
     /** Internal Next route for clinician queue dashboard data. */
     CLINICIAN_QUEUE_ROUTE: "/api/clinician/queue",
 
     /** Internal Next route prefix for clinician queue ticket details/status. */
     CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX: "/api/clinician/queue",
+
+    /** Backend SignalR hub path for queue realtime updates. */
+    QUEUE_SIGNALR_HUB_PATH: "/signalr/queue",
 } as const;

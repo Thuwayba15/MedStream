@@ -15,6 +15,7 @@ export enum PatientIntakeActionEnums {
     urgentCheckSucceeded = "PATIENT_INTAKE_URGENT_CHECK_SUCCEEDED",
     followUpQuestionsLoaded = "PATIENT_INTAKE_FOLLOW_UP_QUESTIONS_LOADED",
     triageSucceeded = "PATIENT_INTAKE_TRIAGE_SUCCEEDED",
+    queuedVisitRestored = "PATIENT_INTAKE_QUEUED_VISIT_RESTORED",
     actionFailed = "PATIENT_INTAKE_ACTION_FAILED",
     clearError = "PATIENT_INTAKE_CLEAR_ERROR",
 }
@@ -138,6 +139,32 @@ export const triageSucceeded = createAction<IPatientIntakeStatePayload, ITriageR
     triage: result.triage,
     queue: result.queue,
     currentStep: 4,
+    errorMessage: undefined,
+}));
+
+export const queuedVisitRestored = createAction<
+    IPatientIntakeStatePayload,
+    {
+        visitId: number;
+        facilityName: string;
+        selectedFacilityId: number | null;
+        startedAt: string | null;
+        pathwayKey: string;
+        triage: ITriageResponse["triage"];
+        queue: ITriageResponse["queue"];
+    },
+    Array<{ id: number; name: string }>
+>(PatientIntakeActionEnums.queuedVisitRestored, (snapshot, facilities) => ({
+    isInitializing: false,
+    currentStep: 4,
+    visitId: snapshot.visitId,
+    facilityName: snapshot.facilityName,
+    availableFacilities: facilities,
+    selectedFacilityId: snapshot.selectedFacilityId,
+    startedAt: snapshot.startedAt,
+    pathwayKey: snapshot.pathwayKey,
+    triage: snapshot.triage,
+    queue: snapshot.queue,
     errorMessage: undefined,
 }));
 
