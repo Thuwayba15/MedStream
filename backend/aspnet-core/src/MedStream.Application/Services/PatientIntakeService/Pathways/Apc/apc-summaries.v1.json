@@ -1,0 +1,539 @@
+{
+  "id": "apc_2023_summaries",
+  "name": "APC 2023 Fallback Summaries",
+  "version": "1.0.0",
+  "source": {
+    "document": "APC 2023 Clinical Tool",
+    "notes": "Structured APC-derived summaries for AI fallback intake generation. These are not rule-complete pathway JSONs and should only be used when no strong approved JSON pathway exists."
+  },
+  "usageRules": [
+    "Use these summaries only in AI fallback mode when pathway classification confidence is low or no suitable approved JSON pathway exists.",
+    "Ask subjective intake questions only.",
+    "Prioritize urgent red-flag questions first.",
+    "Do not generate diagnoses or treatment plans from these summaries alone.",
+    "Deterministic triage and clinician review remain the source of urgency and final clinical decisions."
+  ],
+  "excludedBecauseAlreadyJsonDriven": [
+    "general_adult_fever_cough",
+    "cough_or_difficulty_breathing",
+    "hand_or_upper_limb_injury",
+    "general_unspecified_complaint"
+  ],
+  "summaries": [
+    {
+      "id": "chest_pain",
+      "title": "Chest Pain",
+      "pages": [
+        37,
+        137
+      ],
+      "symptomCategory": "cardiorespiratory",
+      "bodyRegions": [
+        "chest",
+        "heart"
+      ],
+      "complaintCues": [
+        "chest pain",
+        "tight chest",
+        "pressure in chest",
+        "pain in chest",
+        "heavy chest"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Is the pain severe right now?",
+        "Did the pain start at rest or with very little effort?",
+        "Do you also have shortness of breath?",
+        "Does the pain spread to your arm, jaw, neck, or back?",
+        "Are you sweaty, pale, faint, or nauseous with the pain?"
+      ],
+      "coreSubjectiveQuestions": [
+        "When did it start?",
+        "How long does it last?",
+        "Is it worse with exertion?",
+        "Does rest relieve it?",
+        "Any palpitations, dizziness, or collapse?"
+      ],
+      "clinicianObjectiveFocus": [
+        "BP, pulse, oxygen saturation, respiratory rate",
+        "Urgent ECG if indicated",
+        "Assess for ACS and cardiorespiratory instability"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "initial_assessment_of_the_patient",
+          "page": 9
+        },
+        {
+          "targetPathwayId": "ischaemic_heart_disease_initial_assessment",
+          "page": 137
+        },
+        {
+          "targetPathwayId": "cough_or_difficulty_breathing",
+          "page": 38
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 6,
+        "ordering": "Ask urgent cardiorespiratory red flags first, then timing, radiation, exertional features, and associated symptoms.",
+        "notes": "Do not let AI reassure. If severe/urgent features are present, return structured urgent-intake questions only."
+      }
+    },
+    {
+      "id": "abdominal_pain_heartburn",
+      "title": "Abdominal Pain / Heartburn",
+      "pages": [
+        44
+      ],
+      "symptomCategory": "gastrointestinal",
+      "bodyRegions": [
+        "abdomen",
+        "stomach",
+        "pelvis"
+      ],
+      "complaintCues": [
+        "abdominal pain",
+        "stomach pain",
+        "tummy pain",
+        "belly pain",
+        "heartburn"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Is the pain severe or getting rapidly worse?",
+        "Are you pregnant or could you be pregnant?",
+        "Have you had vomiting that will not stop?",
+        "Have you had no stool or wind for the past day?",
+        "Are your eyes or skin yellow?",
+        "Have you fainted or felt very weak with the pain?"
+      ],
+      "coreSubjectiveQuestions": [
+        "Where is the pain worst?",
+        "When did it start?",
+        "Is it constant or cramping?",
+        "Any vomiting, fever, diarrhoea, constipation, urinary symptoms, or vaginal bleeding?",
+        "Any recent pregnancy, miscarriage, or delivery?",
+        "Any relation to meals or heartburn symptoms?"
+      ],
+      "clinicianObjectiveFocus": [
+        "BP and general stability",
+        "Abdominal guarding, rebound, rigidity, mass",
+        "Consider pelvic/urinary/pregnancy-related causes depending on history"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "urinary_symptoms",
+          "page": 59
+        },
+        {
+          "targetPathwayId": "pregnancy",
+          "page": 157
+        },
+        {
+          "targetPathwayId": "vaginal_bleeding",
+          "page": 57
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 7,
+        "ordering": "Ask immediate danger and pregnancy-related questions first, then location, onset, vomiting, bowel, urinary, and gynecological features.",
+        "notes": "Use as fallback only; avoid overextending into clinician exam questions."
+      }
+    },
+    {
+      "id": "injured_patient",
+      "title": "Injured Patient",
+      "pages": [
+        18
+      ],
+      "symptomCategory": "injury",
+      "bodyRegions": [
+        "head",
+        "neck",
+        "chest",
+        "abdomen",
+        "arm",
+        "hand",
+        "leg",
+        "body"
+      ],
+      "complaintCues": [
+        "injury",
+        "fall",
+        "hurt myself",
+        "wound",
+        "fracture",
+        "cut",
+        "trauma"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Is there heavy bleeding right now?",
+        "Did you lose consciousness?",
+        "Is the injury to the head, neck, chest, or abdomen?",
+        "Can you move the injured limb normally?",
+        "Is there severe deformity, exposed bone, or numbness/coldness below the injury?"
+      ],
+      "coreSubjectiveQuestions": [
+        "How were you injured?",
+        "Where are you injured?",
+        "When did it happen?",
+        "Any vomiting after head injury?",
+        "Any weakness, numbness, or severe pain?",
+        "Any chest pain or difficulty breathing after injury?"
+      ],
+      "clinicianObjectiveFocus": [
+        "BP and signs of shock",
+        "Perfusion below injury",
+        "Open fracture, severe deformity, head injury red flags"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "emergency_patient",
+          "page": 14
+        },
+        {
+          "targetPathwayId": "arm_hand_symptoms",
+          "page": 64
+        },
+        {
+          "targetPathwayId": "leg_symptoms",
+          "page": 65
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 6,
+        "ordering": "Ask immediate life/limb danger questions first, then mechanism, region, mobility, and head injury symptoms.",
+        "notes": "AI should stay in subjective history mode and not invent trauma management."
+      }
+    },
+    {
+      "id": "headache",
+      "title": "Headache",
+      "pages": [
+        30
+      ],
+      "symptomCategory": "neurological",
+      "bodyRegions": [
+        "head"
+      ],
+      "complaintCues": [
+        "headache",
+        "head pain",
+        "migraine",
+        "bad headache"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Did the headache start suddenly and severely?",
+        "Do you also have vomiting, confusion, weakness, or fits?",
+        "Do you have fever with the headache?",
+        "Have you recently had head injury?",
+        "Are you pregnant with severe headache?"
+      ],
+      "coreSubjectiveQuestions": [
+        "When did it start?",
+        "Where is the pain worst?",
+        "Any photophobia or neck stiffness?",
+        "Any visual changes, weakness, numbness, or speech problems?",
+        "Any nausea or vomiting?",
+        "Have you had headaches like this before?"
+      ],
+      "clinicianObjectiveFocus": [
+        "Neurological red flags",
+        "BP, temperature, glucose if indicated",
+        "Assess for meningitis, stroke/TIA, head injury, severe hypertension"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "decreased_consciousness",
+          "page": 16
+        },
+        {
+          "targetPathwayId": "initial_assessment_of_the_patient",
+          "page": 9
+        },
+        {
+          "targetPathwayId": "vaginal_bleeding",
+          "page": 57
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 7,
+        "ordering": "Ask catastrophic and neuro red flags first, then onset, associated symptoms, pregnancy/head injury context, and recurrence.",
+        "notes": "Fallback questions should be biased toward ruling in urgent review."
+      }
+    },
+    {
+      "id": "fever",
+      "title": "Fever",
+      "pages": [
+        24
+      ],
+      "symptomCategory": "general_systemic",
+      "bodyRegions": [
+        "body"
+      ],
+      "complaintCues": [
+        "fever",
+        "feverish",
+        "hot",
+        "temperature",
+        "chills"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Are you confused, very weak, or struggling to breathe?",
+        "Do you have severe headache, rash, or vomiting blood?",
+        "Have you recently travelled to a malaria area?",
+        "Do you have cough, night sweats, or weight loss?",
+        "Are you pregnant?"
+      ],
+      "coreSubjectiveQuestions": [
+        "How long have you had the fever?",
+        "Any cough, sore throat, urinary symptoms, diarrhoea, abdominal pain, rash, or body pain?",
+        "Any TB symptoms such as weight loss or night sweats?",
+        "Any HIV or chronic illness context if known?"
+      ],
+      "clinicianObjectiveFocus": [
+        "Temperature, pulse, BP, respiratory rate, oxygen saturation",
+        "Screen for COVID/TB and dangerous sepsis-like features"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "screen_all_patients_for_covid_19_and_tb",
+          "page": 8
+        },
+        {
+          "targetPathwayId": "tb_diagnosis",
+          "page": 92
+        },
+        {
+          "targetPathwayId": "acute_covid_19",
+          "page": 41
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 7,
+        "ordering": "Ask instability, breathing, rash, bleeding, pregnancy, and malaria/TB screening questions first, then organ-system symptom review.",
+        "notes": "Use this only if no stronger fever-oriented JSON pathway is available."
+      }
+    },
+    {
+      "id": "collapse_blackout_faint",
+      "title": "Collapse / Blackout / Faint",
+      "pages": [
+        28
+      ],
+      "symptomCategory": "neurological",
+      "bodyRegions": [
+        "head",
+        "brain",
+        "body"
+      ],
+      "complaintCues": [
+        "collapse",
+        "blackout",
+        "fainted",
+        "passed out",
+        "fell down suddenly"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Did you completely lose consciousness?",
+        "Do you have chest pain, palpitations, or shortness of breath?",
+        "Did you have a seizure or shaking movements?",
+        "Did you hit your head or injure yourself?",
+        "Are you confused or weak afterwards?"
+      ],
+      "coreSubjectiveQuestions": [
+        "When did it happen?",
+        "How long were you out for?",
+        "Any warning symptoms before it happened?",
+        "Any history of similar episodes?",
+        "Any diabetes, pregnancy, or dehydration context?"
+      ],
+      "clinicianObjectiveFocus": [
+        "BP, pulse, glucose, neurological status",
+        "Assess for cardiac, neurological, metabolic, or dehydration causes"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "decreased_consciousness",
+          "page": 16
+        },
+        {
+          "targetPathwayId": "assess_and_manage_glucose",
+          "page": 17
+        },
+        {
+          "targetPathwayId": "chest_pain",
+          "page": 37
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 6,
+        "ordering": "Ask true loss-of-consciousness and cardiopulmonary red flags first, then prodrome, duration, injury, and recurrence.",
+        "notes": "Good fallback for unclear faint/collapse complaints."
+      }
+    },
+    {
+      "id": "dizziness",
+      "title": "Dizziness",
+      "pages": [
+        29
+      ],
+      "symptomCategory": "neurological",
+      "bodyRegions": [
+        "head",
+        "brain"
+      ],
+      "complaintCues": [
+        "dizzy",
+        "dizziness",
+        "lightheaded",
+        "vertigo",
+        "room spinning"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Did you faint or almost faint?",
+        "Do you have chest pain, palpitations, or shortness of breath?",
+        "Do you have weakness, numbness, speech trouble, or severe headache?",
+        "Do you have vomiting and cannot keep fluids down?"
+      ],
+      "coreSubjectiveQuestions": [
+        "Is it spinning, lightheadedness, or imbalance?",
+        "When did it start?",
+        "Is it constant or positional?",
+        "Any ear symptoms, headache, fever, visual changes, or dehydration?"
+      ],
+      "clinicianObjectiveFocus": [
+        "BP, pulse, glucose if needed",
+        "Consider neurological, cardiac, dehydration, ENT causes"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "collapse_blackout_faint",
+          "page": 28
+        },
+        {
+          "targetPathwayId": "ear_symptoms",
+          "page": 33
+        },
+        {
+          "targetPathwayId": "headache",
+          "page": 30
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 6,
+        "ordering": "Screen for collapse/stroke/cardiac danger first, then characterize the dizziness and associated symptoms.",
+        "notes": "Fallback intake should distinguish spinning vs faintness if possible."
+      }
+    },
+    {
+      "id": "nausea_vomiting",
+      "title": "Nausea / Vomiting",
+      "pages": [
+        45
+      ],
+      "symptomCategory": "gastrointestinal",
+      "bodyRegions": [
+        "abdomen",
+        "stomach"
+      ],
+      "complaintCues": [
+        "nausea",
+        "vomiting",
+        "vomit",
+        "throwing up",
+        "can't keep food down"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Are you unable to keep down any fluids?",
+        "Are you vomiting blood?",
+        "Do you also have severe abdominal pain, headache, or confusion?",
+        "Are you pregnant or could you be pregnant?",
+        "Have you had diarrhoea, jaundice, or no stool/wind?"
+      ],
+      "coreSubjectiveQuestions": [
+        "When did it start?",
+        "How often are you vomiting?",
+        "Any abdominal pain, diarrhoea, fever, headache, dizziness, or urinary symptoms?",
+        "Any recent pregnancy, alcohol/drug exposure, or chronic illness?"
+      ],
+      "clinicianObjectiveFocus": [
+        "Hydration and shock features",
+        "BP, pulse, glucose if clinically indicated",
+        "Link to abdominal pain, pregnancy, or diarrhoea causes"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "abdominal_pain_heartburn",
+          "page": 44
+        },
+        {
+          "targetPathwayId": "diarrhoea",
+          "page": 46
+        },
+        {
+          "targetPathwayId": "pregnancy",
+          "page": 157
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 7,
+        "ordering": "Ask dehydration, bleeding, severe pain, pregnancy, and neuro red flags first, then pattern and associated GI symptoms.",
+        "notes": "Keep the AI in symptom-clarification mode only."
+      }
+    },
+    {
+      "id": "urinary_symptoms",
+      "title": "Urinary Symptoms",
+      "pages": [
+        59
+      ],
+      "symptomCategory": "genitourinary",
+      "bodyRegions": [
+        "pelvis",
+        "urinary"
+      ],
+      "complaintCues": [
+        "burning urine",
+        "pain when urinating",
+        "urinary frequency",
+        "can't pass urine",
+        "blood in urine"
+      ],
+      "urgentSubjectiveRedFlags": [
+        "Are you unable to pass urine?",
+        "Do you have fever, vomiting, or flank/back pain?",
+        "Are you pregnant?",
+        "Is there visible blood in the urine?"
+      ],
+      "coreSubjectiveQuestions": [
+        "Is it pain, frequency, urgency, poor stream, or retention?",
+        "When did it start?",
+        "Any lower abdominal pain, vaginal symptoms, or back pain?",
+        "Any previous similar episodes?"
+      ],
+      "clinicianObjectiveFocus": [
+        "Temperature, BP, hydration/stability",
+        "Differentiate lower UTI vs more severe urinary involvement"
+      ],
+      "likelyLinks": [
+        {
+          "targetPathwayId": "abdominal_pain_heartburn",
+          "page": 44
+        },
+        {
+          "targetPathwayId": "genital_symptoms",
+          "page": 49
+        },
+        {
+          "targetPathwayId": "pregnancy",
+          "page": 157
+        }
+      ],
+      "aiFallbackGuidance": {
+        "maxQuestions": 6,
+        "ordering": "Ask retention, fever/flank pain, pregnancy, and blood-in-urine questions first, then classic LUTS characterization.",
+        "notes": "Useful when abdominal/pelvic complaints are vague."
+      }
+    }
+  ]
+}

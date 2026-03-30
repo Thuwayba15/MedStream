@@ -20,10 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Services\PatientIntakeService\Pathways\Definitions\*.json" />
-    <EmbeddedResource Include="..\..\..\..\docs\clinical-pathways\apc-catalog.v1.json">
+    <EmbeddedResource Include="Services\PatientIntakeService\Pathways\Apc\apc-catalog.v1.json">
       <LogicalName>MedStream.Application.Pathways.Apc.apc-catalog.v1.json</LogicalName>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\..\..\..\docs\clinical-pathways\apc-summaries.v1.json">
+    <EmbeddedResource Include="Services\PatientIntakeService\Pathways\Apc\apc-summaries.v1.json">
       <LogicalName>MedStream.Application.Pathways.Apc.apc-summaries.v1.json</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
