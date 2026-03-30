@@ -131,6 +131,8 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
         review.UrgencyLevel.ShouldBe("Urgent");
         review.PriorityScore.ShouldBeGreaterThan(0m);
         review.ChiefComplaint.ShouldNotBeNullOrWhiteSpace();
+        review.Reasoning.Count.ShouldBeGreaterThan(0);
+        review.ClinicianSummary.ShouldNotBeNullOrWhiteSpace();
         review.ConsultationPath.ShouldContain("/clinician/consultation");
         review.PatientHistoryPath.ShouldContain("/clinician/history");
     }
@@ -205,6 +207,32 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
                 QueueTicketId = triageResult.Queue.QueueTicketId,
                 NewStatus = PatientIntakeConstants.QueueStatusWaiting
             });
+        });
+    }
+
+    [Fact]
+    public async Task OverrideQueueTicketUrgency_Should_Update_Triage_Assessment()
+    {
+        var clinicianEmail = await RegisterAndApproveClinicianWithFacilityAsync();
+        var triageResult = await CreateQueuedVisitForPatientAsync($"queue-override-{Guid.NewGuid():N}@medstream.test", isUrgent: false);
+
+        LoginAsTenant(AbpTenantBase.DefaultTenantName, clinicianEmail);
+        var result = await _queueOperationsAppService.OverrideQueueTicketUrgency(new OverrideQueueTicketUrgencyInput
+        {
+            QueueTicketId = triageResult.Queue.QueueTicketId,
+            UrgencyLevel = "Urgent",
+            Note = "Clinician review identified higher urgency."
+        });
+
+        result.UrgencyLevel.ShouldBe("Urgent");
+        result.PriorityScore.ShouldBeGreaterThanOrEqualTo(90m);
+
+        await UsingDbContextAsync(async context =>
+        {
+            var queueTicket = await context.QueueTickets.SingleAsync(item => item.Id == triageResult.Queue.QueueTicketId);
+            var triageAssessment = await context.TriageAssessments.SingleAsync(item => item.Id == queueTicket.TriageAssessmentId);
+            triageAssessment.UrgencyLevel.ShouldBe("Urgent");
+            triageAssessment.PriorityScore.ShouldBeGreaterThanOrEqualTo(90m);
         });
     }
 

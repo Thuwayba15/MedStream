@@ -1,6 +1,7 @@
 using Abp.Application.Services;
 using Abp.Application.Services.Dto;
 using MedStream.QueueOperations.Dto;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 namespace MedStream.QueueOperations;
@@ -23,5 +24,12 @@ public interface IQueueOperationsAppService : IApplicationService
     /// <summary>
     /// Updates queue status for clinician operational flow.
     /// </summary>
+    [HttpPut]
     Task<UpdateQueueTicketStatusOutput> UpdateQueueTicketStatus(UpdateQueueTicketStatusInput input);
+
+    /// <summary>
+    /// Overrides urgency for clinician review flow.
+    /// </summary>
+    [HttpPost]
+    Task<OverrideQueueTicketUrgencyOutput> OverrideQueueTicketUrgency(OverrideQueueTicketUrgencyInput input);
 }

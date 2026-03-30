@@ -453,6 +453,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         }
 
         var facilityId = await ResolveFacilityIdAsync(visit);
+        await SupersedePreviousActiveQueueTicketsAsync(visit, facilityId, assessedAt);
         var queueDate = assessedAt.Date;
         var nextQueueNumber = await GetNextQueueNumberAsync(visit.TenantId, facilityId, queueDate);
         var queueTicket = new QueueTicket
@@ -486,6 +487,50 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
 
         await CurrentUnitOfWork.SaveChangesAsync();
         return queueTicket;
+    }
+
+    private async Task SupersedePreviousActiveQueueTicketsAsync(Visit visit, int facilityId, DateTime supersededAt)
+    {
+        var previousActiveTickets = await (
+            from queueTicket in _queueTicketRepository.GetAll()
+            join existingVisit in _visitRepository.GetAll() on queueTicket.VisitId equals existingVisit.Id
+            where queueTicket.TenantId == visit.TenantId &&
+                  queueTicket.FacilityId == facilityId &&
+                  existingVisit.PatientUserId == visit.PatientUserId &&
+                  queueTicket.VisitId != visit.Id &&
+                  queueTicket.IsActive &&
+                  !queueTicket.IsDeleted
+            select new
+            {
+                QueueTicket = queueTicket,
+                Visit = existingVisit
+            }).ToListAsync();
+
+        foreach (var previousTicketEntry in previousActiveTickets)
+        {
+            var previousStatus = previousTicketEntry.QueueTicket.QueueStatus;
+            previousTicketEntry.QueueTicket.QueueStatus = PatientIntakeConstants.QueueStatusCancelled;
+            previousTicketEntry.QueueTicket.CurrentStage = "Cancelled";
+            previousTicketEntry.QueueTicket.IsActive = false;
+            previousTicketEntry.QueueTicket.CancelledAt = supersededAt;
+            previousTicketEntry.QueueTicket.LastStatusChangedAt = supersededAt;
+
+            previousTicketEntry.Visit.Status = "Cancelled";
+
+            await _queueTicketRepository.UpdateAsync(previousTicketEntry.QueueTicket);
+            await _visitRepository.UpdateAsync(previousTicketEntry.Visit);
+
+            await _queueEventRepository.InsertAsync(new QueueEvent
+            {
+                TenantId = visit.TenantId,
+                QueueTicketId = previousTicketEntry.QueueTicket.Id,
+                EventType = PatientIntakeConstants.QueueEventStatusChanged,
+                OldStatus = previousStatus,
+                NewStatus = PatientIntakeConstants.QueueStatusCancelled,
+                Notes = $"Queue ticket superseded by new visit {visit.Id}.",
+                EventAt = supersededAt
+            });
+        }
     }
 
     private async Task<int> ResolveFacilityIdAsync(Visit visit)

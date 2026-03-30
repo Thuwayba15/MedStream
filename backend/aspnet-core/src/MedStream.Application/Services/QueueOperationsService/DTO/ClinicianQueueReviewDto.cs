@@ -74,6 +74,11 @@ public class ClinicianQueueReviewDto
     public List<string> RedFlags { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets clinician-friendly reasoning items behind the triage result.
+    /// </summary>
+    public List<string> Reasoning { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets patient chief complaint.
     /// </summary>
     public string ChiefComplaint { get; set; }
@@ -92,6 +97,11 @@ public class ClinicianQueueReviewDto
     /// Gets or sets subjective summary for clinician handoff.
     /// </summary>
     public string SubjectiveSummary { get; set; }
+
+    /// <summary>
+    /// Gets or sets clinician-facing intake summary text.
+    /// </summary>
+    public string ClinicianSummary { get; set; }
 
     /// <summary>
     /// Gets or sets consultation route path for this visit.
