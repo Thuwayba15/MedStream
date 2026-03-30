@@ -29,3 +29,41 @@ export interface IGetClinicianQueueRequest {
     skipCount?: number;
     maxResultCount?: number;
 }
+
+export interface IClinicianQueueReview {
+    queueTicketId: number;
+    visitId: number;
+    patientUserId: number;
+    patientName: string;
+    queueNumber: number;
+    queueStatus: TQueueStatus;
+    currentStage: string;
+    waitingMinutes: number;
+    enteredQueueAt: string;
+    urgencyLevel: TUrgencyLevel;
+    priorityScore: number;
+    triageExplanation: string;
+    redFlags: string[];
+    chiefComplaint: string;
+    selectedSymptoms: string[];
+    extractedPrimarySymptoms: string[];
+    subjectiveSummary: string;
+    consultationPath: string;
+    patientHistoryPath: string;
+}
+
+export interface IUpdateQueueStatusRequest {
+    queueTicketId: number;
+    newStatus: TQueueStatus;
+    note?: string;
+}
+
+export interface IUpdateQueueStatusResponse {
+    queueTicketId: number;
+    oldStatus: TQueueStatus;
+    newStatus: TQueueStatus;
+    currentStage: string;
+    changedAt: string;
+    visitId: number;
+    patientUserId: number;
+}
