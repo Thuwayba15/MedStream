@@ -47,6 +47,7 @@ test.describe("patient intake flow", () => {
 
         await expect(page.getByText("Step 5 of 5")).toBeVisible();
         await expect(page.getByText("Queue Status", { exact: true })).toBeVisible();
+        await expect(page.getByText("Priority score:")).toHaveCount(0);
     });
 
     test("urgent-check fast-tracks directly to status", async ({ page, context }) => {
