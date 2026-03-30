@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, HistoryOutlined, PhoneOutlined, StopOutlined, WarningOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Empty, Modal, Skeleton, Space, Tag, Typography } from "antd";
+import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, HistoryOutlined, StopOutlined, WarningOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Empty, Input, Modal, Select, Skeleton, Space, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -25,50 +25,6 @@ const getHumanStatus = (status: TQueueStatus): string => {
     return status.replace("_", " ");
 };
 
-const normalizeFollowUpValue = (value: string): string => {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed === "[]" || trimmed === "{}") {
-        return "Not provided";
-    }
-
-    if (trimmed.toLowerCase() === "true") {
-        return "Yes";
-    }
-
-    if (trimmed.toLowerCase() === "false") {
-        return "No";
-    }
-
-    return trimmed;
-};
-
-const parseFollowUpAnswers = (subjectiveSummary: string): Array<{ label: string; value: string }> => {
-    const marker = "Follow-up answers:";
-    const markerIndex = subjectiveSummary.indexOf(marker);
-    if (markerIndex < 0) {
-        return [];
-    }
-
-    const answerSection = subjectiveSummary.slice(markerIndex + marker.length).trim();
-    if (!answerSection) {
-        return [];
-    }
-
-    return answerSection
-        .split(";")
-        .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0 && entry.includes(":"))
-        .map((entry) => {
-            const separatorIndex = entry.indexOf(":");
-            const label = entry.slice(0, separatorIndex).trim();
-            const value = entry.slice(separatorIndex + 1).trim();
-            return {
-                label: label.length > 0 ? label : "Follow-up",
-                value: normalizeFollowUpValue(value),
-            };
-        });
-};
-
 interface IClinicianTriageReviewPageProps {
     queueTicketId: number;
 }
@@ -79,6 +35,9 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
     const state = useClinicianQueueReviewState();
     const actions = useClinicianQueueReviewActions();
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+    const [overrideUrgencyLevel, setOverrideUrgencyLevel] = useState<TUrgencyLevel>("Priority");
+    const [overrideNote, setOverrideNote] = useState("");
 
     useEffect(() => {
         if (queueTicketId > 0) {
@@ -89,10 +48,6 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
     const review = state.review;
     const status = review?.queueStatus;
 
-    const followUpAnswers = useMemo(() => {
-        return review ? parseFollowUpAnswers(review.subjectiveSummary) : [];
-    }, [review]);
-
     const actionConfig = useMemo((): { status: TQueueStatus; label: string; icon: React.ReactNode } | null => {
         if (!status) {
             return null;
@@ -100,9 +55,9 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
 
         if (status === "waiting") {
             return {
-                status: "called",
-                label: "Call In",
-                icon: <PhoneOutlined />,
+                status: "in_consultation",
+                label: "Start Consultation",
+                icon: <FileTextOutlined />,
             };
         }
 
@@ -126,6 +81,12 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
     }, [status]);
 
     const canCancel = status === "waiting" || status === "called" || status === "in_consultation";
+
+    useEffect(() => {
+        if (review) {
+            setOverrideUrgencyLevel(review.urgencyLevel);
+        }
+    }, [review]);
 
     const handlePrimaryAction = async (): Promise<void> => {
         if (!review || !actionConfig) {
@@ -154,6 +115,18 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
         }
     };
 
+    const handleUrgencyOverride = async (): Promise<void> => {
+        if (!review) {
+            return;
+        }
+
+        const result = await actions.overrideUrgency(review.queueTicketId, overrideUrgencyLevel, overrideNote);
+        if (result) {
+            setIsOverrideModalOpen(false);
+            setOverrideNote("");
+        }
+    };
+
     const patientSummary = review
         ? review.selectedSymptoms.length > 0
             ? `Reported symptoms: ${review.selectedSymptoms.join(", ")}`
@@ -165,7 +138,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
             <header className={styles.topBar}>
                 <div className={styles.topBarLeft}>
                     <Link href="/clinician">
-                        <Button icon={<ArrowLeftOutlined />} className={styles.backButton}>
+                        <Button icon={<ArrowLeftOutlined />} className={`${styles.backButton} ${styles.secondaryAction}`}>
                             Back
                         </Button>
                     </Link>
@@ -175,7 +148,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                     {review ? <Tag className={styles.queueBadge}>#{review.queueNumber}</Tag> : null}
                 </div>
                 <Space size={10} wrap>
-                    <Button className={styles.secondaryAction} disabled>
+                    <Button className={styles.secondaryAction} onClick={() => setIsOverrideModalOpen(true)}>
                         Override Urgency
                     </Button>
                     {actionConfig ? (
@@ -259,19 +232,12 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                                         <Tag key={`primary-${item}`}>{item}</Tag>
                                     ))}
                                 </div>
-                                {followUpAnswers.length > 0 ? (
-                                    <>
-                                        <Typography.Text strong>Follow-up Answers</Typography.Text>
-                                        <div className={styles.followUpList}>
-                                            {followUpAnswers.map((answer, index) => (
-                                                <div key={`${answer.label}-${index}`} className={styles.followUpItem}>
-                                                    <Typography.Text className={styles.followUpLabel}>{answer.label}</Typography.Text>
-                                                    <Typography.Text className={styles.followUpValue}>{answer.value}</Typography.Text>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                ) : null}
+                                <Typography.Text strong>AI Summary</Typography.Text>
+                                <div className={styles.summaryPanel}>
+                                    <Typography.Paragraph className={styles.bodyText}>
+                                        {review.clinicianSummary || "A clinician-ready summary is not available yet."}
+                                    </Typography.Paragraph>
+                                </div>
                             </Space>
                         </Card>
                     </Space>
@@ -279,28 +245,28 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                     <Space orientation="vertical" size={14}>
                         <Card className={styles.sectionCard}>
                             <Space orientation="vertical" size={12}>
-                                <div className={styles.assessmentIconWrap}>
+                                <div className={`${styles.assessmentIconWrap} ${getAssessmentIconClassName(review.urgencyLevel, styles)}`}>
                                     <WarningOutlined />
                                 </div>
                                 <Typography.Title level={4} className={styles.sideSectionTitle}>
                                     System Assessment
                                 </Typography.Title>
-                                <Typography.Title level={2} className={styles.assessmentUrgency}>
+                                <Typography.Title level={2} className={`${styles.assessmentUrgency} ${getAssessmentUrgencyClassName(review.urgencyLevel, styles)}`}>
                                     {review.urgencyLevel.toUpperCase()}
                                 </Typography.Title>
                                 <Typography.Paragraph className={styles.bodyText}>{review.triageExplanation || "No triage explanation is available."}</Typography.Paragraph>
-                                <Typography.Text strong>Rule-Based Logic Applied</Typography.Text>
-                                {review.redFlags.length > 0 ? (
+                                <Typography.Text strong>Reasoning</Typography.Text>
+                                {review.reasoning.length > 0 ? (
                                     <div className={styles.redFlagList}>
-                                        {review.redFlags.map((flag) => (
-                                            <div key={flag} className={styles.redFlagItem}>
-                                                <span className={styles.redDot} />
-                                                <Typography.Text>{flag}</Typography.Text>
+                                        {review.reasoning.map((item) => (
+                                            <div key={item} className={styles.redFlagItem}>
+                                                <span className={`${styles.redDot} ${getReasoningDotClassName(review.urgencyLevel, styles)}`} />
+                                                <Typography.Text>{item}</Typography.Text>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <Typography.Text type="secondary">No explicit red flags captured.</Typography.Text>
+                                    <Typography.Text type="secondary">No explicit clinical reasoning was captured.</Typography.Text>
                                 )}
                                 <Typography.Text type="secondary">Priority score: {review.priorityScore}</Typography.Text>
                             </Space>
@@ -319,7 +285,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                                     </Button>
                                 </Link>
                                 {canCancel ? (
-                                    <Button icon={<StopOutlined />} className={styles.cancelAction} loading={state.isUpdatingStatus} onClick={() => setIsCancelModalOpen(true)}>
+                                    <Button icon={<StopOutlined />} className={`${styles.secondaryAction} ${styles.centeredAction}`} loading={state.isUpdatingStatus} onClick={() => setIsCancelModalOpen(true)} block>
                                         Cancel Queue Entry
                                     </Button>
                                 ) : null}
@@ -340,6 +306,69 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
             >
                 <Typography.Paragraph>Cancelled queue entries are removed from active flow and should only be used when a visit is no longer continuing.</Typography.Paragraph>
             </Modal>
+
+            <Modal
+                title="Override urgency"
+                open={isOverrideModalOpen}
+                onCancel={() => setIsOverrideModalOpen(false)}
+                onOk={() => void handleUrgencyOverride()}
+                okText="Save urgency"
+                confirmLoading={state.isUpdatingStatus}
+            >
+                <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+                    <Select<TUrgencyLevel>
+                        value={overrideUrgencyLevel}
+                        onChange={setOverrideUrgencyLevel}
+                        options={[
+                            { value: "Urgent", label: "Urgent" },
+                            { value: "Priority", label: "Priority" },
+                            { value: "Routine", label: "Routine" },
+                        ]}
+                    />
+                    <Input.TextArea
+                        rows={4}
+                        value={overrideNote}
+                        onChange={(event) => setOverrideNote(event.target.value)}
+                        placeholder="Optional reason for override"
+                    />
+                </Space>
+            </Modal>
         </section>
     );
+};
+
+const getAssessmentUrgencyClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string, string>): string => {
+    if (urgencyLevel === "Urgent") {
+        return styles.assessmentUrgent;
+    }
+
+    if (urgencyLevel === "Priority") {
+        return styles.assessmentPriority;
+    }
+
+    return styles.assessmentRoutine;
+};
+
+const getAssessmentIconClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string, string>): string => {
+    if (urgencyLevel === "Urgent") {
+        return styles.assessmentIconUrgent;
+    }
+
+    if (urgencyLevel === "Priority") {
+        return styles.assessmentIconPriority;
+    }
+
+    return styles.assessmentIconRoutine;
+};
+
+const getReasoningDotClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string, string>): string => {
+    if (urgencyLevel === "Urgent") {
+        return styles.reasoningDotUrgent;
+    }
+
+    if (urgencyLevel === "Priority") {
+        return styles.reasoningDotPriority;
+    }
+
+    return styles.reasoningDotRoutine;
 };

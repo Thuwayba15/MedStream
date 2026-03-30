@@ -9,6 +9,9 @@ export enum ClinicianQueueReviewActionEnums {
     updateStatusStarted = "CLINICIAN_QUEUE_REVIEW_UPDATE_STARTED",
     updateStatusSucceeded = "CLINICIAN_QUEUE_REVIEW_UPDATE_SUCCEEDED",
     updateStatusFailed = "CLINICIAN_QUEUE_REVIEW_UPDATE_FAILED",
+    overrideUrgencyStarted = "CLINICIAN_QUEUE_REVIEW_OVERRIDE_URGENCY_STARTED",
+    overrideUrgencySucceeded = "CLINICIAN_QUEUE_REVIEW_OVERRIDE_URGENCY_SUCCEEDED",
+    overrideUrgencyFailed = "CLINICIAN_QUEUE_REVIEW_OVERRIDE_URGENCY_FAILED",
     clearMessages = "CLINICIAN_QUEUE_REVIEW_CLEAR_MESSAGES",
 }
 
@@ -51,6 +54,22 @@ export const updateStatusSucceeded = createAction<IClinicianQueueReviewStatePayl
 );
 
 export const updateStatusFailed = createAction<IClinicianQueueReviewStatePayload, string>(ClinicianQueueReviewActionEnums.updateStatusFailed, (message) => ({
+    isUpdatingStatus: false,
+    errorMessage: message,
+}));
+
+export const overrideUrgencyStarted = createAction<IClinicianQueueReviewStatePayload>(ClinicianQueueReviewActionEnums.overrideUrgencyStarted, () => ({
+    isUpdatingStatus: true,
+    errorMessage: undefined,
+    successMessage: undefined,
+}));
+
+export const overrideUrgencySucceeded = createAction<IClinicianQueueReviewStatePayload, string>(ClinicianQueueReviewActionEnums.overrideUrgencySucceeded, (urgencyLevel) => ({
+    isUpdatingStatus: false,
+    successMessage: `Urgency updated to ${urgencyLevel}.`,
+}));
+
+export const overrideUrgencyFailed = createAction<IClinicianQueueReviewStatePayload, string>(ClinicianQueueReviewActionEnums.overrideUrgencyFailed, (message) => ({
     isUpdatingStatus: false,
     errorMessage: message,
 }));

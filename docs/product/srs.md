@@ -245,6 +245,7 @@ F6.2 Track Queue State
 2.1 System must log all queue changes via QueueEvent
  2.2 Queue state must be persisted with `waiting`, `called`, `in_consultation`, `completed`, and `cancelled`
  2.3 System must prevent duplicate active queue tickets for the same Visit
+ 2.3.1 When a patient completes intake for a newer Visit while an older queue ticket is still active, the older active queue ticket must be superseded and cancelled so the patient remains in the live queue only once
  2.4 Queue status transitions must be constrained to:
 `waiting -> called|in_consultation|cancelled`
 `called -> waiting|in_consultation|cancelled`
@@ -254,9 +255,11 @@ F6.2 Track Queue State
 
 F6.3 Clinician Queue Visibility
 3.1 Clinician queue view must return facility-scoped queue rows for the signed-in clinician
- 3.2 Queue ordering must prioritize urgency first, then higher priority score, then oldest waiting time
- 3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
- 3.4 Live queue dashboard must show active queue tickets only; completed and cancelled tickets must leave active queue view
+3.2 Queue ordering must prioritize urgency first, then higher priority score, then oldest waiting time
+3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
+3.4 Live queue dashboard must show active queue tickets only; completed and cancelled tickets must leave active queue view
+ 3.5 Clinician triage review must show clinician-friendly reasoning and a readable intake summary; internal rule ids or raw intake payload keys must not be shown directly in the UI
+ 3.6 If AI summarization is available, clinician review may use it to generate a concise intake handoff summary, with deterministic fallback when AI is unavailable
 
 F6.4 Clinician Triage Review and Handoff
 4.1 Clinician must be able to open a queue ticket and view combined triage + intake context for that visit
@@ -264,6 +267,7 @@ F6.4 Clinician Triage Review and Handoff
  4.2.1 If free-text chief complaint is missing, clinician review should derive a fallback chief complaint from captured symptom selections/extractions
  4.3 Clinician must be able to execute queue transitions from review context using the constrained status model in F6.2
  4.4 Review context must provide explicit handoff links into consultation and patient history views for the currently selected visit/patient
+ 4.5 Clinician must be able to override urgency during review, and the override must persist back to `TriageAssessment` so queue ranking updates accordingly
 
 F7. Vital Signs
 F7.1 Record Vitals

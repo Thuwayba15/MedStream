@@ -65,6 +65,9 @@ export const API = {
     /** ABP clinician queue status-update endpoint. */
     QUEUE_OPERATIONS_UPDATE_QUEUE_STATUS_ENDPOINT: "/api/services/app/QueueOperations/UpdateQueueTicketStatus",
 
+    /** ABP clinician queue urgency-override endpoint. */
+    QUEUE_OPERATIONS_OVERRIDE_QUEUE_URGENCY_ENDPOINT: "/api/services/app/QueueOperations/OverrideQueueTicketUrgency",
+
     /** Internal Next route for auth login. */
     AUTH_LOGIN_ROUTE: "/api/auth/login",
 

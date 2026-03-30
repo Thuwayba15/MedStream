@@ -2,8 +2,8 @@
 
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
-import type { IClinicianQueueReview, IUpdateQueueStatusResponse, TQueueStatus } from "@/services/queue-operations/types";
-import { clearMessages, loadReviewFailed, loadReviewStarted, loadReviewSucceeded, updateStatusFailed, updateStatusStarted, updateStatusSucceeded } from "./actions";
+import type { IClinicianQueueReview, IOverrideQueueUrgencyResponse, IUpdateQueueStatusResponse, TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
+import { clearMessages, loadReviewFailed, loadReviewStarted, loadReviewSucceeded, overrideUrgencyFailed, overrideUrgencyStarted, overrideUrgencySucceeded, updateStatusFailed, updateStatusStarted, updateStatusSucceeded } from "./actions";
 import { ClinicianQueueReviewActionContext, ClinicianQueueReviewStateContext, INITIAL_STATE, type IClinicianQueueReviewActionContext, type IClinicianQueueReviewStateContext } from "./context";
 import { clinicianQueueReviewReducer } from "./reducer";
 
@@ -60,13 +60,39 @@ export const ClinicianQueueReviewProvider = ({ children }: { children: React.Rea
         }
     }, [loadReview]);
 
+    const overrideUrgency = useCallback(async (queueTicketId: number, urgencyLevel: TUrgencyLevel, note?: string): Promise<IOverrideQueueUrgencyResponse | null> => {
+        dispatch(overrideUrgencyStarted());
+        try {
+            const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/urgency`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    urgencyLevel,
+                    note: note ?? "",
+                }),
+            });
+
+            const result = await parseResponse<IOverrideQueueUrgencyResponse>(response, "Unable to override urgency.");
+            dispatch(overrideUrgencySucceeded(result.urgencyLevel));
+            await loadReview(queueTicketId);
+            return result;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unable to override urgency.";
+            dispatch(overrideUrgencyFailed(message));
+            return null;
+        }
+    }, [loadReview]);
+
     const actions: IClinicianQueueReviewActionContext = useMemo(
         () => ({
             loadReview,
             updateQueueStatus,
+            overrideUrgency,
             clearMessages: () => dispatch(clearMessages()),
         }),
-        [loadReview, updateQueueStatus]
+        [loadReview, overrideUrgency, updateQueueStatus]
     );
 
     return (

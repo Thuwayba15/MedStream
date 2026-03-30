@@ -1,7 +1,7 @@
 import { API } from "@/constants/api";
 import { unwrapAbpResponse } from "@/lib/api/abp";
 import { apiClient } from "@/lib/api/client";
-import type { IClinicianQueueResponse, IClinicianQueueReview, IGetClinicianQueueRequest, IUpdateQueueStatusRequest, IUpdateQueueStatusResponse } from "./types";
+import type { IClinicianQueueResponse, IClinicianQueueReview, IGetClinicianQueueRequest, IOverrideQueueUrgencyRequest, IOverrideQueueUrgencyResponse, IUpdateQueueStatusRequest, IUpdateQueueStatusResponse } from "./types";
 
 const getAuthorizationHeader = (accessToken: string): { Authorization: string } => {
     return { Authorization: `Bearer ${accessToken}` };
@@ -35,7 +35,7 @@ const getQueueTicketForReview = async (queueTicketId: number, accessToken: strin
 };
 
 const updateQueueTicketStatus = async (payload: IUpdateQueueStatusRequest, accessToken: string): Promise<IUpdateQueueStatusResponse> => {
-    const response = await apiClient.post(
+    const response = await apiClient.put(
         API.QUEUE_OPERATIONS_UPDATE_QUEUE_STATUS_ENDPOINT,
         {
             queueTicketId: payload.queueTicketId,
@@ -50,8 +50,25 @@ const updateQueueTicketStatus = async (payload: IUpdateQueueStatusRequest, acces
     return unwrapAbpResponse<IUpdateQueueStatusResponse>(response.data);
 };
 
+const overrideQueueTicketUrgency = async (payload: IOverrideQueueUrgencyRequest, accessToken: string): Promise<IOverrideQueueUrgencyResponse> => {
+    const response = await apiClient.post(
+        API.QUEUE_OPERATIONS_OVERRIDE_QUEUE_URGENCY_ENDPOINT,
+        {
+            queueTicketId: payload.queueTicketId,
+            urgencyLevel: payload.urgencyLevel,
+            note: payload.note ?? "",
+        },
+        {
+            headers: getAuthorizationHeader(accessToken),
+        }
+    );
+
+    return unwrapAbpResponse<IOverrideQueueUrgencyResponse>(response.data);
+};
+
 export const queueOperationsService = {
     getClinicianQueue,
     getQueueTicketForReview,
     updateQueueTicketStatus,
+    overrideQueueTicketUrgency,
 };

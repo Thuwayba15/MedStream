@@ -44,10 +44,12 @@ export interface IClinicianQueueReview {
     priorityScore: number;
     triageExplanation: string;
     redFlags: string[];
+    reasoning: string[];
     chiefComplaint: string;
     selectedSymptoms: string[];
     extractedPrimarySymptoms: string[];
     subjectiveSummary: string;
+    clinicianSummary: string;
     consultationPath: string;
     patientHistoryPath: string;
 }
@@ -66,4 +68,19 @@ export interface IUpdateQueueStatusResponse {
     changedAt: string;
     visitId: number;
     patientUserId: number;
+}
+
+export interface IOverrideQueueUrgencyRequest {
+    queueTicketId: number;
+    urgencyLevel: TUrgencyLevel;
+    note?: string;
+}
+
+export interface IOverrideQueueUrgencyResponse {
+    queueTicketId: number;
+    visitId: number;
+    patientUserId: number;
+    previousUrgencyLevel: TUrgencyLevel;
+    urgencyLevel: TUrgencyLevel;
+    priorityScore: number;
 }

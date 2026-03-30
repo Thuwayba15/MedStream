@@ -28,6 +28,18 @@ export const clinicianQueueReviewReducer = handleActions<IClinicianQueueReviewSt
             ...state,
             ...action.payload,
         }),
+        [ClinicianQueueReviewActionEnums.overrideUrgencyStarted]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [ClinicianQueueReviewActionEnums.overrideUrgencySucceeded]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [ClinicianQueueReviewActionEnums.overrideUrgencyFailed]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
         [ClinicianQueueReviewActionEnums.clearMessages]: (state, action) => ({
             ...state,
             ...action.payload,

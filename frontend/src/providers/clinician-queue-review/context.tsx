@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext } from "react";
-import type { IClinicianQueueReview, IUpdateQueueStatusResponse, TQueueStatus } from "@/services/queue-operations/types";
+import type { IClinicianQueueReview, IOverrideQueueUrgencyResponse, IUpdateQueueStatusResponse, TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
 
 export interface IClinicianQueueReviewStateContext {
     review: IClinicianQueueReview | null;
@@ -14,6 +14,7 @@ export interface IClinicianQueueReviewStateContext {
 export interface IClinicianQueueReviewActionContext {
     loadReview: (queueTicketId: number) => Promise<void>;
     updateQueueStatus: (queueTicketId: number, newStatus: TQueueStatus, note?: string) => Promise<IUpdateQueueStatusResponse | null>;
+    overrideUrgency: (queueTicketId: number, urgencyLevel: TUrgencyLevel, note?: string) => Promise<IOverrideQueueUrgencyResponse | null>;
     clearMessages: () => void;
 }
 
@@ -28,6 +29,7 @@ export const INITIAL_STATE: IClinicianQueueReviewStateContext = {
 export const INITIAL_ACTION_STATE: IClinicianQueueReviewActionContext = {
     loadReview: async () => Promise.resolve(),
     updateQueueStatus: async () => null,
+    overrideUrgency: async () => null,
     clearMessages: () => undefined,
 };
 

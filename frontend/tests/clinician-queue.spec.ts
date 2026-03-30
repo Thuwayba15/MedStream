@@ -89,10 +89,12 @@ test.describe("clinician queue dashboard", () => {
                     priorityScore: 95,
                     triageExplanation: "Urgent chest pain with shortness of breath and elevated risk score.",
                     redFlags: ["Chest pain + shortness of breath", "Heart rate > 100 bpm"],
+                    reasoning: ["Urgent chest pain with shortness of breath and elevated risk score.", "Severe chest pain reported", "Severe difficulty breathing reported"],
                     chiefComplaint: "Severe chest pain, shortness of breath",
                     selectedSymptoms: ["Chest pain", "Shortness of breath"],
                     extractedPrimarySymptoms: ["Chest pain", "Shortness of breath"],
                     subjectiveSummary: "Patient reports severe crushing chest pain that started two hours ago.",
+                    clinicianSummary: "Primary concern is severe chest pain with shortness of breath. Urgent safety features were reported and the case requires immediate clinician review.",
                     consultationPath: "/clinician/consultation?visitId=3001&queueTicketId=901",
                     patientHistoryPath: "/clinician/history?patientUserId=2001&visitId=3001",
                 }),
@@ -107,7 +109,7 @@ test.describe("clinician queue dashboard", () => {
                 contentType: "application/json",
                 body: JSON.stringify({
                     queueTicketId: 901,
-                    oldStatus: body.newStatus === "called" ? "waiting" : "called",
+                    oldStatus: "waiting",
                     newStatus: body.newStatus,
                     currentStage: body.newStatus === "called" ? "Called" : "In Consultation",
                     changedAt: new Date().toISOString(),
@@ -132,10 +134,10 @@ test.describe("clinician queue dashboard", () => {
         await page.getByRole("button", { name: "Review" }).first().click();
         await expect(page.getByText("Triage Review", { exact: true })).toBeVisible();
         await expect(page.getByText("Thabo Molefe", { exact: true })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Call In" })).toBeVisible();
-
-        await page.getByRole("button", { name: "Call In" }).click();
         await expect(page.getByRole("button", { name: "Start Consultation" })).toBeVisible();
+
+        await page.getByRole("button", { name: "Start Consultation" }).click();
+        await expect(page).toHaveURL(/\/clinician\/consultation\?visitId=3001&queueTicketId=901/);
 
         const urgentRequests = requestUrls.filter((url) => url.includes("urgencyLevel=Urgent"));
         expect(urgentRequests.length).toBeGreaterThan(0);

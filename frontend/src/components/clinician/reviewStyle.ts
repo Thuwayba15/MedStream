@@ -113,6 +113,13 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         flex-wrap: wrap;
     `,
 
+    summaryPanel: css`
+        padding: 14px 16px;
+        border-radius: ${radius.sm}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: #f8fafc;
+    `,
+
     followUpList: css`
         display: grid;
         gap: 8px;
@@ -187,12 +194,13 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
     secondaryAction: css`
         border-radius: ${radius.sm}px !important;
         font-weight: 700;
+        border-color: rgba(13, 27, 46, 0.16) !important;
+        color: ${colors.navy} !important;
+        background: ${colors.white} !important;
     `,
 
-    cancelAction: css`
-        border-radius: ${radius.sm}px !important;
-        border-color: rgba(201, 64, 64, 0.25) !important;
-        color: ${colors.urgent} !important;
+    centeredAction: css`
+        justify-content: center !important;
         font-weight: 700;
     `,
 
@@ -202,9 +210,22 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         border-radius: 999px;
         display: grid;
         place-items: center;
+        font-size: 1.75rem;
+    `,
+
+    assessmentIconUrgent: css`
         color: ${colors.urgent};
         background: rgba(201, 64, 64, 0.1);
-        font-size: 1.75rem;
+    `,
+
+    assessmentIconPriority: css`
+        color: ${colors.priority};
+        background: rgba(224, 123, 42, 0.12);
+    `,
+
+    assessmentIconRoutine: css`
+        color: ${colors.routine};
+        background: rgba(42, 123, 224, 0.12);
     `,
 
     sideSectionTitle: css`
@@ -217,8 +238,19 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
 
     assessmentUrgency: css`
         margin: 0 !important;
-        color: ${colors.urgent} !important;
         font-family: ${typography.fontDisplay};
+    `,
+
+    assessmentUrgent: css`
+        color: ${colors.urgent} !important;
+    `,
+
+    assessmentPriority: css`
+        color: ${colors.priority} !important;
+    `,
+
+    assessmentRoutine: css`
+        color: ${colors.routine} !important;
     `,
 
     redFlagList: css`
@@ -237,7 +269,18 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         height: 7px;
         margin-top: 8px;
         border-radius: 999px;
-        background: ${colors.urgent};
         flex-shrink: 0;
+    `,
+
+    reasoningDotUrgent: css`
+        background: ${colors.urgent};
+    `,
+
+    reasoningDotPriority: css`
+        background: ${colors.priority};
+    `,
+
+    reasoningDotRoutine: css`
+        background: ${colors.routine};
     `,
 }));
