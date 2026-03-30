@@ -342,6 +342,14 @@ Behavioral notes:
 - based on TriageAssessment
 - has many QueueEvents
 
+**Implementation notes**
+- `QueueStatus` follows constrained transitions:
+`waiting -> called|in_consultation|cancelled`,
+`called -> waiting|in_consultation|cancelled`,
+`in_consultation -> completed|cancelled`
+- `completed` and `cancelled` are terminal states and should set `IsActive = false`
+- queue listing for live clinician operations should be based on active (`IsActive = true`) tickets only
+
 ---
 
 ## 12. QueueEvent
@@ -353,13 +361,16 @@ Behavioral notes:
 - EventType
 - OldStatus
 - NewStatus
-- ChangedByClinicianId
+- ChangedByClinicianUserId
 - Notes
 - EventAt
 
 **Relationships**
 - belongs to QueueTicket
 - may be changed by a Clinician
+
+**Implementation notes**
+- `EventType` should distinguish generic status changes from consultation-start transitions so timeline/audit views can render queue progression correctly
 
 ---
 

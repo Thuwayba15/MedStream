@@ -245,11 +245,24 @@ F6.2 Track Queue State
 2.1 System must log all queue changes via QueueEvent
  2.2 Queue state must be persisted with `waiting`, `called`, `in_consultation`, `completed`, and `cancelled`
  2.3 System must prevent duplicate active queue tickets for the same Visit
+ 2.4 Queue status transitions must be constrained to:
+`waiting -> called|in_consultation|cancelled`
+`called -> waiting|in_consultation|cancelled`
+`in_consultation -> completed|cancelled`
+`completed` and `cancelled` are terminal states
+ 2.5 Queue state transitions must persist workflow timestamps and clinician linkage where relevant (for example `CalledAt`, `ConsultationStartedAt`, `ConsultationStartedByClinicianUserId`, `CompletedAt`, `CancelledAt`, `LastStatusChangedAt`)
 
 F6.3 Clinician Queue Visibility
 3.1 Clinician queue view must return facility-scoped queue rows for the signed-in clinician
  3.2 Queue ordering must prioritize urgency first, then higher priority score, then oldest waiting time
  3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
+ 3.4 Live queue dashboard must show active queue tickets only; completed and cancelled tickets must leave active queue view
+
+F6.4 Clinician Triage Review and Handoff
+4.1 Clinician must be able to open a queue ticket and view combined triage + intake context for that visit
+ 4.2 Review context must include at least queue identity/status, urgency, triage explanation/red flags, and intake symptom summary
+ 4.3 Clinician must be able to execute queue transitions from review context using the constrained status model in F6.2
+ 4.4 Review context must provide explicit handoff links into consultation and patient history views for the currently selected visit/patient
 
 F7. Vital Signs
 F7.1 Record Vitals
