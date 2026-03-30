@@ -2,6 +2,7 @@
 
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef } from "react";
 import { API } from "@/constants/api";
+import { subscribeToQueueRealtime } from "@/services/realtime/queueRealtimeClient";
 import { clearError, loadFailed, loadStarted, loadSucceeded, setQueueStatusFilter, setSearchText, setUrgencyTabFilter } from "./actions";
 import { ClinicianQueueActionContext, ClinicianQueueStateContext, INITIAL_STATE, type IClinicianQueueActionContext, type IClinicianQueueStateContext, type TQueueTabFilter } from "./context";
 import { clinicianQueueReducer } from "./reducer";
@@ -38,6 +39,11 @@ const getQueueStatuses = (queueStatusFilter: IClinicianQueueStateContext["queueS
 export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(clinicianQueueReducer, INITIAL_STATE);
     const hasInitializedRef = useRef(false);
+    const stateRef = useRef(state);
+
+    useEffect(() => {
+        stateRef.current = state;
+    }, [state]);
 
     const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
         const body = (await response.json()) as TResponse & IMessageResponse;
@@ -104,6 +110,15 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
 
         return () => clearTimeout(timeout);
     }, [loadQueueByFilters, state.queueStatusFilter, state.searchText, state.urgencyTabFilter]);
+
+    useEffect(() => {
+        const unsubscribe = subscribeToQueueRealtime(() => {
+            const currentState = stateRef.current;
+            void loadQueueByFilters(currentState.searchText, currentState.queueStatusFilter, currentState.urgencyTabFilter, "refresh");
+        });
+
+        return unsubscribe;
+    }, [loadQueueByFilters]);
 
     const actions: IClinicianQueueActionContext = useMemo(
         () => ({

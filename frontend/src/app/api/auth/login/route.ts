@@ -1,4 +1,4 @@
-import { ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME } from "@/lib/auth/constants";
+import { ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME, SIGNALR_TOKEN_COOKIE_NAME } from "@/lib/auth/constants";
 import { getAbpErrorMessage } from "@/lib/api/abp";
 import { deriveAuthInfoFromAccessToken } from "@/lib/server/tokenState";
 import { authService } from "@/services/auth/authService";
@@ -39,6 +39,15 @@ export const POST = async (request: Request): Promise<Response> => {
             name: AUTH_STATE_COOKIE_NAME,
             value: authInfo.authState,
             httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: authResult.expireInSeconds,
+        });
+        response.cookies.set({
+            name: SIGNALR_TOKEN_COOKIE_NAME,
+            value: authResult.encryptedAccessToken,
+            httpOnly: false,
             sameSite: "lax",
             secure: process.env.NODE_ENV === "production",
             path: "/",
