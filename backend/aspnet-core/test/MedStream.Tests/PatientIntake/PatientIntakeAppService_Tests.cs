@@ -299,6 +299,44 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
         });
     }
 
+    [Fact]
+    public async Task GetCurrentQueueStatus_Should_Return_Latest_Status_For_Current_Patient_Visit()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await _patientIntakeAppService.CheckIn();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "I have persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" }
+        });
+
+        await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough" },
+            Answers = new Dictionary<string, object>
+            {
+                { "durationDays", 3 },
+                { "hasFever", false },
+                { "breathingDifficulty", false }
+            }
+        });
+
+        var currentStatus = await _patientIntakeAppService.GetCurrentQueueStatus(new GetCurrentQueueStatusInput
+        {
+            VisitId = checkIn.VisitId
+        });
+
+        currentStatus.Triage.ShouldNotBeNull();
+        currentStatus.Queue.ShouldNotBeNull();
+        currentStatus.Queue.QueueStatus.ShouldBe(PatientIntakeConstants.QueueStatusWaiting);
+        currentStatus.Queue.QueueNumber.ShouldBeGreaterThan(0);
+        currentStatus.Queue.Message.ShouldContain("#");
+    }
+
     private async Task<string> RegisterAndLoginPatientAsync()
     {
         var email = $"patient-intake-{Guid.NewGuid():N}@medstream.test";

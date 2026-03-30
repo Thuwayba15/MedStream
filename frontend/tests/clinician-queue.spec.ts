@@ -121,7 +121,8 @@ test.describe("clinician queue dashboard", () => {
 
         await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
 
-        await page.goto("/clinician");
+        await page.goto("/clinician", { waitUntil: "domcontentloaded" });
+        await page.waitForResponse((response) => response.url().includes("/api/clinician/queue") && response.status() === 200);
 
         await expect(page.getByRole("main").getByText("Queue Dashboard", { exact: true })).toBeVisible();
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
@@ -131,8 +132,9 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByText("Nomsa Dlamini")).toHaveCount(0);
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
 
-        await page.getByRole("button", { name: "Review" }).first().click();
-        await expect(page.getByText("Triage Review", { exact: true })).toBeVisible();
+        await page.getByRole("link", { name: "Review" }).first().click();
+        await expect(page).toHaveURL(/\/clinician\/review\/901$/);
+        await expect(page.getByRole("heading", { name: "Triage Review" })).toBeVisible();
         await expect(page.getByText("Thabo Molefe", { exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Start Consultation" })).toBeVisible();
 

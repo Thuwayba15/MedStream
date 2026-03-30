@@ -71,8 +71,8 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         IRepository<Visit, long> visitRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
-        IConfiguration configuration,
-        IQueueRealtimeNotifier queueRealtimeNotifier)
+        IQueueRealtimeNotifier queueRealtimeNotifier,
+        IConfiguration configuration = null)
     {
         _queueTicketRepository = queueTicketRepository;
         _queueEventRepository = queueEventRepository;
