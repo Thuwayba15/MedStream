@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
-import { UserOutlined } from "@ant-design/icons";
-import { Avatar, Layout, Menu, Space } from "antd";
+import { ClockCircleOutlined, MenuOutlined, UserOutlined } from "@ant-design/icons";
+import { Avatar, Button, Drawer, Layout, Menu, Space, Typography } from "antd";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { LogoutButton } from "@/components/auth/logoutButton";
 import { useRoleShellStyles } from "@/components/layout/style";
 
@@ -24,6 +25,27 @@ interface IRoleAppShellProps {
 
 const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps, "roleLabel" | "activeKey" | "items">) => {
     const { styles } = useRoleShellStyles();
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [clockValue, setClockValue] = useState<string>("--:--:--");
+
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setClockValue(new Date().toLocaleTimeString());
+        }, 1000);
+
+        return () => {
+            window.clearInterval(timer);
+        };
+    }, []);
+
+    const navigationItems = useMemo(
+        () =>
+            items.map((item) => ({
+                key: item.key,
+                label: <Link href={item.href}>{item.label}</Link>,
+            })),
+        [items]
+    );
 
     return (
         <Header className={styles.topHeader}>
@@ -37,25 +59,31 @@ const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps,
                     </span>
                 </div>
 
-                {items.length > 0 ? (
-                    <Menu
-                        mode="horizontal"
-                        selectedKeys={activeKey ? [activeKey] : []}
-                        className={styles.topMenu}
-                        items={items.map((item) => ({
-                            key: item.key,
-                            label: <Link href={item.href}>{item.label}</Link>,
-                        }))}
-                    />
-                ) : (
-                    <div className={styles.menuSpacer} />
-                )}
+                {navigationItems.length > 0 ? <Menu mode="horizontal" selectedKeys={activeKey ? [activeKey] : []} className={styles.topMenu} items={navigationItems} /> : <div className={styles.menuSpacer} />}
 
                 <Space size={10} className={styles.actionArea}>
                     <Avatar icon={<UserOutlined />} className={styles.profileAvatar} />
+                    <Typography.Text className={styles.roleLabel}>{roleLabel}</Typography.Text>
                     <LogoutButton className={styles.logoutButton} />
                 </Space>
+
+                <Button type="text" className={styles.mobileMenuButton} icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setIsDrawerOpen(true)} />
             </div>
+
+            <Drawer
+                title="Navigation"
+                placement="right"
+                open={isDrawerOpen}
+                size="default"
+                onClose={() => setIsDrawerOpen(false)}
+                className={styles.mobileDrawer}
+            >
+                {navigationItems.length > 0 ? <Menu mode="inline" selectedKeys={activeKey ? [activeKey] : []} items={navigationItems} /> : null}
+                <div className={styles.mobileDrawerFooter}>
+                    <Typography.Text type="secondary">Signed in as {roleLabel}</Typography.Text>
+                    <LogoutButton className={styles.mobileLogoutButton} />
+                </div>
+            </Drawer>
         </Header>
     );
 };
@@ -72,3 +100,4 @@ export const RoleAppShell = ({ roleLabel, activeKey, items, children }: IRoleApp
         </Layout>
     );
 };
+

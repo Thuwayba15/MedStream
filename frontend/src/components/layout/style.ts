@@ -1,4 +1,4 @@
-import { createStyles, medstreamTheme } from "@/theme/theme";
+﻿import { createStyles, medstreamTheme } from "@/theme/theme";
 
 const { colors, radius, typography } = medstreamTheme;
 const pageBackground = colors.offWhite;
@@ -7,6 +7,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
     root: css`
         min-height: 100vh;
         background: ${pageBackground} !important;
+
         .ant-layout {
             background: ${pageBackground};
         }
@@ -26,14 +27,12 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         place-items: center;
         flex-shrink: 0;
         border-radius: 10px;
-        // background: linear-gradient(180deg, ${colors.amberLight} 0%, ${colors.amber} 100%);
-        // box-shadow: 0 8px 24px rgba(224, 123, 42, 0.28);
     `,
 
     brandText: css`
         font-family: ${typography.fontDisplay};
         color: ${colors.white};
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 2.8vw, 2rem);
         line-height: 1;
     `,
 
@@ -50,7 +49,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         line-height: 1;
         padding: 0;
         background: linear-gradient(90deg, ${colors.navy} 0%, ${colors.navyMid} 100%) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     `,
 
     headerInner: css`
@@ -63,10 +62,10 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         gap: 16px;
         padding: 12px 16px;
 
-        @media (max-width: 768px) {
+        @media (max-width: 960px) {
             grid-template-columns: 1fr auto;
-            gap: 10px;
             min-height: 68px;
+            gap: 8px;
         }
     `,
 
@@ -77,7 +76,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         min-width: 0;
 
         .ant-menu-item {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.82);
             border-radius: ${radius.pill}px;
             font-weight: 700;
             margin-inline: 4px;
@@ -85,31 +84,59 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
 
         .ant-menu-item-selected {
             color: ${colors.white} !important;
-            background: rgba(240, 144, 64, 0.22) !important;
+            background: rgba(255, 255, 255, 0.12) !important;
         }
 
         .ant-menu-item::after {
             display: none !important;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 960px) {
             display: none !important;
         }
     `,
 
     menuSpacer: css`
         min-height: 1px;
+
+        @media (max-width: 960px) {
+            display: none;
+        }
     `,
 
     actionArea: css`
         align-items: center;
         justify-self: end;
+
+        @media (max-width: 960px) {
+            display: none !important;
+        }
+    `,
+
+    clockPill: css`
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 12px;
+        border-radius: ${radius.pill}px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: ${colors.slateLight};
+        font-weight: 700;
+        font-size: 0.9rem;
     `,
 
     profileAvatar: css`
         background: rgba(255, 255, 255, 0.1) !important;
         color: ${colors.white} !important;
         border: 1px solid rgba(255, 255, 255, 0.2);
+    `,
+
+    roleLabel: css`
+        color: ${colors.slateLight} !important;
+        font-weight: 700;
+        text-transform: capitalize;
     `,
 
     logoutButton: css`
@@ -127,6 +154,42 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
             border-color: rgba(255, 255, 255, 0.35) !important;
             background: rgba(255, 255, 255, 0.09) !important;
         }
+    `,
+
+    mobileMenuButton: css`
+        display: none !important;
+
+        @media (max-width: 960px) {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            color: ${colors.white} !important;
+            border-radius: ${radius.sm}px;
+            border: 1px solid rgba(255, 255, 255, 0.22) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+    `,
+
+    mobileDrawer: css`
+        .ant-drawer-header-title {
+            color: ${colors.navy};
+            font-family: ${typography.fontDisplay};
+        }
+    `,
+
+    mobileDrawerFooter: css`
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(13, 27, 46, 0.08);
+        display: grid;
+        gap: 10px;
+    `,
+
+    mobileLogoutButton: css`
+        width: 100%;
+        border-radius: ${radius.sm}px !important;
+        height: 42px;
+        font-weight: 700;
     `,
 
     content: css`
@@ -147,3 +210,4 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         background: transparent;
     `,
 }));
+

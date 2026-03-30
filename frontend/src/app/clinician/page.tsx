@@ -1,22 +1,15 @@
 "use client";
 
-import { useAuthStyles } from "@/components/auth/style";
+import { ClinicianQueueDashboard } from "@/components/clinician/clinicianQueueDashboard";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
-import { Card, Space, Typography } from "antd";
+import { ClinicianQueueProvider } from "@/providers/clinician-queue";
 
 const ClinicianHomePage = () => {
-    const { styles } = useAuthStyles();
-
     return (
-        <RoleAppShell roleLabel="Clinician" activeKey="clinician-workspace" items={[{ key: "clinician-workspace", label: "Workspace", href: "/clinician" }]}>
-            <Card className={styles.dashboardCard}>
-                <Space orientation="vertical" size={16}>
-                    <Typography.Title level={1} className={styles.dashboardHeading}>
-                        Clinician Workspace
-                    </Typography.Title>
-                    <Typography.Paragraph className={styles.dashboardText}>Your clinician account is approved. Clinical workflows are now accessible.</Typography.Paragraph>
-                </Space>
-            </Card>
+        <RoleAppShell roleLabel="Clinician" activeKey="clinician-queue-dashboard" items={[{ key: "clinician-queue-dashboard", label: "Queue Dashboard", href: "/clinician" }]}>
+            <ClinicianQueueProvider>
+                <ClinicianQueueDashboard />
+            </ClinicianQueueProvider>
         </RoleAppShell>
     );
 };
