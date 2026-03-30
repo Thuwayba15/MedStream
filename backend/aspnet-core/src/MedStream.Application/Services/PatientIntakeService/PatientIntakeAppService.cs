@@ -317,7 +317,6 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         var triage = new TriageResultDto
         {
             UrgencyLevel = resolvedUrgency,
-            PriorityScore = resolvedPriorityScore,
             Explanation = resolvedExplanation,
             RedFlags = resolvedRedFlags
         };
@@ -332,7 +331,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             TenantId = visit.TenantId,
             VisitId = visit.Id,
             UrgencyLevel = triage.UrgencyLevel,
-            PriorityScore = triage.PriorityScore,
+            PriorityScore = resolvedPriorityScore,
             Explanation = triage.Explanation,
             RedFlagsDetected = SerializeStringList(triage.RedFlags),
             PositionPending = false,

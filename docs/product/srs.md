@@ -233,6 +233,7 @@ F5.1 Generate Triage
  1.2 Must include:
 Urgency level
 Priority score
+ 1.3 Patient-facing status views must not expose raw `priorityScore`; this value is clinician/system-facing only
 
 F6. Queue Management
 F6.1 Create Queue Ticket
@@ -247,7 +248,7 @@ F6.2 Track Queue State
 
 F6.3 Clinician Queue Visibility
 3.1 Clinician queue view must return facility-scoped queue rows for the signed-in clinician
- 3.2 Queue ordering must prioritize urgency first, then oldest waiting time
+ 3.2 Queue ordering must prioritize urgency first, then higher priority score, then oldest waiting time
  3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
 
 F7. Vital Signs

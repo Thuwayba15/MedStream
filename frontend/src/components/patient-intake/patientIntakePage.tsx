@@ -459,7 +459,6 @@ const StatusStep = ({
 }: {
     triage: {
         urgencyLevel: "Routine" | "Priority" | "Urgent";
-        priorityScore: number;
         explanation: string;
         redFlags: string[];
     } | null;
@@ -482,9 +481,6 @@ const StatusStep = ({
                         <Tag color={statusColor}>{triage?.urgencyLevel ?? "Pending"}</Tag>
                     </Space>
                     <Typography.Text>{triage?.explanation ?? "Assessment is still pending."}</Typography.Text>
-                    <Typography.Text>
-                        <strong>Priority score:</strong> {triage?.priorityScore ?? "-"}
-                    </Typography.Text>
                 </Space>
             </Card>
 

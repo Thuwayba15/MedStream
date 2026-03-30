@@ -102,6 +102,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         var effectiveMaxResultCount = input.MaxResultCount <= 0 ? 50 : Math.Min(input.MaxResultCount, 200);
         var queueRows = await queueQuery
             .OrderBy(item => item.UrgencyRank)
+            .ThenByDescending(item => item.PriorityScore)
             .ThenBy(item => item.EnteredQueueAt)
             .Skip(input.SkipCount)
             .Take(effectiveMaxResultCount)

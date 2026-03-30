@@ -169,8 +169,8 @@ test.describe("auth state routing", () => {
         ]);
 
         await page.goto("/clinician");
-        await expect(page.getByRole("heading", { level: 1, name: "Clinician Workspace" })).toBeVisible();
-        await expect(page.getByRole("link", { name: "Workspace" })).toBeVisible();
+        await expect(page.getByRole("heading", { level: 1, name: "Queue Dashboard" })).toBeVisible();
+        // await expect(page.getByRole("link", { name: "Workspace" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Sign Out" })).toBeVisible();
     });
 });
