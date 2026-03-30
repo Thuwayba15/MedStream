@@ -237,10 +237,18 @@ Priority score
 F6. Queue Management
 F6.1 Create Queue Ticket
 1.1 System must generate a queue ticket per Visit
+ 1.2 Queue ticket creation must happen automatically after triage completion
+ 1.3 Queue ticket must include facility-scoped daily queue numbering
 
 F6.2 Track Queue State
 2.1 System must log all queue changes via QueueEvent
- 2.2 In intake UX v1, queue display may show "position pending" placeholder status until full queue ticket orchestration is enabled
+ 2.2 Queue state must be persisted with `waiting`, `called`, `in_consultation`, `completed`, and `cancelled`
+ 2.3 System must prevent duplicate active queue tickets for the same Visit
+
+F6.3 Clinician Queue Visibility
+3.1 Clinician queue view must return facility-scoped queue rows for the signed-in clinician
+ 3.2 Queue ordering must prioritize urgency first, then oldest waiting time
+ 3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
 
 F7. Vital Signs
 F7.1 Record Vitals
