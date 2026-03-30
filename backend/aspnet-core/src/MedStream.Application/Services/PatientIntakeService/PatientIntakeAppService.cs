@@ -6,6 +6,7 @@ using MedStream.Authorization.Users;
 using MedStream.Facilities;
 using MedStream.PatientIntake.Dto;
 using MedStream.PatientIntake.Pathways;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
@@ -24,6 +25,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
     private readonly IRepository<Visit, long> _visitRepository;
     private readonly IRepository<SymptomIntake, long> _symptomIntakeRepository;
     private readonly IRepository<TriageAssessment, long> _triageAssessmentRepository;
+    private readonly IRepository<QueueTicket, long> _queueTicketRepository;
+    private readonly IRepository<QueueEvent, long> _queueEventRepository;
     private readonly IRepository<Facility, int> _facilityRepository;
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
@@ -36,6 +39,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         IRepository<Visit, long> visitRepository,
         IRepository<SymptomIntake, long> symptomIntakeRepository,
         IRepository<TriageAssessment, long> triageAssessmentRepository,
+        IRepository<QueueTicket, long> queueTicketRepository,
+        IRepository<QueueEvent, long> queueEventRepository,
         IRepository<Facility, int> facilityRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
@@ -47,6 +52,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         _visitRepository = visitRepository;
         _symptomIntakeRepository = symptomIntakeRepository;
         _triageAssessmentRepository = triageAssessmentRepository;
+        _queueTicketRepository = queueTicketRepository;
+        _queueEventRepository = queueEventRepository;
         _facilityRepository = facilityRepository;
         _userRepository = userRepository;
         _userManager = userManager;
@@ -315,7 +322,6 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             RedFlags = resolvedRedFlags
         };
 
-        var queueMessage = BuildQueueStatus(triage.UrgencyLevel);
         var assessedAt = DateTime.UtcNow;
         intake.FollowUpAnswersJson = JsonConvert.SerializeObject(input.Answers ?? new Dictionary<string, object>());
         intake.SubjectiveSummary = BuildSubjectiveSummary(visit.PathwayKey, intake, input.Answers ?? new Dictionary<string, object>());
@@ -329,17 +335,25 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             PriorityScore = triage.PriorityScore,
             Explanation = triage.Explanation,
             RedFlagsDetected = SerializeStringList(triage.RedFlags),
-            PositionPending = true,
-            QueueMessage = queueMessage,
+            PositionPending = false,
+            QueueMessage = string.Empty,
             LastQueueUpdatedAt = assessedAt,
             AssessedAt = assessedAt
         };
 
-        visit.Status = PatientIntakeConstants.VisitStatusTriageCompleted;
-
         await _symptomIntakeRepository.UpdateAsync(intake);
-        await _triageAssessmentRepository.InsertAsync(triageEntity);
+        triageEntity = await _triageAssessmentRepository.InsertAsync(triageEntity);
+        await CurrentUnitOfWork.SaveChangesAsync();
+
+        var queueTicket = await GetOrCreateActiveQueueTicketAsync(visit, triageEntity, assessedAt);
+        var queueMessage = BuildQueueStatus(queueTicket.QueueNumber, triage.UrgencyLevel);
+        triageEntity.QueueMessage = queueMessage;
+        triageEntity.LastQueueUpdatedAt = queueTicket.LastStatusChangedAt;
+        triageEntity.PositionPending = false;
+
+        visit.Status = PatientIntakeConstants.VisitStatusQueued;
         await _visitRepository.UpdateAsync(visit);
+        await _triageAssessmentRepository.UpdateAsync(triageEntity);
         await CurrentUnitOfWork.SaveChangesAsync();
 
         return new AssessTriageOutput
@@ -347,9 +361,14 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             Triage = triage,
             Queue = new QueueStatusDto
             {
-                PositionPending = true,
+                QueueTicketId = queueTicket.Id,
+                QueueNumber = queueTicket.QueueNumber,
+                QueueStatus = queueTicket.QueueStatus,
+                CurrentStage = queueTicket.CurrentStage,
+                PositionPending = false,
                 Message = queueMessage,
-                LastUpdatedAt = assessedAt
+                LastUpdatedAt = queueTicket.LastStatusChangedAt,
+                EnteredQueueAt = queueTicket.EnteredQueueAt
             },
             Execution = new PathwayExecutionSummaryDto
             {
@@ -420,6 +439,87 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         await _symptomIntakeRepository.InsertAsync(intake);
         await CurrentUnitOfWork.SaveChangesAsync();
         return intake;
+    }
+
+    private async Task<QueueTicket> GetOrCreateActiveQueueTicketAsync(Visit visit, TriageAssessment triageAssessment, DateTime assessedAt)
+    {
+        var activeTicket = await _queueTicketRepository.FirstOrDefaultAsync(item =>
+            item.TenantId == visit.TenantId &&
+            item.VisitId == visit.Id &&
+            item.IsActive &&
+            !item.IsDeleted);
+        if (activeTicket != null)
+        {
+            return activeTicket;
+        }
+
+        var facilityId = await ResolveFacilityIdAsync(visit);
+        var queueDate = assessedAt.Date;
+        var nextQueueNumber = await GetNextQueueNumberAsync(visit.TenantId, facilityId, queueDate);
+        var queueTicket = new QueueTicket
+        {
+            TenantId = visit.TenantId,
+            FacilityId = facilityId,
+            VisitId = visit.Id,
+            TriageAssessmentId = triageAssessment.Id,
+            QueueDate = queueDate,
+            QueueNumber = nextQueueNumber,
+            QueueStatus = PatientIntakeConstants.QueueStatusWaiting,
+            CurrentStage = "Waiting",
+            IsActive = true,
+            EnteredQueueAt = assessedAt,
+            LastStatusChangedAt = assessedAt
+        };
+
+        queueTicket = await _queueTicketRepository.InsertAsync(queueTicket);
+        await CurrentUnitOfWork.SaveChangesAsync();
+
+        await _queueEventRepository.InsertAsync(new QueueEvent
+        {
+            TenantId = visit.TenantId,
+            QueueTicketId = queueTicket.Id,
+            EventType = PatientIntakeConstants.QueueEventEntered,
+            OldStatus = null,
+            NewStatus = queueTicket.QueueStatus,
+            Notes = "Queue ticket created after triage completion.",
+            EventAt = assessedAt
+        });
+
+        await CurrentUnitOfWork.SaveChangesAsync();
+        return queueTicket;
+    }
+
+    private async Task<int> ResolveFacilityIdAsync(Visit visit)
+    {
+        if (visit.FacilityId.HasValue)
+        {
+            return visit.FacilityId.Value;
+        }
+
+        var fallbackFacility = await _facilityRepository.FirstOrDefaultAsync(item => item.TenantId == visit.TenantId && item.IsActive);
+        if (fallbackFacility == null)
+        {
+            throw new UserFriendlyException("No active facility is available for queue assignment.");
+        }
+
+        visit.FacilityId = fallbackFacility.Id;
+        await _visitRepository.UpdateAsync(visit);
+        await CurrentUnitOfWork.SaveChangesAsync();
+        return fallbackFacility.Id;
+    }
+
+    private async Task<int> GetNextQueueNumberAsync(int tenantId, int facilityId, DateTime queueDate)
+    {
+        var currentMax = await _queueTicketRepository.GetAll()
+            .Where(item => item.TenantId == tenantId &&
+                           item.FacilityId == facilityId &&
+                           item.QueueDate == queueDate &&
+                           !item.IsDeleted)
+            .Select(item => (int?)item.QueueNumber)
+            .DefaultIfEmpty(0)
+            .MaxAsync();
+
+        return (currentMax ?? 0) + 1;
     }
 
     private static string SerializeStringList(IEnumerable<string> values)
@@ -695,18 +795,18 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         return false;
     }
 
-    private static string BuildQueueStatus(string urgencyLevel)
+    private static string BuildQueueStatus(int queueNumber, string urgencyLevel)
     {
         if (string.Equals(urgencyLevel, "Urgent", StringComparison.Ordinal))
         {
-            return "You have been flagged for immediate clinical attention. Queue position will be assigned shortly.";
+            return $"Queue #{queueNumber}: urgent case flagged for immediate clinical attention.";
         }
 
         if (string.Equals(urgencyLevel, "Priority", StringComparison.Ordinal))
         {
-            return "You have been marked as priority. Queue position is being prepared.";
+            return $"Queue #{queueNumber}: marked as priority and currently waiting.";
         }
 
-        return "You have been checked in. Queue position will appear once assignment is completed.";
+        return $"Queue #{queueNumber}: checked in and waiting for clinician call.";
     }
 }
