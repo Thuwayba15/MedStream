@@ -325,12 +325,6 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                             { value: "Routine", label: "Routine" },
                         ]}
                     />
-                    <Input.TextArea
-                        rows={4}
-                        value={overrideNote}
-                        onChange={(event) => setOverrideNote(event.target.value)}
-                        placeholder="Optional reason for override"
-                    />
                 </Space>
             </Modal>
         </section>

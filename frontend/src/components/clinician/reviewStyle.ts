@@ -53,7 +53,7 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
 
     sectionCard: css`
         border-radius: ${radius.md}px;
-        border: 1px solid rgba(13, 27, 46, 0.1);
+        border: 2px solid ${colors.amberMuted};
         box-shadow: ${shadows.soft};
         background: ${colors.white};
     `,
@@ -116,9 +116,20 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
     summaryPanel: css`
         padding: 14px 16px;
         border-radius: ${radius.sm}px;
-        border: 1px solid rgba(13, 27, 46, 0.08);
-        background: #f8fafc;
+        border: 2px solid ${colors.amberMuted};
+        background: ${colors.white};
+        box-shadow: 0 0 8px 2px ${colors.amber}80, 0 0 0 0 ${colors.amber};
+        animation: summaryGlow 1.8s infinite alternate;
     `,
+
+    '@keyframes summaryGlow': {
+        from: {
+            boxShadow: `0 0 8px 2px ${colors.amberMuted}80, 0 0 0 0 ${colors.amberMuted}`,
+        },
+        to: {
+            boxShadow: `0 0 16px 6px ${colors.amberMuted}cc, 0 0 0 0 ${colors.amberMuted}`,
+        },
+    },
 
     followUpList: css`
         display: grid;
