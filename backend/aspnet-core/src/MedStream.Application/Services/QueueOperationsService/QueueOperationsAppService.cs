@@ -1,4 +1,4 @@
-﻿using Abp.Application.Services.Dto;
+using Abp.Application.Services.Dto;
 using Abp.Authorization;
 using Abp.Authorization.Users;
 using Abp.Domain.Repositories;
@@ -61,6 +61,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
     private readonly IConfiguration _configuration;
+    private readonly IQueueRealtimeNotifier _queueRealtimeNotifier;
 
     public QueueOperationsAppService(
         IRepository<QueueTicket, long> queueTicketRepository,
@@ -70,7 +71,8 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         IRepository<Visit, long> visitRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
-        IConfiguration configuration = null)
+        IConfiguration configuration,
+        IQueueRealtimeNotifier queueRealtimeNotifier)
     {
         _queueTicketRepository = queueTicketRepository;
         _queueEventRepository = queueEventRepository;
@@ -80,6 +82,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         _userRepository = userRepository;
         _userManager = userManager;
         _configuration = configuration;
+        _queueRealtimeNotifier = queueRealtimeNotifier;
     }
 
     /// <inheritdoc />
@@ -323,6 +326,11 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         await _visitRepository.UpdateAsync(visit);
 
         await CurrentUnitOfWork.SaveChangesAsync();
+        if (_queueRealtimeNotifier != null)
+        {
+            await _queueRealtimeNotifier.NotifyFacilityQueueChangedAsync(queueTicket.FacilityId);
+            await _queueRealtimeNotifier.NotifyPatientQueueChangedAsync(visit.PatientUserId, visit.Id, queueTicket.Id);
+        }
 
         return new UpdateQueueTicketStatusOutput
         {
@@ -381,6 +389,11 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         });
 
         await CurrentUnitOfWork.SaveChangesAsync();
+        if (_queueRealtimeNotifier != null)
+        {
+            await _queueRealtimeNotifier.NotifyFacilityQueueChangedAsync(queueTicket.FacilityId);
+            await _queueRealtimeNotifier.NotifyPatientQueueChangedAsync((await _visitRepository.GetAsync(queueTicket.VisitId)).PatientUserId, queueTicket.VisitId, queueTicket.Id);
+        }
 
         return new OverrideQueueTicketUrgencyOutput
         {
