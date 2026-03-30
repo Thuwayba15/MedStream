@@ -31,6 +31,11 @@ public static class PatientIntakeConstants
     public const string VisitStatusTriageCompleted = "TriageCompleted";
 
     /// <summary>
+    /// Visit status used once a queue ticket has been created.
+    /// </summary>
+    public const string VisitStatusQueued = "Queued";
+
+    /// <summary>
     /// Extraction source label for real OpenAI extraction.
     /// </summary>
     public const string ExtractionSourceAi = "ai";
@@ -49,4 +54,44 @@ public static class PatientIntakeConstants
     /// Intake mode using APC summary-backed AI fallback questions.
     /// </summary>
     public const string IntakeModeApcFallback = "apc_fallback";
+
+    /// <summary>
+    /// Queue status for patients waiting to be called.
+    /// </summary>
+    public const string QueueStatusWaiting = "waiting";
+
+    /// <summary>
+    /// Queue status for patients called by a clinician.
+    /// </summary>
+    public const string QueueStatusCalled = "called";
+
+    /// <summary>
+    /// Queue status for patients currently in consultation.
+    /// </summary>
+    public const string QueueStatusInConsultation = "in_consultation";
+
+    /// <summary>
+    /// Queue status for completed consultations.
+    /// </summary>
+    public const string QueueStatusCompleted = "completed";
+
+    /// <summary>
+    /// Queue status for cancelled queue tickets.
+    /// </summary>
+    public const string QueueStatusCancelled = "cancelled";
+
+    /// <summary>
+    /// Queue event type recorded when a visit enters queue.
+    /// </summary>
+    public const string QueueEventEntered = "entered_queue";
+
+    /// <summary>
+    /// Queue event type recorded when queue status changes.
+    /// </summary>
+    public const string QueueEventStatusChanged = "status_changed";
+
+    /// <summary>
+    /// Queue event type recorded when consultation starts from queue.
+    /// </summary>
+    public const string QueueEventConsultationStarted = "consultation_started";
 }

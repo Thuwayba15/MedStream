@@ -158,7 +158,9 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
 
         output.Triage.ShouldNotBeNull();
         output.Queue.ShouldNotBeNull();
-        output.Queue.PositionPending.ShouldBeTrue();
+        output.Queue.PositionPending.ShouldBeFalse();
+        output.Queue.QueueNumber.ShouldBeGreaterThan(0);
+        output.Queue.QueueStatus.ShouldBe(PatientIntakeConstants.QueueStatusWaiting);
         output.Execution.TriggeredOutcomeIds.ShouldBeEmpty();
         output.Execution.TriggeredRecommendationIds.ShouldBeEmpty();
         output.Execution.RuleTrace.ShouldBeEmpty();
@@ -167,7 +169,8 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
         {
             var triage = await context.Set<TriageAssessment>().FirstOrDefaultAsync(item => item.VisitId == checkIn.VisitId);
             triage.ShouldNotBeNull();
-            triage.PositionPending.ShouldBeTrue();
+            triage.PositionPending.ShouldBeFalse();
+            triage.QueueMessage.ShouldContain("#");
 
             var intake = await context.Set<SymptomIntake>().FirstOrDefaultAsync(item => item.VisitId == checkIn.VisitId);
             intake.ShouldNotBeNull();
@@ -176,8 +179,55 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
             intake.SubjectiveSummary.ShouldContain("Chief complaint");
             intake.SubjectiveSummary.ShouldContain("Follow-up answers");
 
+            var queueTicket = await context.Set<QueueTicket>().FirstOrDefaultAsync(item => item.VisitId == checkIn.VisitId && item.IsActive);
+            queueTicket.ShouldNotBeNull();
+            queueTicket.QueueNumber.ShouldBeGreaterThan(0);
+            queueTicket.QueueStatus.ShouldBe(PatientIntakeConstants.QueueStatusWaiting);
+
+            var queueEvents = await context.Set<QueueEvent>().Where(item => item.QueueTicketId == queueTicket.Id).ToListAsync();
+            queueEvents.Count.ShouldBe(1);
+            queueEvents[0].EventType.ShouldBe(PatientIntakeConstants.QueueEventEntered);
+
             var visit = await context.Set<Visit>().FirstAsync(item => item.Id == checkIn.VisitId);
-            visit.Status.ShouldBe(PatientIntakeConstants.VisitStatusTriageCompleted);
+            visit.Status.ShouldBe(PatientIntakeConstants.VisitStatusQueued);
+        });
+    }
+
+    [Fact]
+    public async Task AssessTriage_Should_Not_Create_Duplicate_Active_QueueTicket_For_Same_Visit()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await _patientIntakeAppService.CheckIn();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "I have persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" }
+        });
+
+        var request = new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "persistent cough",
+            SelectedSymptoms = new List<string> { "Cough" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough" },
+            Answers = new Dictionary<string, object>
+            {
+                { "durationDays", 3 },
+                { "hasFever", false },
+                { "breathingDifficulty", false }
+            }
+        };
+
+        await _patientIntakeAppService.AssessTriage(request);
+        await _patientIntakeAppService.AssessTriage(request);
+
+        await UsingDbContextAsync(async context =>
+        {
+            var activeTickets = await context.Set<QueueTicket>()
+                .Where(item => item.VisitId == checkIn.VisitId && item.IsActive && !item.IsDeleted)
+                .ToListAsync();
+            activeTickets.Count.ShouldBe(1);
         });
     }
 

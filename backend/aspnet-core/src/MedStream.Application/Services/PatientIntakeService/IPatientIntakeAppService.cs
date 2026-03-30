@@ -43,7 +43,7 @@ public interface IPatientIntakeAppService : IApplicationService
     Task<UrgentCheckOutput> UrgentCheck(UrgentCheckInput input);
 
     /// <summary>
-    /// Computes triage output and queue placeholder status.
+    /// Computes triage output and ensures persistent queue ticket creation.
     /// </summary>
     Task<AssessTriageOutput> AssessTriage(AssessTriageInput input);
 }

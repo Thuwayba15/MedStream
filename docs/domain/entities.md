@@ -295,19 +295,18 @@ Behavioral notes:
 **Key fields**
 - Id
 - VisitId
-- SymptomIntakeId
-- ComplaintPathwayId
 - UrgencyLevel
 - PriorityScore
 - Explanation
 - RedFlagsDetected
-- RequiresImmediateAttention
+- PositionPending
+- QueueMessage
+- LastQueueUpdatedAt
 - AssessedAt
 
 **Relationships**
 - belongs to Visit
-- based on SymptomIntake
-- uses ComplaintPathway
+- is referenced by QueueTicket
 
 ---
 
@@ -320,12 +319,19 @@ Behavioral notes:
 - VisitId
 - TriageAssessmentId
 - QueueNumber
+- QueueDate
 - QueueStatus
 - CurrentStage
+- IsActive
 - EnteredQueueAt
 - CalledAt
+- ConsultationStartedAt
+- ConsultationStartedByClinicianUserId
 - CompletedAt
+- CancelledAt
 - AssignedRoom
+- CurrentClinicianUserId
+- LastStatusChangedAt
 
 **Relationships**
 - belongs to Facility
@@ -346,7 +352,7 @@ Behavioral notes:
 - NewStatus
 - ChangedByClinicianId
 - Notes
-- CreatedAt
+- EventAt
 
 **Relationships**
 - belongs to QueueTicket
