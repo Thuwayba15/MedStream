@@ -14,4 +14,14 @@ public interface IQueueOperationsAppService : IApplicationService
     /// Returns prioritized queue rows for the current clinician facility.
     /// </summary>
     Task<PagedResultDto<ClinicianQueueItemDto>> GetClinicianQueue(GetClinicianQueueInput input);
+
+    /// <summary>
+    /// Returns detailed queue + triage + intake context for clinician review.
+    /// </summary>
+    Task<ClinicianQueueReviewDto> GetQueueTicketForReview(GetQueueTicketForReviewInput input);
+
+    /// <summary>
+    /// Updates queue status for clinician operational flow.
+    /// </summary>
+    Task<UpdateQueueTicketStatusOutput> UpdateQueueTicketStatus(UpdateQueueTicketStatusInput input);
 }

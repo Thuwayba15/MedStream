@@ -112,6 +112,102 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
         result.Items[1].PriorityScore.ShouldBe(25m);
     }
 
+    [Fact]
+    public async Task GetQueueTicketForReview_Should_Return_Intake_And_Triage_Context()
+    {
+        var clinicianEmail = await RegisterAndApproveClinicianWithFacilityAsync();
+        var triageResult = await CreateQueuedVisitForPatientAsync($"queue-review-{Guid.NewGuid():N}@medstream.test", isUrgent: true);
+
+        LoginAsTenant(AbpTenantBase.DefaultTenantName, clinicianEmail);
+        var review = await _queueOperationsAppService.GetQueueTicketForReview(new GetQueueTicketForReviewInput
+        {
+            Id = triageResult.Queue.QueueTicketId
+        });
+
+        review.QueueTicketId.ShouldBe(triageResult.Queue.QueueTicketId);
+        review.VisitId.ShouldBeGreaterThan(0);
+        review.PatientUserId.ShouldBeGreaterThan(0);
+        review.PatientName.ShouldNotBeNullOrWhiteSpace();
+        review.UrgencyLevel.ShouldBe("Urgent");
+        review.PriorityScore.ShouldBeGreaterThan(0m);
+        review.ChiefComplaint.ShouldNotBeNullOrWhiteSpace();
+        review.ConsultationPath.ShouldContain("/clinician/consultation");
+        review.PatientHistoryPath.ShouldContain("/clinician/history");
+    }
+
+    [Fact]
+    public async Task UpdateQueueTicketStatus_Should_Transition_And_Log_Event()
+    {
+        var clinicianEmail = await RegisterAndApproveClinicianWithFacilityAsync();
+        var triageResult = await CreateQueuedVisitForPatientAsync($"queue-status-{Guid.NewGuid():N}@medstream.test", isUrgent: false);
+
+        LoginAsTenant(AbpTenantBase.DefaultTenantName, clinicianEmail);
+        var called = await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
+        {
+            QueueTicketId = triageResult.Queue.QueueTicketId,
+            NewStatus = PatientIntakeConstants.QueueStatusCalled
+        });
+        var inConsultation = await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
+        {
+            QueueTicketId = triageResult.Queue.QueueTicketId,
+            NewStatus = PatientIntakeConstants.QueueStatusInConsultation
+        });
+
+        called.OldStatus.ShouldBe(PatientIntakeConstants.QueueStatusWaiting);
+        called.NewStatus.ShouldBe(PatientIntakeConstants.QueueStatusCalled);
+        inConsultation.NewStatus.ShouldBe(PatientIntakeConstants.QueueStatusInConsultation);
+
+        await UsingDbContextAsync(async context =>
+        {
+            var queueTicket = await context.QueueTickets.SingleAsync(item => item.Id == triageResult.Queue.QueueTicketId);
+            queueTicket.QueueStatus.ShouldBe(PatientIntakeConstants.QueueStatusInConsultation);
+            queueTicket.ConsultationStartedAt.ShouldNotBeNull();
+            queueTicket.ConsultationStartedByClinicianUserId.ShouldNotBeNull();
+
+            var statusEvents = await context.QueueEvents
+                .Where(item => item.QueueTicketId == queueTicket.Id)
+                .OrderBy(item => item.Id)
+                .ToListAsync();
+
+            statusEvents.Count.ShouldBeGreaterThanOrEqualTo(3);
+            statusEvents.Any(item => item.NewStatus == PatientIntakeConstants.QueueStatusCalled).ShouldBeTrue();
+            statusEvents.Any(item => item.NewStatus == PatientIntakeConstants.QueueStatusInConsultation).ShouldBeTrue();
+        });
+    }
+
+    [Fact]
+    public async Task UpdateQueueTicketStatus_Should_Reject_Invalid_Transition()
+    {
+        var clinicianEmail = await RegisterAndApproveClinicianWithFacilityAsync();
+        var triageResult = await CreateQueuedVisitForPatientAsync($"queue-invalid-transition-{Guid.NewGuid():N}@medstream.test", isUrgent: false);
+
+        LoginAsTenant(AbpTenantBase.DefaultTenantName, clinicianEmail);
+        await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
+        {
+            QueueTicketId = triageResult.Queue.QueueTicketId,
+            NewStatus = PatientIntakeConstants.QueueStatusCalled
+        });
+        await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
+        {
+            QueueTicketId = triageResult.Queue.QueueTicketId,
+            NewStatus = PatientIntakeConstants.QueueStatusInConsultation
+        });
+        await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
+        {
+            QueueTicketId = triageResult.Queue.QueueTicketId,
+            NewStatus = PatientIntakeConstants.QueueStatusCompleted
+        });
+
+        await Should.ThrowAsync<Abp.UI.UserFriendlyException>(async () =>
+        {
+            await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
+            {
+                QueueTicketId = triageResult.Queue.QueueTicketId,
+                NewStatus = PatientIntakeConstants.QueueStatusWaiting
+            });
+        });
+    }
+
     private async Task<string> RegisterAndApproveClinicianWithFacilityAsync()
     {
         var clinicianEmail = $"queue-clinician-{Guid.NewGuid():N}@medstream.test";
