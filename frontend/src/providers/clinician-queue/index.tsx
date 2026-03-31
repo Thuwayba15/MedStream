@@ -3,7 +3,7 @@
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef } from "react";
 import { API } from "@/constants/api";
 import { subscribeToQueueRealtime } from "@/services/realtime/queueRealtimeClient";
-import { clearError, loadFailed, loadStarted, loadSucceeded, setQueueStatusFilter, setSearchText, setUrgencyTabFilter } from "./actions";
+import { clearError, loadFailed, loadStarted, loadSucceeded, setPage, setQueueStatusFilter, setSearchText, setUrgencyTabFilter } from "./actions";
 import { ClinicianQueueActionContext, ClinicianQueueStateContext, INITIAL_STATE, type IClinicianQueueActionContext, type IClinicianQueueStateContext, type TQueueTabFilter } from "./context";
 import { clinicianQueueReducer } from "./reducer";
 import type { IClinicianQueueResponse, TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
@@ -55,7 +55,14 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
     };
 
     const loadQueueByFilters = useCallback(
-        async (searchText: string, queueStatusFilter: IClinicianQueueStateContext["queueStatusFilter"], urgencyTabFilter: TQueueTabFilter, mode: "initial" | "refresh"): Promise<void> => {
+        async (
+            searchText: string,
+            queueStatusFilter: IClinicianQueueStateContext["queueStatusFilter"],
+            urgencyTabFilter: TQueueTabFilter,
+            page: number,
+            pageSize: number,
+            mode: "initial" | "refresh"
+        ): Promise<void> => {
             dispatch(loadStarted(mode));
 
             try {
@@ -71,10 +78,12 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
                 getUrgencyLevels(urgencyTabFilter).forEach((urgency) => {
                     query.append("urgencyLevel", urgency);
                 });
+                query.set("skipCount", String(Math.max(0, (page - 1) * pageSize)));
+                query.set("maxResultCount", String(pageSize));
 
                 const response = await fetch(`${API.CLINICIAN_QUEUE_ROUTE}?${query.toString()}`);
                 const body = await parseResponse<IClinicianQueueResponse>(response, "Unable to load clinician queue.");
-                dispatch(loadSucceeded(body.items ?? [], body.totalCount ?? 0));
+                dispatch(loadSucceeded(body.items ?? [], body.totalCount ?? 0, body.summary ?? INITIAL_STATE.summary));
             } catch (error) {
                 const message = error instanceof Error ? error.message : "Unable to load clinician queue.";
                 dispatch(loadFailed(message));
@@ -85,9 +94,9 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
 
     const loadQueue = useCallback(
         async (mode: "initial" | "refresh" = "refresh"): Promise<void> => {
-            await loadQueueByFilters(state.searchText, state.queueStatusFilter, state.urgencyTabFilter, mode);
+            await loadQueueByFilters(state.searchText, state.queueStatusFilter, state.urgencyTabFilter, state.page, state.pageSize, mode);
         },
-        [loadQueueByFilters, state.queueStatusFilter, state.searchText, state.urgencyTabFilter]
+        [loadQueueByFilters, state.page, state.pageSize, state.queueStatusFilter, state.searchText, state.urgencyTabFilter]
     );
 
     useEffect(() => {
@@ -105,16 +114,23 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
         }
 
         const timeout = setTimeout(() => {
-            void loadQueueByFilters(state.searchText, state.queueStatusFilter, state.urgencyTabFilter, "refresh");
+            void loadQueueByFilters(state.searchText, state.queueStatusFilter, state.urgencyTabFilter, state.page, state.pageSize, "refresh");
         }, 250);
 
         return () => clearTimeout(timeout);
-    }, [loadQueueByFilters, state.queueStatusFilter, state.searchText, state.urgencyTabFilter]);
+    }, [loadQueueByFilters, state.page, state.pageSize, state.queueStatusFilter, state.searchText, state.urgencyTabFilter]);
 
     useEffect(() => {
         const unsubscribe = subscribeToQueueRealtime(() => {
             const currentState = stateRef.current;
-            void loadQueueByFilters(currentState.searchText, currentState.queueStatusFilter, currentState.urgencyTabFilter, "refresh");
+            void loadQueueByFilters(
+                currentState.searchText,
+                currentState.queueStatusFilter,
+                currentState.urgencyTabFilter,
+                currentState.page,
+                currentState.pageSize,
+                "refresh"
+            );
         });
 
         return unsubscribe;
@@ -126,6 +142,7 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
             setSearchText: (value) => dispatch(setSearchText(value)),
             setQueueStatusFilter: (value) => dispatch(setQueueStatusFilter(value)),
             setUrgencyTabFilter: (value) => dispatch(setUrgencyTabFilter(value)),
+            setPage: (page, pageSize) => dispatch(setPage(page, pageSize)),
             clearError: () => dispatch(clearError()),
         }),
         [loadQueue]
