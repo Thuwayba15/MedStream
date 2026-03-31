@@ -709,20 +709,21 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         var selectedSymptoms = DeserializeList(intake.SelectedSymptoms);
         var extractedSymptoms = DeserializeList(intake.ExtractedPrimarySymptoms);
         var summaryParts = new List<string>();
+        var combinedSymptoms = selectedSymptoms
+            .Concat(extractedSymptoms)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         if (!string.IsNullOrWhiteSpace(intake.FreeTextComplaint))
         {
             summaryParts.Add($"Chief complaint: {intake.FreeTextComplaint.Trim()}");
         }
 
-        if (selectedSymptoms.Count > 0)
+        if (combinedSymptoms.Count > 0)
         {
-            summaryParts.Add($"Selected symptoms: {string.Join(", ", selectedSymptoms)}");
-        }
-
-        if (extractedSymptoms.Count > 0)
-        {
-            summaryParts.Add($"Extracted primary symptoms: {string.Join(", ", extractedSymptoms)}");
+            summaryParts.Add($"Symptoms reported: {string.Join(", ", combinedSymptoms)}");
         }
 
         if (answers.Count == 0)
@@ -752,6 +753,7 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
                 return BuildReadableSummaryAnswer(label, item.Value);
             })
             .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         if (keyDetails.Count > 0)
@@ -781,9 +783,16 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
 
     private static string FormatAnswer(object value)
     {
+        if (value is string stringValue)
+        {
+            return stringValue.Trim();
+        }
+
         if (value is IEnumerable<object> objectList && value is not string)
         {
-            return string.Join(", ", objectList.Select(item => Convert.ToString(item)?.Trim()).Where(item => !string.IsNullOrWhiteSpace(item)));
+            return string.Join(", ", objectList
+                .Select(FormatAnswerItem)
+                .Where(item => !string.IsNullOrWhiteSpace(item) && !string.Equals(item, "none", StringComparison.OrdinalIgnoreCase)));
         }
 
         if (value is System.Collections.IEnumerable enumerable && value is not string)
@@ -791,8 +800,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             var values = new List<string>();
             foreach (var item in enumerable)
             {
-                var text = Convert.ToString(item)?.Trim();
-                if (!string.IsNullOrWhiteSpace(text))
+                var text = FormatAnswerItem(item);
+                if (!string.IsNullOrWhiteSpace(text) && !string.Equals(text, "none", StringComparison.OrdinalIgnoreCase))
                 {
                     values.Add(text);
                 }
@@ -827,7 +836,8 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         {
             foreach (var item in enumerable)
             {
-                if (!string.IsNullOrWhiteSpace(Convert.ToString(item)?.Trim()))
+                var text = FormatAnswerItem(item);
+                if (!string.IsNullOrWhiteSpace(text) && !string.Equals(text, "none", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -841,13 +851,52 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
 
     private static string BuildReadableSummaryAnswer(string label, object value)
     {
+        var safeLabel = label?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(safeLabel))
+        {
+            return string.Empty;
+        }
+
         if (value is bool booleanValue)
         {
-            return booleanValue ? $"{label}." : string.Empty;
+            if (!booleanValue)
+            {
+                return string.Empty;
+            }
+
+            return safeLabel.EndsWith(".", StringComparison.Ordinal) ? safeLabel : $"{safeLabel}.";
         }
 
         var formattedValue = FormatAnswer(value);
-        return string.IsNullOrWhiteSpace(formattedValue) ? string.Empty : $"{label}: {formattedValue}.";
+        if (string.IsNullOrWhiteSpace(formattedValue))
+        {
+            return string.Empty;
+        }
+
+        return safeLabel switch
+        {
+            "Main concern" => $"Main concern: {formattedValue}.",
+            "Danger signs reported" => $"Danger signs reported: {formattedValue}.",
+            _ => $"{safeLabel}: {formattedValue}."
+        };
+    }
+
+    private static string FormatAnswerItem(object value)
+    {
+        var text = Convert.ToString(value)?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        return text switch
+        {
+            "fainting" => "Fainting/collapse",
+            "severe-pain" => "Severe pain",
+            "breathing" => "Difficulty breathing",
+            "cannot-drink" => "Cannot keep fluids down",
+            _ => text
+        };
     }
 
     private static string HumanizeAnswerKey(string key)
@@ -857,18 +906,55 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             return string.Empty;
         }
 
-        return key switch
+        var normalizedKey = key.Trim();
+        return normalizedKey.ToLowerInvariant() switch
         {
-            "urgentSevereBreathing" => "Severe difficulty breathing reported",
-            "urgentSevereChestPain" => "Severe chest pain reported",
-            "urgentUncontrolledBleeding" => "Uncontrolled bleeding reported",
-            "urgentCollapse" => "Collapse or blackout reported",
-            "urgentConfusion" => "Confusion or reduced responsiveness reported",
-            "hasFever" => "Fever reported",
-            "durationDays" => "Duration",
-            "mainConcern" => "Main concern",
-            _ => char.ToUpperInvariant(key[0]) + string.Concat(key.Skip(1)).Replace("_", " ")
+            "urgentseverebreathing" => "Severe difficulty breathing reported",
+            "urgentseverechestpain" => "Severe chest pain reported",
+            "urgentuncontrolledbleeding" => "Uncontrolled bleeding reported",
+            "urgentcollapse" => "Collapse or blackout reported",
+            "urgentconfusion" => "Confusion or reduced responsiveness reported",
+            "hasfever" => "Fever reported",
+            "durationdays" => "Duration",
+            "mainconcern" => "Main concern",
+            "chiefconcern" => "Main concern",
+            "dangersigns" => "Danger signs reported",
+            "dizzinesstype" => "Type of dizziness",
+            "symptomonset" => "Symptom onset",
+            _ => HumanizeFreeFormKey(normalizedKey)
         };
+    }
+
+    private static string HumanizeFreeFormKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return string.Empty;
+        }
+
+        var builder = new System.Text.StringBuilder();
+        for (var index = 0; index < key.Length; index++)
+        {
+            var character = key[index];
+            if (index > 0 && char.IsUpper(character) && key[index - 1] != ' ')
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(character == '_' ? ' ' : character);
+        }
+
+        var text = builder.ToString().Trim();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        text = text
+            .Replace("Please describe your main concern in one sentence.", "Main concern", StringComparison.OrdinalIgnoreCase)
+            .Replace("Select any danger signs now.", "Danger signs reported", StringComparison.OrdinalIgnoreCase);
+
+        return char.ToUpperInvariant(text[0]) + text[1..];
     }
 
     private static List<string> EvaluateGlobalUrgency(string freeText, IReadOnlyDictionary<string, object> answers)

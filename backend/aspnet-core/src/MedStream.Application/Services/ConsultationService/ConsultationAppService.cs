@@ -339,6 +339,7 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
         await EnsureVisitIsEditableAsync(visit);
         var intake = await GetSymptomIntakeAsync(visit);
         var note = await GetOrCreateEncounterNoteAsync(visit, intake, clinician.Id);
+        var latestVitals = await GetLatestVitalsAsync(visit.Id, visit.TenantId);
         EnsureEncounterNoteIsEditable(note);
 
         if (string.IsNullOrWhiteSpace(note.Subjective))
@@ -346,9 +347,9 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
             throw new UserFriendlyException("Subjective must be completed before finalizing the note.");
         }
 
-        if (string.IsNullOrWhiteSpace(note.Objective))
+        if (string.IsNullOrWhiteSpace(note.Objective) && latestVitals == null)
         {
-            throw new UserFriendlyException("Objective must be completed before finalizing the note.");
+            throw new UserFriendlyException("Add objective findings or save consultation vitals before finalizing the note.");
         }
 
         if (string.IsNullOrWhiteSpace(note.Assessment))
