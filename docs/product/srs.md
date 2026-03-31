@@ -293,10 +293,15 @@ Objective
 Assessment
 Plan
  1.3 `Subjective` must be seeded from persisted intake data (`SymptomIntake`) including free-text complaint, extracted symptoms, and follow-up answer summary
+ 1.4 Consultation access must remain restricted to the assigned or current consultation clinician for the visit
+ 1.5 Transcript text may be attached to the encounter note as typed consultation capture or externally-transcribed consultation content
+ 1.6 The system may generate clinician-reviewable AI draft suggestions for `Subjective`, `Assessment`, and `Plan` using intake, transcript, vitals, and current note context
+ 1.7 AI draft generation must not silently overwrite clinician-authored note content; the clinician must explicitly review and apply or edit suggested content
 
 F8.2 Draft & Finalize
 2.1 Notes must support draft state
  2.2 Notes must be finalized before completion
+ 2.3 Queue or visit completion must be blocked until the encounter note is finalized
 
 F9. Medical Reports
 F9.1 Upload Report
