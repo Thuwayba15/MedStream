@@ -5,6 +5,7 @@ import type { IClinicianQueueReview, IUpdateQueueStatusResponse } from "@/servic
 import type {
     IAttachConsultationTranscriptRequest,
     IConsultationAiDraft,
+    IConsultationInbox,
     IConsultationTranscript,
     IConsultationVitalSigns,
     IConsultationWorkspace,
@@ -14,6 +15,7 @@ import type {
 } from "@/services/consultation/types";
 
 export interface IClinicianConsultationStateContext {
+    inbox: IConsultationInbox | null;
     workspace: IConsultationWorkspace | null;
     review: IClinicianQueueReview | null;
     subjectiveDraft: IConsultationAiDraft | null;
@@ -36,6 +38,7 @@ export interface ILoadConsultationWorkspaceInput {
 }
 
 export interface IClinicianConsultationActionContext {
+    loadInbox: () => Promise<void>;
     loadWorkspace: (input: ILoadConsultationWorkspaceInput) => Promise<void>;
     saveEncounterNoteDraft: (payload: ISaveEncounterNoteDraftRequest) => Promise<IEncounterNote | null>;
     saveVitals: (payload: ISaveVitalsRequest) => Promise<IConsultationVitalSigns | null>;
@@ -48,6 +51,7 @@ export interface IClinicianConsultationActionContext {
 }
 
 export const INITIAL_STATE: IClinicianConsultationStateContext = {
+    inbox: null,
     workspace: null,
     review: null,
     subjectiveDraft: null,
@@ -65,6 +69,7 @@ export const INITIAL_STATE: IClinicianConsultationStateContext = {
 };
 
 export const INITIAL_ACTION_STATE: IClinicianConsultationActionContext = {
+    loadInbox: async () => Promise.resolve(),
     loadWorkspace: async () => Promise.resolve(),
     saveEncounterNoteDraft: async () => null,
     saveVitals: async () => null,

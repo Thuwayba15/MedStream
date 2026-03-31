@@ -4,6 +4,7 @@ import { apiClient } from "@/lib/api/client";
 import type {
     IAttachConsultationTranscriptRequest,
     IConsultationAiDraft,
+    IConsultationInbox,
     IConsultationTranscript,
     IConsultationVitalSigns,
     IConsultationWorkspace,
@@ -15,6 +16,14 @@ import type {
 
 const getAuthorizationHeader = (accessToken: string): { Authorization: string } => {
     return { Authorization: `Bearer ${accessToken}` };
+};
+
+const getConsultationInbox = async (accessToken: string): Promise<IConsultationInbox> => {
+    const response = await apiClient.get(API.CONSULTATION_GET_INBOX_ENDPOINT, {
+        headers: getAuthorizationHeader(accessToken),
+    });
+
+    return unwrapAbpResponse<IConsultationInbox>(response.data);
 };
 
 const getConsultationWorkspace = async (payload: IGetConsultationWorkspaceRequest, accessToken: string): Promise<IConsultationWorkspace> => {
@@ -90,6 +99,7 @@ const finalizeEncounterNote = async (visitId: number, accessToken: string): Prom
 };
 
 export const consultationService = {
+    getConsultationInbox,
     getConsultationWorkspace,
     saveVitals,
     saveEncounterNoteDraft,

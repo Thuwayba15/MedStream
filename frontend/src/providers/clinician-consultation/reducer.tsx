@@ -4,6 +4,18 @@ import { INITIAL_STATE, type IClinicianConsultationStateContext } from "./contex
 
 export const clinicianConsultationReducer = handleActions<IClinicianConsultationStateContext, IClinicianConsultationStatePayload>(
     {
+        [ClinicianConsultationActionEnums.loadInboxStarted]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [ClinicianConsultationActionEnums.loadInboxSucceeded]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
+        [ClinicianConsultationActionEnums.loadInboxFailed]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
         [ClinicianConsultationActionEnums.loadWorkspaceStarted]: (state, action) => ({
             ...state,
             ...action.payload,

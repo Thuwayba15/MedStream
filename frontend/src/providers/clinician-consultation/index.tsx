@@ -6,6 +6,7 @@ import type { IClinicianQueueReview, IUpdateQueueStatusResponse } from "@/servic
 import type {
     IAttachConsultationTranscriptRequest,
     IConsultationAiDraft,
+    IConsultationInbox,
     IConsultationTranscript,
     IConsultationVitalSigns,
     IConsultationWorkspace,
@@ -30,6 +31,9 @@ import {
     generateSubjectiveFailed,
     generateSubjectiveStarted,
     generateSubjectiveSucceeded,
+    loadInboxFailed,
+    loadInboxStarted,
+    loadInboxSucceeded,
     loadWorkspaceFailed,
     loadWorkspaceStarted,
     loadWorkspaceSucceeded,
@@ -68,6 +72,11 @@ const loadQueueReview = async (queueTicketId: number): Promise<IClinicianQueueRe
     return parseResponse<IClinicianQueueReview>(response, "Unable to load consultation handoff.");
 };
 
+const loadConsultationInbox = async (): Promise<IConsultationInbox> => {
+    const response = await fetch(API.CLINICIAN_CONSULTATION_ROUTE);
+    return parseResponse<IConsultationInbox>(response, "Unable to load clinician consultation list.");
+};
+
 const loadConsultationWorkspace = async (visitId: number, queueTicketId?: number): Promise<IConsultationWorkspace> => {
     const query = new URLSearchParams({ visitId: String(visitId) });
     if (queueTicketId) {
@@ -92,6 +101,17 @@ const postJson = async <TResponse,>(url: string, payload: object, fallbackMessag
 
 export const ClinicianConsultationProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(clinicianConsultationReducer, INITIAL_STATE);
+
+    const loadInbox = useCallback(async (): Promise<void> => {
+        dispatch(loadInboxStarted());
+        try {
+            const inbox = await loadConsultationInbox();
+            dispatch(loadInboxSucceeded(inbox));
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unable to load clinician consultation list.";
+            dispatch(loadInboxFailed(message));
+        }
+    }, []);
 
     const refreshWorkspace = useCallback(
         async (visitId: number, queueTicketId?: number): Promise<IConsultationWorkspace> => {
@@ -229,6 +249,7 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
 
     const actions: IClinicianConsultationActionContext = useMemo(
         () => ({
+            loadInbox,
             loadWorkspace,
             saveEncounterNoteDraft,
             saveVitals,
@@ -239,7 +260,7 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
             completeVisit,
             clearMessages: () => dispatch(clearMessages()),
         }),
-        [attachTranscript, completeVisit, finalizeEncounterNote, generateAssessmentPlanDraft, generateSubjectiveDraft, loadWorkspace, saveEncounterNoteDraft, saveVitals]
+        [attachTranscript, completeVisit, finalizeEncounterNote, generateAssessmentPlanDraft, generateSubjectiveDraft, loadInbox, loadWorkspace, saveEncounterNoteDraft, saveVitals]
     );
 
     return (

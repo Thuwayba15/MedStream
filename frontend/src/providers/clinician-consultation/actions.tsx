@@ -3,6 +3,7 @@ import type { IClinicianConsultationStateContext } from "./context";
 import type { IClinicianQueueReview, IUpdateQueueStatusResponse } from "@/services/queue-operations/types";
 import type {
     IConsultationAiDraft,
+    IConsultationInbox,
     IConsultationTranscript,
     IConsultationVitalSigns,
     IConsultationWorkspace,
@@ -10,6 +11,9 @@ import type {
 } from "@/services/consultation/types";
 
 export enum ClinicianConsultationActionEnums {
+    loadInboxStarted = "CLINICIAN_CONSULTATION_LOAD_INBOX_STARTED",
+    loadInboxSucceeded = "CLINICIAN_CONSULTATION_LOAD_INBOX_SUCCEEDED",
+    loadInboxFailed = "CLINICIAN_CONSULTATION_LOAD_INBOX_FAILED",
     loadWorkspaceStarted = "CLINICIAN_CONSULTATION_LOAD_STARTED",
     loadWorkspaceSucceeded = "CLINICIAN_CONSULTATION_LOAD_SUCCEEDED",
     loadWorkspaceFailed = "CLINICIAN_CONSULTATION_LOAD_FAILED",
@@ -44,6 +48,25 @@ export interface IClinicianConsultationStateAction {
 
 export type IClinicianConsultationStatePayload = Partial<IClinicianConsultationStateContext>;
 
+export const loadInboxStarted = createAction<IClinicianConsultationStatePayload>(ClinicianConsultationActionEnums.loadInboxStarted, () => ({
+    isLoadingWorkspace: true,
+    errorMessage: undefined,
+    successMessage: undefined,
+}));
+
+export const loadInboxSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationInbox>(ClinicianConsultationActionEnums.loadInboxSucceeded, (inbox) => ({
+    inbox,
+    workspace: null,
+    review: null,
+    isLoadingWorkspace: false,
+    errorMessage: undefined,
+}));
+
+export const loadInboxFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.loadInboxFailed, (message) => ({
+    isLoadingWorkspace: false,
+    errorMessage: message,
+}));
+
 export const loadWorkspaceStarted = createAction<IClinicianConsultationStatePayload>(ClinicianConsultationActionEnums.loadWorkspaceStarted, () => ({
     isLoadingWorkspace: true,
     errorMessage: undefined,
@@ -53,6 +76,7 @@ export const loadWorkspaceStarted = createAction<IClinicianConsultationStatePayl
 export const loadWorkspaceSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace, IClinicianQueueReview | null>(
     ClinicianConsultationActionEnums.loadWorkspaceSucceeded,
     (workspace, review) => ({
+        inbox: null,
         workspace,
         review,
         isLoadingWorkspace: false,

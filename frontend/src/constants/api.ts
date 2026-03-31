@@ -74,6 +74,9 @@ export const API = {
     /** ABP consultation workspace endpoint. */
     CONSULTATION_GET_WORKSPACE_ENDPOINT: "/api/services/app/Consultation/GetConsultationWorkspace",
 
+    /** ABP consultation inbox endpoint. */
+    CONSULTATION_GET_INBOX_ENDPOINT: "/api/services/app/Consultation/GetConsultationInbox",
+
     /** ABP consultation vitals save endpoint. */
     CONSULTATION_SAVE_VITALS_ENDPOINT: "/api/services/app/Consultation/SaveVitals",
 
