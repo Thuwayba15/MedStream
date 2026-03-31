@@ -727,7 +727,12 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                     <Typography.Title level={3} className={styles.editorTitle}>
                         Plan
                     </Typography.Title>
-                    <TextArea value={noteDraft.plan} onChange={(event) => updateNoteDraft((current) => ({ ...current, plan: event.target.value }))} className={styles.editorArea} disabled={isFinalized} />
+                    <TextArea
+                        value={noteDraft.plan}
+                        onChange={(event) => updateNoteDraft((current) => ({ ...current, plan: event.target.value }))}
+                        className={styles.editorArea}
+                        disabled={isFinalized}
+                    />
                 </div>
             ),
         },
