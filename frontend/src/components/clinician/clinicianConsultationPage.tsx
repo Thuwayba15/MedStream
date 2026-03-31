@@ -4,7 +4,7 @@ import { ArrowLeftOutlined, AudioOutlined, CheckCircleOutlined, FileDoneOutlined
 import { Alert, Button, Card, Empty, Input, Skeleton, Space, Steps, Tabs, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useClinicianConsultationActions, useClinicianConsultationState } from "@/providers/clinician-consultation";
 import type { IConsultationInboxItem, IConsultationWorkspace } from "@/services/consultation/types";
 import type { TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
@@ -78,6 +78,14 @@ const humanizeClinicalLabel = (label: string): string => {
         return "Triage category";
     }
 
+    if (normalized === "please describe your main concern in one sentence.") {
+        return "Main concern";
+    }
+
+    if (normalized === "select any danger signs now.") {
+        return "Danger signs reported";
+    }
+
     return label.trim();
 };
 
@@ -95,6 +103,10 @@ const humanizeStructuredSegment = (segment: string): string => {
     const rawLabel = parts.shift()?.trim() ?? "";
     const value = parts.join(":").trim();
     if (!rawLabel || !value) {
+        return "";
+    }
+
+    if (value === "[]") {
         return "";
     }
 
@@ -120,7 +132,6 @@ const sanitizeClinicalCopy = (value?: string | null): string => {
     }
 
     let cleaned = value
-        .replace(/\r?\n/g, " ")
         .replace(/Follow-up answers:/gi, "Key details:")
         .replace(/urgentSevereBreathing:\s*True/gi, "Severe difficulty breathing reported")
         .replace(/urgentSevereChestPain:\s*True/gi, "Severe chest pain reported")
@@ -128,18 +139,24 @@ const sanitizeClinicalCopy = (value?: string | null): string => {
         .replace(/urgentCollapse:\s*True/gi, "Collapse or blackout reported")
         .replace(/urgentConfusion:\s*True/gi, "Confusion or reduced responsiveness reported")
         .replace(/urgent[A-Za-z]+:\s*False;?/g, "")
-        .replace(/\s+/g, " ")
         .trim();
 
-    const sections = cleaned
-        .split(/(?=Chief complaint:|Selected symptoms:|Extracted primary symptoms:|Key details:|Primary concern:|Symptoms reported:|Triage category:)/gi)
-        .map((segment) => segment.trim())
+    const rawSections = cleaned
+        .split(/\r?\n|(?=Chief complaint:|Selected symptoms:|Extracted primary symptoms:|Key details:|Primary concern:|Symptoms reported:|Triage category:)/gi)
+        .map((segment) => segment.replace(/\s+/g, " ").trim())
         .filter(Boolean);
 
-    const rendered = sections.map((section) => {
+    const seen = new Set<string>();
+    const rendered = rawSections.map((section) => {
         const parts = section.split(":");
         if (parts.length < 2) {
-            return section;
+            const plain = section.endsWith(".") ? section : `${section}.`;
+            if (seen.has(plain.toLowerCase())) {
+                return "";
+            }
+
+            seen.add(plain.toLowerCase());
+            return plain;
         }
 
         const rawLabel = parts.shift()?.trim() ?? "";
@@ -155,16 +172,33 @@ const sanitizeClinicalCopy = (value?: string | null): string => {
                 .split(";")
                 .map((segment) => humanizeStructuredSegment(segment))
                 .filter(Boolean)
-                .join(" ");
-            return detailText ? `${label}: ${detailText}` : "";
+                .join("\n");
+            const summary = detailText ? `${label}:\n${detailText}` : "";
+            if (!summary || seen.has(summary.toLowerCase())) {
+                return "";
+            }
+
+            seen.add(summary.toLowerCase());
+            return summary;
         }
 
-        return `${label}: ${valuePart.replace(/\s+/g, " ").trim()}`.trim();
+        const summary = `${label}: ${valuePart.replace(/\s+/g, " ").trim()}`.trim();
+        if (summary.endsWith(": []")) {
+            return "";
+        }
+
+        if (seen.has(summary.toLowerCase())) {
+            return "";
+        }
+
+        seen.add(summary.toLowerCase());
+        return summary;
     }).filter(Boolean);
 
-    cleaned = rendered.length > 0 ? rendered.join(" ") : cleaned;
+    cleaned = rendered.length > 0 ? rendered.join("\n\n") : cleaned;
     cleaned = cleaned
-        .replace(/Symptoms reported:\s*([^.]*)\s*Symptoms reported:/gi, "Symptoms reported: $1 ")
+        .replace(/Symptoms reported:\s*([^\n.]*)\s*Symptoms reported:/gi, "Symptoms reported: $1 ")
+        .replace(/\n{3,}/g, "\n\n")
         .replace(/\s+\./g, ".")
         .trim();
 
@@ -251,6 +285,10 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     const [noteDraft, setNoteDraft] = useState<INoteDraftState>(createNoteDraft);
     const [vitalsDraft, setVitalsDraft] = useState<IVitalsDraftState>(createVitalsDraft);
     const [transcriptText, setTranscriptText] = useState("");
+    const hydratedNoteSignatureRef = useRef<string>("");
+    const workspace = state.workspace;
+    const review = state.review;
+    const inbox = state.inbox?.items ?? [];
 
     useEffect(() => {
         if (visitId) {
@@ -262,43 +300,85 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     }, [actions, queueTicketId, visitId]);
 
     useEffect(() => {
-        if (!state.workspace) {
+        if (!workspace) {
             return;
         }
 
-        setNoteDraft({
-            subjective: sanitizeClinicalCopy(state.workspace.encounterNote.subjective || state.workspace.encounterNote.intakeSubjective),
-            objective: state.workspace.encounterNote.objective || "",
-            assessment: state.workspace.encounterNote.assessment || "",
-            plan: state.workspace.encounterNote.plan || "",
+        const shouldPreferHandoffSummary = Boolean(
+            review?.clinicianSummary &&
+            workspace.encounterNote.subjective.trim() === workspace.encounterNote.intakeSubjective.trim()
+        );
+        const nextSubjective = sanitizeClinicalCopy(
+            shouldPreferHandoffSummary
+                ? review?.clinicianSummary
+                : workspace.encounterNote.subjective || workspace.encounterNote.intakeSubjective
+        );
+        const noteSignature = JSON.stringify({
+            id: workspace.encounterNote.id,
+            intakeSubjective: workspace.encounterNote.intakeSubjective,
+            subjective: workspace.encounterNote.subjective,
+            objective: workspace.encounterNote.objective,
+            assessment: workspace.encounterNote.assessment,
+            plan: workspace.encounterNote.plan,
+            reviewSummary: shouldPreferHandoffSummary ? review?.clinicianSummary : "",
         });
 
+        if (hydratedNoteSignatureRef.current !== noteSignature) {
+            hydratedNoteSignatureRef.current = noteSignature;
+            setNoteDraft({
+                subjective: nextSubjective,
+                objective: workspace.encounterNote.objective || "",
+                assessment: workspace.encounterNote.assessment || "",
+                plan: workspace.encounterNote.plan || "",
+            });
+        }
         setVitalsDraft({
-            bloodPressureSystolic: state.workspace.latestVitals?.bloodPressureSystolic?.toString() ?? "",
-            bloodPressureDiastolic: state.workspace.latestVitals?.bloodPressureDiastolic?.toString() ?? "",
-            heartRate: state.workspace.latestVitals?.heartRate?.toString() ?? "",
-            respiratoryRate: state.workspace.latestVitals?.respiratoryRate?.toString() ?? "",
-            temperatureCelsius: state.workspace.latestVitals?.temperatureCelsius?.toString() ?? "",
-            oxygenSaturation: state.workspace.latestVitals?.oxygenSaturation?.toString() ?? "",
-            bloodGlucose: state.workspace.latestVitals?.bloodGlucose?.toString() ?? "",
-            weightKg: state.workspace.latestVitals?.weightKg?.toString() ?? "",
+            bloodPressureSystolic: workspace.latestVitals?.bloodPressureSystolic?.toString() ?? "",
+            bloodPressureDiastolic: workspace.latestVitals?.bloodPressureDiastolic?.toString() ?? "",
+            heartRate: workspace.latestVitals?.heartRate?.toString() ?? "",
+            respiratoryRate: workspace.latestVitals?.respiratoryRate?.toString() ?? "",
+            temperatureCelsius: workspace.latestVitals?.temperatureCelsius?.toString() ?? "",
+            oxygenSaturation: workspace.latestVitals?.oxygenSaturation?.toString() ?? "",
+            bloodGlucose: workspace.latestVitals?.bloodGlucose?.toString() ?? "",
+            weightKg: workspace.latestVitals?.weightKg?.toString() ?? "",
         });
-    }, [state.workspace]);
-
-    const workspace = state.workspace;
-    const review = state.review;
-    const inbox = state.inbox?.items ?? [];
+    }, [review?.clinicianSummary, workspace]);
     const patientName = review?.patientName ?? workspace?.patientContext.patientName ?? "Consultation";
     const queueStatus = review?.queueStatus ?? (workspace?.patientContext.queueStatus as TQueueStatus | undefined);
     const urgencyLevel = (review?.urgencyLevel ?? workspace?.patientContext.urgencyLevel ?? "Priority") as TUrgencyLevel;
     const isFinalized = (workspace?.encounterNote.status ?? "draft") === "finalized";
     const canCompleteVisit = isFinalized && Boolean(review?.queueTicketId) && review?.queueStatus === "in_consultation";
-    const workflowSteps = useMemo<Array<{ title: string; content: string; status: "wait" | "process" | "finish" }>>(() => [
-        { title: "Capture context", content: workspace?.transcripts.length ? "Transcript attached" : "Attach transcript or typed notes", status: workspace?.transcripts.length ? "finish" : "process" },
-        { title: "Record objective", content: workspace?.latestVitals || noteDraft.objective.trim() ? "Vitals or findings saved" : "Save vitals and exam findings", status: workspace?.latestVitals || noteDraft.objective.trim() ? "finish" : "wait" },
-        { title: "Draft assessment & plan", content: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "Review and refine" : "Generate A/P draft", status: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "finish" : "wait" },
-        { title: "Finalize note", content: isFinalized ? "Note locked" : "Finalize when SOAP is complete", status: isFinalized ? "finish" : "wait" },
-    ], [isFinalized, noteDraft.assessment, noteDraft.objective, noteDraft.plan, workspace?.latestVitals, workspace?.transcripts.length]);
+    const workflowSteps = useMemo<Array<{ title: string; content: string; status: "wait" | "process" | "finish" }>>(() => {
+        const steps = [
+            {
+                title: "Capture Context",
+                content: workspace?.transcripts.length ? "Transcript attached" : "Attach transcript or typed notes",
+                done: Boolean(workspace?.transcripts.length),
+            },
+            {
+                title: "Record Objective",
+                content: workspace?.latestVitals || noteDraft.objective.trim() ? "Vitals or findings saved" : "Save vitals and exam findings",
+                done: Boolean(workspace?.latestVitals || noteDraft.objective.trim()),
+            },
+            {
+                title: "Draft A/P",
+                content: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "Review and refine" : "Generate A/P draft",
+                done: Boolean(noteDraft.assessment.trim() && noteDraft.plan.trim()),
+            },
+            {
+                title: "Finalize Note",
+                content: isFinalized ? "Note locked" : "Finalize when SOAP is complete",
+                done: isFinalized,
+            },
+        ];
+
+        const currentIndex = steps.findIndex((item) => !item.done);
+        return steps.map((item, index) => ({
+            title: item.title,
+            content: item.content,
+            status: item.done ? "finish" : currentIndex === -1 ? "wait" : currentIndex === index ? "process" : "wait",
+        }));
+    }, [isFinalized, noteDraft.assessment, noteDraft.objective, noteDraft.plan, workspace?.latestVitals, workspace?.transcripts.length]);
 
     const objectiveVitalCards = [
         {
@@ -426,7 +506,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     const noteTabs = [
         {
             key: "subjective",
-            label: "subjective",
+            label: "Subjective",
             children: (
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
@@ -448,7 +528,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         },
         {
             key: "objective",
-            label: "objective",
+            label: "Objective",
             children: (
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
@@ -475,7 +555,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         },
         {
             key: "assessment",
-            label: "assessment",
+            label: "Assessment",
             children: (
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
@@ -497,7 +577,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         },
         {
             key: "plan",
-            label: "plan",
+            label: "Plan",
             children: (
                 <div className={styles.editorPanel}>
                     <Typography.Title level={3} className={styles.editorTitle}>Plan</Typography.Title>
@@ -531,9 +611,6 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 <>
                     <header className={styles.topBar}>
                         <div className={styles.topBarLeft}>
-                            <Link href={queueTicketId ? `/clinician/review/${queueTicketId}` : "/clinician/consultation"}>
-                                <Button icon={<ArrowLeftOutlined />} className={styles.secondaryAction}>Back</Button>
-                            </Link>
                             <div>
                                 <Typography.Title level={2} className={styles.pageTitle}>Consultation: {patientName}</Typography.Title>
                                 <Typography.Text className={styles.pageMeta}>{formatVisitStartedAt(workspace.patientContext.visitDate)}</Typography.Text>
@@ -565,11 +642,6 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                             </Card>
 
                             <Card className={styles.panelCard}>
-                                <Typography.Title level={5} className={styles.sectionHeading}>Visit Workflow</Typography.Title>
-                                <Steps orientation="vertical" size="small" items={workflowSteps} className={styles.workflowSteps} />
-                            </Card>
-
-                            <Card className={styles.panelCard}>
                                 <div className={styles.cardTitleRow}>
                                     <Typography.Title level={5} className={styles.sectionHeading} style={{ marginBottom: 0 }}>Latest Vitals</Typography.Title>
                                     <Button size="small" className={styles.secondaryAction} onClick={() => setActiveTab("objective")}>Update</Button>
@@ -594,6 +666,10 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                         </aside>
 
                         <div className={styles.mainColumn}>
+                            <Card className={styles.panelCard}>
+                                <Typography.Title level={5} className={styles.sectionHeading}>Visit Workflow</Typography.Title>
+                                <Steps size="small" responsive items={workflowSteps} className={styles.workflowSteps} />
+                            </Card>
                             <Card className={styles.workspaceCard}>
                                 <div className={styles.statusStrip}>
                                     <span className={styles.successPill}>{isFinalized ? "Finalized" : "Draft in progress"}</span>

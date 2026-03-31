@@ -59,6 +59,7 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         color: ${colors.white} !important;
         font-weight: 700;
         box-shadow: 0 10px 24px rgba(224, 123, 42, 0.2);
+        min-height: 40px;
     `,
     shellGrid: css`
         display: grid;
@@ -113,6 +114,7 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
     patientSummaryText: css`
         margin: 6px 0 0 !important;
         color: #7889a5;
+        white-space: pre-line;
     `,
     tagRow: css`
         display: flex;
@@ -159,6 +161,7 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
     bodyText: css`
         color: #50617b;
         margin: 0 !important;
+        white-space: pre-line;
     `,
     reasoningList: css`
         display: grid;
@@ -220,8 +223,32 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         gap: 14px;
     `,
     workflowSteps: css`
-        .ant-steps-item-description {
+        .ant-steps-item-content {
+            min-height: auto !important;
+        }
+
+        .ant-steps-item-title {
+            color: ${colors.navy} !important;
+            font-weight: 700;
+        }
+
+        .ant-steps-item-description,
+        .ant-steps-item-content {
             color: #73839d !important;
+        }
+
+        .ant-steps-item-process .ant-steps-item-icon {
+            background: ${colors.amber} !important;
+            border-color: ${colors.amber} !important;
+        }
+
+        .ant-steps-item-finish .ant-steps-item-icon {
+            background: rgba(35, 160, 112, 0.12) !important;
+            border-color: rgba(35, 160, 112, 0.2) !important;
+        }
+
+        .ant-steps-item-finish .ant-steps-icon {
+            color: #198a60 !important;
         }
     `,
     aiBanner: css`
@@ -414,6 +441,7 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
     inboxSummary: css`
         color: #50617b;
         min-height: 54px;
+        white-space: pre-line;
     `,
     inboxMeta: css`
         display: flex;
@@ -430,6 +458,10 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         border: 1px dashed rgba(224, 123, 42, 0.4);
         background: rgba(224, 123, 42, 0.06);
         color: #44566f;
+
+        .ant-typography {
+            white-space: pre-line;
+        }
     `,
     statusStrip: css`
         display: flex;

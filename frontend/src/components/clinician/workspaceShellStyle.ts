@@ -37,26 +37,30 @@ export const useClinicianWorkspaceShellStyles = createStyles(({ css }) => ({
 
     tabCard: css`
         border-radius: ${radius.md}px;
-        border: 1px solid rgba(224, 123, 42, 0.18);
-        background: ${colors.white};
-        box-shadow: ${shadows.soft};
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: #fcfaf6;
+        box-shadow: 0 10px 30px rgba(13, 27, 46, 0.08);
         overflow: hidden;
 
         .ant-tabs-nav {
             margin: 0 !important;
             padding: 0 20px;
-            background: linear-gradient(180deg, #fffdfa 0%, #f8f4ee 100%);
-            border-bottom: 1px solid rgba(224, 123, 42, 0.14);
+            background: ${colors.white};
+        }
+
+        .ant-tabs-nav::before {
+            border-color: rgba(13, 27, 46, 0.12);
         }
 
         .ant-tabs-tab {
-            font-weight: 700;
+            color: ${colors.slate};
+            font-weight: 600;
             padding-top: 16px;
             padding-bottom: 16px;
         }
 
         .ant-tabs-tab-active .ant-tabs-tab-btn {
-            color: ${colors.navy} !important;
+            color: ${colors.amber} !important;
         }
 
         .ant-tabs-ink-bar {
@@ -70,6 +74,11 @@ export const useClinicianWorkspaceShellStyles = createStyles(({ css }) => ({
         .ant-tabs-content-holder {
             display: none;
         }
+    `,
+
+    tabLink: css`
+        color: inherit !important;
+        text-decoration: none !important;
     `,
 
     content: css`

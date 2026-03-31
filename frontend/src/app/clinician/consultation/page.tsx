@@ -18,7 +18,12 @@ const ClinicianConsultationPage = async ({ searchParams }: IClinicianConsultatio
     return (
         <RoleAppShell roleLabel="Clinician" items={[]}>
             <ClinicianConsultationProvider>
-                <ClinicianWorkspaceShell activeKey="consultation" title="Consultation Workspace" subtitle="Open an active visit or return to today's drafted and completed consultations.">
+                <ClinicianWorkspaceShell
+                    activeKey="consultation"
+                    reviewQueueTicketId={queueTicketId}
+                    title="Consultation Workspace"
+                    subtitle="Open an active visit or return to today's drafted and completed consultations."
+                >
                     <ClinicianConsultationWorkspace visitId={visitId} queueTicketId={queueTicketId} />
                 </ClinicianWorkspaceShell>
             </ClinicianConsultationProvider>

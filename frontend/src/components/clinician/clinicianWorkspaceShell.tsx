@@ -5,32 +5,39 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useClinicianWorkspaceShellStyles } from "./workspaceShellStyle";
 
-type TClinicianWorkspaceTabKey = "queue" | "consultation" | "history";
+type TClinicianWorkspaceTabKey = "queue" | "review" | "consultation" | "history";
 
 interface IClinicianWorkspaceShellProps {
     activeKey: TClinicianWorkspaceTabKey;
     title: string;
     subtitle: string;
     extra?: React.ReactNode;
+    reviewQueueTicketId?: number;
     children: React.ReactNode;
 }
 
-const TAB_CONFIG: Array<{ key: TClinicianWorkspaceTabKey; label: string; href: string }> = [
-    { key: "queue", label: "Queue Dashboard", href: "/clinician" },
-    { key: "consultation", label: "Consultation", href: "/clinician/consultation" },
-    { key: "history", label: "Patient Timeline", href: "/clinician/history" },
-];
-
-export const ClinicianWorkspaceShell = ({ activeKey, title, subtitle, extra, children }: IClinicianWorkspaceShellProps): React.JSX.Element => {
+export const ClinicianWorkspaceShell = ({ activeKey, title, subtitle, extra, reviewQueueTicketId, children }: IClinicianWorkspaceShellProps): React.JSX.Element => {
     const { styles } = useClinicianWorkspaceShellStyles();
 
     const tabs = useMemo(
-        () =>
-            TAB_CONFIG.map((item) => ({
+        () => {
+            const items: Array<{ key: TClinicianWorkspaceTabKey; label: string; href: string }> = [
+                { key: "queue", label: "Queue Dashboard", href: "/clinician" },
+                ...(reviewQueueTicketId ? [{ key: "review" as const, label: "Triage Review", href: `/clinician/review/${reviewQueueTicketId}` }] : []),
+                { key: "consultation", label: "Consultation", href: "/clinician/consultation" },
+                { key: "history", label: "Patient Timeline", href: "/clinician/history" },
+            ];
+
+            return items.map((item) => ({
                 key: item.key,
-                label: <Link href={item.href}>{item.label}</Link>,
-            })),
-        []
+                label: (
+                    <Link href={item.href} className={styles.tabLink}>
+                        {item.label}
+                    </Link>
+                ),
+            }));
+        },
+        [reviewQueueTicketId, styles.tabLink]
     );
 
     return (
