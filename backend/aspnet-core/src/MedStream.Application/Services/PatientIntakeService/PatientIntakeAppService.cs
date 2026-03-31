@@ -744,18 +744,19 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
             .Where(item => string.Equals(item.Stage, "patient_intake", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(item => item.Id, item => item.Label, StringComparer.OrdinalIgnoreCase);
 
-        var answeredDetails = answers
-            .Where(item => item.Value != null)
+        var keyDetails = answers
+            .Where(item => ShouldIncludeAnswerInSummary(item.Value))
             .Select(item =>
             {
-                var label = inputLookup.TryGetValue(item.Key, out var mappedLabel) ? mappedLabel : item.Key;
-                return $"{label}: {FormatAnswer(item.Value)}";
+                var label = inputLookup.TryGetValue(item.Key, out var mappedLabel) ? mappedLabel : HumanizeAnswerKey(item.Key);
+                return BuildReadableSummaryAnswer(label, item.Value);
             })
+            .Where(item => !string.IsNullOrWhiteSpace(item))
             .ToList();
 
-        if (answeredDetails.Count > 0)
+        if (keyDetails.Count > 0)
         {
-            summaryParts.Add($"Follow-up answers: {string.Join("; ", answeredDetails)}");
+            summaryParts.Add($"Key details: {string.Join(" ", keyDetails)}");
         }
 
         return string.Join("\n", summaryParts);
@@ -801,6 +802,73 @@ public class PatientIntakeAppService : MedStreamAppServiceBase, IPatientIntakeAp
         }
 
         return Convert.ToString(value)?.Trim() ?? string.Empty;
+    }
+
+    private static bool ShouldIncludeAnswerInSummary(object value)
+    {
+        if (value == null)
+        {
+            return false;
+        }
+
+        if (value is bool booleanValue)
+        {
+            return booleanValue;
+        }
+
+        if (value is string stringValue)
+        {
+            return !string.IsNullOrWhiteSpace(stringValue) &&
+                   !string.Equals(stringValue.Trim(), "false", StringComparison.OrdinalIgnoreCase) &&
+                   !string.Equals(stringValue.Trim(), "no", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (value is System.Collections.IEnumerable enumerable && value is not string)
+        {
+            foreach (var item in enumerable)
+            {
+                if (!string.IsNullOrWhiteSpace(Convert.ToString(item)?.Trim()))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static string BuildReadableSummaryAnswer(string label, object value)
+    {
+        if (value is bool booleanValue)
+        {
+            return booleanValue ? $"{label}." : string.Empty;
+        }
+
+        var formattedValue = FormatAnswer(value);
+        return string.IsNullOrWhiteSpace(formattedValue) ? string.Empty : $"{label}: {formattedValue}.";
+    }
+
+    private static string HumanizeAnswerKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return string.Empty;
+        }
+
+        return key switch
+        {
+            "urgentSevereBreathing" => "Severe difficulty breathing reported",
+            "urgentSevereChestPain" => "Severe chest pain reported",
+            "urgentUncontrolledBleeding" => "Uncontrolled bleeding reported",
+            "urgentCollapse" => "Collapse or blackout reported",
+            "urgentConfusion" => "Confusion or reduced responsiveness reported",
+            "hasFever" => "Fever reported",
+            "durationDays" => "Duration",
+            "mainConcern" => "Main concern",
+            _ => char.ToUpperInvariant(key[0]) + string.Concat(key.Skip(1)).Replace("_", " ")
+        };
     }
 
     private static List<string> EvaluateGlobalUrgency(string freeText, IReadOnlyDictionary<string, object> answers)

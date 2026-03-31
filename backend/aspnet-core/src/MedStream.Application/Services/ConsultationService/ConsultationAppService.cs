@@ -29,6 +29,7 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
     private readonly IConsultationDraftGenerator _consultationDraftGenerator;
+    private readonly IConsultationPathwayGuidanceResolver _consultationPathwayGuidanceResolver;
 
     public ConsultationAppService(
         IRepository<Visit, long> visitRepository,
@@ -40,7 +41,8 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
         IRepository<ConsultationTranscript, long> consultationTranscriptRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
-        IConsultationDraftGenerator consultationDraftGenerator)
+        IConsultationDraftGenerator consultationDraftGenerator,
+        IConsultationPathwayGuidanceResolver consultationPathwayGuidanceResolver)
     {
         _visitRepository = visitRepository;
         _symptomIntakeRepository = symptomIntakeRepository;
@@ -52,6 +54,7 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
         _userRepository = userRepository;
         _userManager = userManager;
         _consultationDraftGenerator = consultationDraftGenerator;
+        _consultationPathwayGuidanceResolver = consultationPathwayGuidanceResolver;
     }
 
     public async Task<ConsultationWorkspaceDto> GetConsultationWorkspace(GetConsultationWorkspaceInput input)
@@ -89,6 +92,90 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
             EncounterNote = MapEncounterNote(note),
             LatestVitals = latestVitals == null ? null : MapVitalSigns(latestVitals),
             Transcripts = transcripts.Select(MapTranscript).ToList()
+        };
+    }
+
+    public async Task<ConsultationInboxDto> GetConsultationInbox()
+    {
+        var clinician = await EnsureCurrentClinicianAsync();
+        var tenantId = AbpSession.TenantId ?? 1;
+        var startOfTodayUtc = DateTime.UtcNow.Date;
+
+        var rows = await (
+            from visit in _visitRepository.GetAll()
+            join patient in _userRepository.GetAll() on visit.PatientUserId equals patient.Id
+            join intake in _symptomIntakeRepository.GetAll() on visit.Id equals intake.VisitId into intakeGroup
+            from intake in intakeGroup.DefaultIfEmpty()
+            join note in _encounterNoteRepository.GetAll() on visit.Id equals note.VisitId into noteGroup
+            from note in noteGroup.DefaultIfEmpty()
+            join triage in _triageAssessmentRepository.GetAll() on visit.Id equals triage.VisitId into triageGroup
+            from triage in triageGroup.DefaultIfEmpty()
+            join queueTicket in _queueTicketRepository.GetAll() on visit.Id equals queueTicket.VisitId into queueGroup
+            from queueTicket in queueGroup.DefaultIfEmpty()
+            where visit.TenantId == tenantId &&
+                  !visit.IsDeleted &&
+                  visit.AssignedClinicianUserId == clinician.Id &&
+                  visit.VisitDate >= startOfTodayUtc
+            select new
+            {
+                visit.Id,
+                visit.PatientUserId,
+                visit.VisitDate,
+                PatientName = string.Concat(patient.Name, " ", patient.Surname),
+                ChiefComplaint = intake != null ? intake.FreeTextComplaint : null,
+                SubjectiveSummary = intake != null ? intake.SubjectiveSummary : null,
+                QueueTicketId = queueTicket != null ? (long?)queueTicket.Id : null,
+                QueueStatus = queueTicket != null ? queueTicket.QueueStatus : string.Empty,
+                UrgencyLevel = triage != null ? triage.UrgencyLevel : string.Empty,
+                EncounterNoteStatus = note != null ? note.Status : string.Empty,
+                note.FinalizedAt,
+                NoteId = note != null ? (long?)note.Id : null,
+                QueueSortAt = queueTicket != null ? (DateTime?)queueTicket.LastStatusChangedAt : null,
+            }).ToListAsync();
+
+        var noteIds = rows
+            .Where(item => item.NoteId.HasValue)
+            .Select(item => item.NoteId!.Value)
+            .Distinct()
+            .ToList();
+
+        var lastTranscriptLookup = noteIds.Count == 0
+            ? new Dictionary<long, DateTime?>()
+            : await _consultationTranscriptRepository.GetAll()
+                .Where(item => item.TenantId == tenantId && noteIds.Contains(item.EncounterNoteId) && !item.IsDeleted)
+                .GroupBy(item => item.EncounterNoteId)
+                .Select(group => new
+                {
+                    EncounterNoteId = group.Key,
+                    LastTranscriptAt = group.Max(item => (DateTime?)item.CapturedAt)
+                })
+                .ToDictionaryAsync(item => item.EncounterNoteId, item => item.LastTranscriptAt);
+
+        return new ConsultationInboxDto
+        {
+            Items = rows
+                .OrderByDescending(item => item.QueueSortAt ?? item.FinalizedAt ?? item.VisitDate)
+                .Select(item => new ConsultationInboxItemDto
+                {
+                    VisitId = item.Id,
+                    QueueTicketId = item.QueueTicketId,
+                    PatientUserId = item.PatientUserId,
+                    PatientName = item.PatientName.Trim(),
+                    ChiefComplaint = item.ChiefComplaint ?? string.Empty,
+                    SubjectiveSummary = item.SubjectiveSummary ?? string.Empty,
+                    QueueStatus = item.QueueStatus,
+                    UrgencyLevel = item.UrgencyLevel,
+                    EncounterNoteStatus = item.EncounterNoteStatus ?? PatientIntakeConstants.EncounterNoteStatusDraft,
+                    VisitDate = item.VisitDate,
+                    FinalizedAt = item.FinalizedAt,
+                    LastTranscriptAt = item.NoteId.HasValue && lastTranscriptLookup.TryGetValue(item.NoteId.Value, out var lastTranscriptAt)
+                        ? lastTranscriptAt
+                        : null,
+                    ConsultationPath = item.QueueTicketId.HasValue
+                        ? $"/clinician/consultation?visitId={item.Id}&queueTicketId={item.QueueTicketId.Value}"
+                        : $"/clinician/consultation?visitId={item.Id}"
+                })
+                .ToList()
         };
     }
 
@@ -290,9 +377,12 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
             .OrderByDescending(item => item.CapturedAt)
             .Take(5)
             .ToListAsync();
+        var guidance = _consultationPathwayGuidanceResolver.Resolve(visit.PathwayKey, intake?.FreeTextComplaint);
 
         return new ConsultationDraftContext
         {
+            PathwayId = guidance.PathwayId,
+            PathwayName = guidance.PathwayName,
             ChiefComplaint = intake?.FreeTextComplaint ?? string.Empty,
             IntakeSubjective = note.IntakeSubjective ?? intake?.SubjectiveSummary ?? string.Empty,
             CurrentSubjective = note.Subjective ?? string.Empty,
@@ -300,7 +390,12 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
             CurrentAssessment = note.Assessment ?? string.Empty,
             CurrentPlan = note.Plan ?? string.Empty,
             UrgencyLevel = triage?.UrgencyLevel ?? string.Empty,
+            TriageExplanation = triage?.Explanation ?? string.Empty,
             LatestVitalsSummary = BuildVitalsSummary(latestVitals),
+            PathwayAssessmentHints = guidance.PathwayAssessmentHints,
+            PathwayPlanHints = guidance.PathwayPlanHints,
+            ObjectiveFocusHints = guidance.ObjectiveFocusHints,
+            ApcReferenceLinks = guidance.ApcReferenceLinks,
             TranscriptSegments = transcripts.Select(item => item.RawTranscriptText).Where(item => !string.IsNullOrWhiteSpace(item)).ToList()
         };
     }

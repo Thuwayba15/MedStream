@@ -27,12 +27,13 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
     {
         var fallback = BuildFallbackSubjective(context);
         var aiResult = await TryGenerateJsonAsync(
-            "Create a concise clinician-reviewable SOAP subjective draft. Merge intake handoff with transcript updates. Do not diagnose. Return JSON with keys source, summary, subjective.",
+            "Create a concise clinician-reviewable SOAP subjective draft. Merge intake handoff with transcript updates. Do not diagnose. Never echo raw field keys, booleans, or machine labels. Return JSON with keys source, summary, subjective.",
             new
             {
+                context.PathwayName,
                 context.ChiefComplaint,
-                context.IntakeSubjective,
-                context.CurrentSubjective,
+                IntakeSubjective = CleanNarrative(context.IntakeSubjective),
+                CurrentSubjective = CleanNarrative(context.CurrentSubjective),
                 context.UrgencyLevel,
                 context.TranscriptSegments
             });
@@ -55,16 +56,21 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
     {
         var fallback = BuildFallbackAssessmentPlan(context);
         var aiResult = await TryGenerateJsonAsync(
-            "Create a clinician-reviewable assessment and plan draft from the provided consultation context. Be concise, avoid unsupported certainty, and return JSON with keys source, summary, assessment, plan.",
+            "Create a clinician-reviewable assessment and plan draft from the provided consultation context. Write readable clinical prose for a clinician, not raw machine output. Ground the draft in the provided pathway and APC guidance when available. Use pathway-supported assessment hints and plan suggestions only when the current subjective, objective, transcript, or vitals support them. If evidence is limited, say so explicitly and avoid definitive diagnosis or treatment claims. Never echo raw form keys, booleans, or machine labels. Return JSON with keys source, summary, assessment, plan.",
             new
             {
+                context.PathwayId,
+                context.PathwayName,
                 context.ChiefComplaint,
-                context.CurrentSubjective,
-                context.CurrentObjective,
-                context.CurrentAssessment,
-                context.CurrentPlan,
+                CurrentSubjective = CleanNarrative(context.CurrentSubjective),
+                CurrentObjective = CleanNarrative(context.CurrentObjective),
                 context.UrgencyLevel,
+                context.TriageExplanation,
                 context.LatestVitalsSummary,
+                ObjectiveFocusHints = context.ObjectiveFocusHints,
+                PathwayAssessmentHints = context.PathwayAssessmentHints,
+                PathwayPlanHints = context.PathwayPlanHints,
+                ApcReferenceLinks = context.ApcReferenceLinks,
                 context.TranscriptSegments
             });
 
@@ -145,11 +151,13 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .Select(item => item.Trim())
             .Take(3));
+        var cleanedIntakeSubjective = CleanNarrative(context.IntakeSubjective);
+        var cleanedCurrentSubjective = CleanNarrative(context.CurrentSubjective);
 
         var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(context.IntakeSubjective))
+        if (!string.IsNullOrWhiteSpace(cleanedIntakeSubjective))
         {
-            parts.Add(context.IntakeSubjective.Trim());
+            parts.Add(cleanedIntakeSubjective);
         }
 
         if (!string.IsNullOrWhiteSpace(transcriptSummary))
@@ -157,9 +165,9 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             parts.Add($"Consultation updates: {transcriptSummary}");
         }
 
-        if (!string.IsNullOrWhiteSpace(context.CurrentSubjective))
+        if (!string.IsNullOrWhiteSpace(cleanedCurrentSubjective))
         {
-            parts.Add($"Existing clinician note: {context.CurrentSubjective.Trim()}");
+            parts.Add($"Existing clinician note: {cleanedCurrentSubjective}");
         }
 
         return new ConsultationDraftResult
@@ -172,42 +180,77 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
 
     private static ConsultationDraftResult BuildFallbackAssessmentPlan(ConsultationDraftContext context)
     {
+        var cleanedSubjective = CleanNarrative(context.CurrentSubjective);
+        var cleanedObjective = CleanNarrative(context.CurrentObjective);
+        var vitalsSentence = BuildVitalsAssessmentSentence(context.LatestVitalsSummary);
         var assessmentParts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(context.CurrentSubjective))
+        var evidenceParts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(cleanedSubjective))
         {
-            assessmentParts.Add($"Clinical picture based on subjective history: {context.CurrentSubjective.Trim()}");
+            evidenceParts.Add(cleanedSubjective);
         }
 
-        if (!string.IsNullOrWhiteSpace(context.CurrentObjective))
+        if (!string.IsNullOrWhiteSpace(cleanedObjective))
         {
-            assessmentParts.Add($"Objective findings noted: {context.CurrentObjective.Trim()}");
+            evidenceParts.Add($"Objective findings include {TrimEnding(cleanedObjective)}.");
         }
-        else if (!string.IsNullOrWhiteSpace(context.LatestVitalsSummary))
+        else if (!string.IsNullOrWhiteSpace(vitalsSentence))
         {
-            assessmentParts.Add($"Objective findings include vitals: {context.LatestVitalsSummary}");
+            evidenceParts.Add(vitalsSentence);
         }
 
-        if (!string.IsNullOrWhiteSpace(context.UrgencyLevel))
+        if (evidenceParts.Count > 0)
         {
-            assessmentParts.Add($"Current triage context remains {context.UrgencyLevel}.");
+            assessmentParts.Add(string.Join(" ", evidenceParts));
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.PathwayName))
+        {
+            assessmentParts.Add($"This presentation aligns most closely with the {context.PathwayName} pathway.");
+        }
+
+        if (context.PathwayAssessmentHints.Count > 0)
+        {
+            assessmentParts.Add($"Pathway-supported considerations include {JoinWithAnd(context.PathwayAssessmentHints.Take(2))}, pending clinician confirmation.");
+        }
+        else if (!string.IsNullOrWhiteSpace(context.UrgencyLevel))
+        {
+            assessmentParts.Add($"Current triage context remains {context.UrgencyLevel.ToLowerInvariant()}.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.TriageExplanation))
+        {
+            assessmentParts.Add($"Triage notes: {TrimEnding(CleanNarrative(context.TriageExplanation))}.");
         }
 
         var planParts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(context.LatestVitalsSummary))
+        if (context.PathwayPlanHints.Count > 0)
         {
-            planParts.Add($"Monitor and document response to care with repeat vitals as needed ({context.LatestVitalsSummary}).");
-        }
-        else
-        {
-            planParts.Add("Continue clinician-directed evaluation and management based on examination findings.");
+            planParts.Add($"Follow pathway-supported next steps such as {JoinWithAnd(context.PathwayPlanHints.Take(2))}.");
         }
 
-        planParts.Add("Confirm the final assessment and treatment steps clinically before completing the visit.");
+        if (!string.IsNullOrWhiteSpace(context.LatestVitalsSummary))
+        {
+            planParts.Add($"Repeat and document vitals as clinically indicated ({context.LatestVitalsSummary}).");
+        }
+
+        if (context.ObjectiveFocusHints.Count > 0)
+        {
+            planParts.Add($"Complete clinician assessment with focus on {JoinWithAnd(context.ObjectiveFocusHints.Take(3))}.");
+        }
+
+        if (planParts.Count == 0)
+        {
+            planParts.Add("Continue clinician-directed evaluation and management based on the available consultation findings.");
+        }
+
+        planParts.Add("Confirm the final diagnosis and treatment steps clinically before completing the visit.");
 
         return new ConsultationDraftResult
         {
             Source = "deterministic-fallback",
-            Summary = "Generated a conservative draft from the current consultation context.",
+            Summary = BuildGroundingSummary(context),
             Assessment = string.Join(" ", assessmentParts.Where(item => !string.IsNullOrWhiteSpace(item))).Trim(),
             Plan = string.Join(" ", planParts.Where(item => !string.IsNullOrWhiteSpace(item))).Trim()
         };
@@ -225,5 +268,152 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
         }
 
         return fallbackValue;
+    }
+
+    private static string CleanNarrative(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var cleanedSections = new List<string>();
+        var lines = value
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(item => item.Trim())
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .ToList();
+
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("Follow-up answers:", StringComparison.OrdinalIgnoreCase))
+            {
+                var followUpContent = line["Follow-up answers:".Length..].Trim();
+                var highlights = followUpContent
+                    .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(item => item.Trim())
+                    .Select(BuildReadableFollowUpSegment)
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .ToList();
+                if (highlights.Count > 0)
+                {
+                    cleanedSections.Add($"Key follow-up details: {string.Join("; ", highlights)}.");
+                }
+
+                continue;
+            }
+
+            if (line.Contains(':'))
+            {
+                var parts = line.Split(':', 2);
+                var label = parts[0].Trim();
+                var content = parts[1].Trim();
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    cleanedSections.Add($"{label}: {content}.");
+                }
+
+                continue;
+            }
+
+            cleanedSections.Add(line.EndsWith('.') ? line : $"{line}.");
+        }
+
+        return string.Join(" ", cleanedSections).Trim();
+    }
+
+    private static string BuildReadableFollowUpSegment(string segment)
+    {
+        if (string.IsNullOrWhiteSpace(segment))
+        {
+            return string.Empty;
+        }
+
+        var parts = segment.Split(':', 2);
+        if (parts.Length != 2)
+        {
+            return segment;
+        }
+
+        var label = HumanizeFollowUpLabel(parts[0].Trim());
+        var value = parts[1].Trim();
+        if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase))
+        {
+            return label;
+        }
+
+        if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "no", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        return $"{label}: {value}";
+    }
+
+    private static string HumanizeFollowUpLabel(string key)
+    {
+        return key switch
+        {
+            "urgentSevereBreathing" => "severe difficulty breathing was reported",
+            "urgentSevereChestPain" => "severe chest pain was reported",
+            "urgentUncontrolledBleeding" => "uncontrolled bleeding was reported",
+            "urgentCollapse" => "collapse or blackout was reported",
+            "urgentConfusion" => "confusion or reduced responsiveness was reported",
+            _ => key
+        };
+    }
+
+    private static string BuildVitalsAssessmentSentence(string latestVitalsSummary)
+    {
+        return string.IsNullOrWhiteSpace(latestVitalsSummary)
+            ? string.Empty
+            : $"Latest vitals: {latestVitalsSummary}.";
+    }
+
+    private static string BuildGroundingSummary(ConsultationDraftContext context)
+    {
+        var sources = new List<string> { "current consultation notes" };
+        if (!string.IsNullOrWhiteSpace(context.LatestVitalsSummary))
+        {
+            sources.Add("latest vitals");
+        }
+
+        if (context.PathwayAssessmentHints.Count > 0 || context.PathwayPlanHints.Count > 0)
+        {
+            sources.Add("pathway guidance");
+        }
+
+        if (context.ApcReferenceLinks.Count > 0)
+        {
+            sources.Add("targeted APC references");
+        }
+
+        return $"Draft grounded in {JoinWithAnd(sources)}.";
+    }
+
+    private static string JoinWithAnd(IEnumerable<string> values)
+    {
+        var items = values.Where(item => !string.IsNullOrWhiteSpace(item)).Select(item => item.Trim()).ToList();
+        if (items.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        if (items.Count == 1)
+        {
+            return items[0];
+        }
+
+        if (items.Count == 2)
+        {
+            return $"{items[0]} and {items[1]}";
+        }
+
+        return $"{string.Join(", ", items.Take(items.Count - 1))}, and {items[^1]}";
+    }
+
+    private static string TrimEnding(string value)
+    {
+        return value.Trim().TrimEnd('.', ';');
     }
 }

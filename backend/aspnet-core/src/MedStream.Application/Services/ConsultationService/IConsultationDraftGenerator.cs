@@ -16,6 +16,10 @@ public interface IConsultationDraftGenerator
 
 public class ConsultationDraftContext
 {
+    public string PathwayId { get; set; } = string.Empty;
+
+    public string PathwayName { get; set; } = string.Empty;
+
     public string ChiefComplaint { get; set; } = string.Empty;
 
     public string IntakeSubjective { get; set; } = string.Empty;
@@ -30,7 +34,17 @@ public class ConsultationDraftContext
 
     public string UrgencyLevel { get; set; } = string.Empty;
 
+    public string TriageExplanation { get; set; } = string.Empty;
+
     public string LatestVitalsSummary { get; set; } = string.Empty;
+
+    public IReadOnlyList<string> PathwayAssessmentHints { get; set; } = new List<string>();
+
+    public IReadOnlyList<string> PathwayPlanHints { get; set; } = new List<string>();
+
+    public IReadOnlyList<string> ObjectiveFocusHints { get; set; } = new List<string>();
+
+    public IReadOnlyList<string> ApcReferenceLinks { get; set; } = new List<string>();
 
     public IReadOnlyList<string> TranscriptSegments { get; set; } = new List<string>();
 }

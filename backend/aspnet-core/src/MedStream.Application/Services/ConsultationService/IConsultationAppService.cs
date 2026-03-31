@@ -10,6 +10,8 @@ namespace MedStream.Consultation;
 /// </summary>
 public interface IConsultationAppService : IApplicationService
 {
+    Task<ConsultationInboxDto> GetConsultationInbox();
+
     Task<ConsultationWorkspaceDto> GetConsultationWorkspace(GetConsultationWorkspaceInput input);
 
     [HttpPost]
