@@ -6,7 +6,6 @@ using Abp.Net.Mail;
 using Abp.TestBase;
 using Abp.Zero.Configuration;
 using Abp.Zero.EntityFrameworkCore;
-using MedStream.Consultation;
 using MedStream.EntityFrameworkCore;
 using MedStream.QueueOperations;
 using MedStream.Tests.DependencyInjection;
@@ -54,9 +53,6 @@ public class MedStreamTestModule : AbpModule
         IocManager.IocContainer.Register(
             Component.For<IConfiguration>()
                 .Instance(new ConfigurationBuilder().Build())
-                .LifestyleSingleton(),
-            Component.For<IConsultationDraftGenerator>()
-                .ImplementedBy<ConsultationDraftGenerator>()
                 .LifestyleSingleton());
 
         ServiceCollectionRegistrar.Register(IocManager);
