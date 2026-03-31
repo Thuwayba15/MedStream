@@ -8,39 +8,6 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         gap: 18px;
     `,
 
-    pageHeader: css`
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-    `,
-
-    eyebrow: css`
-        color: ${colors.amber};
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        font-size: 0.75rem;
-        font-weight: 700;
-    `,
-
-    pageTitle: css`
-        margin: 6px 0 0 !important;
-        color: ${colors.navy} !important;
-        font-family: ${typography.fontDisplay};
-        font-size: clamp(2rem, 4.2vw, 3rem) !important;
-    `,
-
-    liveTag: css`
-        border-radius: ${radius.pill}px;
-        border-color: rgba(35, 160, 112, 0.35) !important;
-        background: rgba(35, 160, 112, 0.12) !important;
-        color: #198a60 !important;
-        font-weight: 700;
-        font-size: 0.92rem;
-        padding: 6px 12px !important;
-    `,
-
     summaryGrid: css`
         display: grid;
         gap: 12px;
@@ -113,12 +80,13 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
     `,
 
     filterTopRow: css`
-        display: grid;
-        grid-template-columns: minmax(220px, 1fr) auto;
+        display: flex;
+        align-items: center;
         gap: 10px;
+        flex-wrap: wrap;
 
         @media (max-width: 768px) {
-            grid-template-columns: 1fr;
+            align-items: stretch;
         }
     `,
 
@@ -129,10 +97,11 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         border-color: ${colors.navy} !important;
     `,
 
-    filterBottomRow: css`
-        display: grid;
-        gap: 12px;
-        margin-top: 12px;
+    filterGroup: css`
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
     `,
 
     filterLabel: css`
@@ -356,5 +325,15 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
     loadingWrap: css`
         display: grid;
         gap: 10px;
+    `,
+
+    paginationRow: css`
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 8px;
+
+        @media (max-width: 640px) {
+            justify-content: center;
+        }
     `,
 }));

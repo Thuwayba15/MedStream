@@ -52,6 +52,14 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         border-color: ${colors.navy} !important;
         font-weight: 700;
     `,
+    signalAction: css`
+        border-radius: ${radius.sm}px !important;
+        background: linear-gradient(180deg, ${colors.amberLight} 0%, ${colors.amber} 100%) !important;
+        border-color: ${colors.amber} !important;
+        color: ${colors.white} !important;
+        font-weight: 700;
+        box-shadow: 0 10px 24px rgba(224, 123, 42, 0.2);
+    `,
     shellGrid: css`
         display: grid;
         gap: 18px;
@@ -200,9 +208,21 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         color: #7d8ca4;
         font-size: 0.9rem;
     `,
+    cardTitleRow: css`
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    `,
     mainColumn: css`
         display: grid;
         gap: 14px;
+    `,
+    workflowSteps: css`
+        .ant-steps-item-description {
+            color: #73839d !important;
+        }
     `,
     aiBanner: css`
         border-radius: 28px;
@@ -355,6 +375,54 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
     helperText: css`
         color: #8997aa;
         font-size: 0.88rem;
+    `,
+    inboxSection: css`
+        display: grid;
+        gap: 14px;
+    `,
+    pageSectionTitle: css`
+        margin: 0 !important;
+        color: ${colors.navy} !important;
+        font-family: ${typography.fontDisplay};
+    `,
+    inboxGrid: css`
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+
+        @media (max-width: 960px) {
+            grid-template-columns: 1fr;
+        }
+    `,
+    inboxCard: css`
+        border-radius: ${radius.md}px;
+        border: 1px solid rgba(224, 123, 42, 0.16);
+        box-shadow: ${shadows.soft};
+    `,
+    inboxCardHeader: css`
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    `,
+    inboxPatientName: css`
+        margin: 0 !important;
+        color: ${colors.navy} !important;
+    `,
+    inboxSummary: css`
+        color: #50617b;
+        min-height: 54px;
+    `,
+    inboxMeta: css`
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        color: #7d8ca4;
+        font-size: 0.88rem;
+        margin-bottom: 14px;
     `,
     draftPreview: css`
         padding: 14px 16px;

@@ -1,21 +1,12 @@
 "use client";
 
-import {
-    ArrowLeftOutlined,
-    AudioOutlined,
-    CheckCircleOutlined,
-    FileDoneOutlined,
-    FormOutlined,
-    HeartOutlined,
-    LoadingOutlined,
-    RobotOutlined,
-    SaveOutlined,
-} from "@ant-design/icons";
-import { Alert, Button, Card, Empty, Input, Skeleton, Space, Tabs, Tag, Typography } from "antd";
+import { ArrowLeftOutlined, AudioOutlined, CheckCircleOutlined, FileDoneOutlined, HeartOutlined, LoadingOutlined, RobotOutlined, SaveOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Empty, Input, Skeleton, Space, Steps, Tabs, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useClinicianConsultationActions, useClinicianConsultationState } from "@/providers/clinician-consultation";
+import type { IConsultationInboxItem, IConsultationWorkspace } from "@/services/consultation/types";
 import type { TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
 import { useClinicianConsultationStyles } from "./consultationStyle";
 
@@ -44,13 +35,7 @@ interface IVitalsDraftState {
     weightKg: string;
 }
 
-const createNoteDraft = (): INoteDraftState => ({
-    subjective: "",
-    objective: "",
-    assessment: "",
-    plan: "",
-});
-
+const createNoteDraft = (): INoteDraftState => ({ subjective: "", objective: "", assessment: "", plan: "" });
 const createVitalsDraft = (): IVitalsDraftState => ({
     bloodPressureSystolic: "",
     bloodPressureDiastolic: "",
@@ -63,25 +48,134 @@ const createVitalsDraft = (): IVitalsDraftState => ({
 });
 
 const asNumber = (value: string): number | null => {
-    if (!value.trim()) {
-        return null;
+    const parsed = Number(value);
+    return value.trim() && Number.isFinite(parsed) ? parsed : null;
+};
+
+const humanizeClinicalLabel = (label: string): string => {
+    const normalized = label.trim().toLowerCase();
+    if (!normalized) {
+        return "";
     }
 
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
+    if (normalized === "selected symptoms" || normalized === "extracted primary symptoms") {
+        return "Symptoms reported";
+    }
+
+    if (normalized === "follow-up answers") {
+        return "Key details";
+    }
+
+    if (normalized === "primary concern") {
+        return "Primary concern";
+    }
+
+    if (normalized === "chief complaint") {
+        return "Chief complaint";
+    }
+
+    if (normalized === "triage category") {
+        return "Triage category";
+    }
+
+    return label.trim();
+};
+
+const humanizeStructuredSegment = (segment: string): string => {
+    const trimmedSegment = segment.trim().replace(/\.$/, "");
+    if (!trimmedSegment) {
+        return "";
+    }
+
+    const parts = trimmedSegment.split(":");
+    if (parts.length < 2) {
+        return trimmedSegment.endsWith(".") ? trimmedSegment : `${trimmedSegment}.`;
+    }
+
+    const rawLabel = parts.shift()?.trim() ?? "";
+    const value = parts.join(":").trim();
+    if (!rawLabel || !value) {
+        return "";
+    }
+
+    if (/^(false|no)$/i.test(value)) {
+        return "";
+    }
+
+    const friendlyLabel = humanizeClinicalLabel(rawLabel);
+    if (/^(true|yes)$/i.test(value)) {
+        return `${friendlyLabel}.`;
+    }
+
+    if (friendlyLabel === "Symptoms reported") {
+        return `${friendlyLabel}: ${value}.`;
+    }
+
+    return `${friendlyLabel}: ${value}.`;
+};
+
+const sanitizeClinicalCopy = (value?: string | null): string => {
+    if (!value?.trim()) {
+        return "";
+    }
+
+    let cleaned = value
+        .replace(/\r?\n/g, " ")
+        .replace(/Follow-up answers:/gi, "Key details:")
+        .replace(/urgentSevereBreathing:\s*True/gi, "Severe difficulty breathing reported")
+        .replace(/urgentSevereChestPain:\s*True/gi, "Severe chest pain reported")
+        .replace(/urgentUncontrolledBleeding:\s*True/gi, "Uncontrolled bleeding reported")
+        .replace(/urgentCollapse:\s*True/gi, "Collapse or blackout reported")
+        .replace(/urgentConfusion:\s*True/gi, "Confusion or reduced responsiveness reported")
+        .replace(/urgent[A-Za-z]+:\s*False;?/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const sections = cleaned
+        .split(/(?=Chief complaint:|Selected symptoms:|Extracted primary symptoms:|Key details:|Primary concern:|Symptoms reported:|Triage category:)/gi)
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+
+    const rendered = sections.map((section) => {
+        const parts = section.split(":");
+        if (parts.length < 2) {
+            return section;
+        }
+
+        const rawLabel = parts.shift()?.trim() ?? "";
+        const valuePart = parts.join(":").trim();
+        const label = humanizeClinicalLabel(rawLabel);
+
+        if (!valuePart) {
+            return "";
+        }
+
+        if (label === "Key details") {
+            const detailText = valuePart
+                .split(";")
+                .map((segment) => humanizeStructuredSegment(segment))
+                .filter(Boolean)
+                .join(" ");
+            return detailText ? `${label}: ${detailText}` : "";
+        }
+
+        return `${label}: ${valuePart.replace(/\s+/g, " ").trim()}`.trim();
+    }).filter(Boolean);
+
+    cleaned = rendered.length > 0 ? rendered.join(" ") : cleaned;
+    cleaned = cleaned
+        .replace(/Symptoms reported:\s*([^.]*)\s*Symptoms reported:/gi, "Symptoms reported: $1 ")
+        .replace(/\s+\./g, ".")
+        .trim();
+
+    return cleaned;
 };
 
 const formatVisitStartedAt = (value?: string): string => {
-    if (!value) {
-        return "Consultation in progress";
-    }
-
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-        return "Consultation in progress";
-    }
-
-    return `Started ${parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    const parsed = value ? new Date(value) : null;
+    return parsed && !Number.isNaN(parsed.getTime())
+        ? `Started ${parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+        : "Consultation in progress";
 };
 
 const getUrgencyClassName = (urgencyLevel: string, styles: Record<string, string>): string => {
@@ -96,7 +190,7 @@ const getUrgencyClassName = (urgencyLevel: string, styles: Record<string, string
     return styles.urgencyRoutine;
 };
 
-const getStatusLabel = (status?: TQueueStatus): string => {
+const getStatusLabel = (status?: TQueueStatus | string): string => {
     if (!status) {
         return "Queue active";
     }
@@ -104,13 +198,49 @@ const getStatusLabel = (status?: TQueueStatus): string => {
     return status.replaceAll("_", " ");
 };
 
-const buildPatientSummary = (patientName: string, subjectiveSummary: string): string => {
-    if (subjectiveSummary.trim()) {
-        return subjectiveSummary;
+const isConcerning = (label: string, vitals?: IConsultationWorkspace["latestVitals"]): boolean => {
+    switch (label) {
+        case "BP":
+            return Boolean((vitals?.bloodPressureSystolic ?? 0) >= 140 || (vitals?.bloodPressureSystolic ?? 999) < 90 || (vitals?.bloodPressureDiastolic ?? 0) >= 90 || (vitals?.bloodPressureDiastolic ?? 999) < 60);
+        case "HR":
+            return Boolean((vitals?.heartRate ?? 0) > 100 || (vitals?.heartRate ?? 999) < 50);
+        case "Temp":
+            return Boolean((vitals?.temperatureCelsius ?? 0) >= 38 || (vitals?.temperatureCelsius ?? 999) < 35);
+        case "SpO2":
+            return Boolean((vitals?.oxygenSaturation ?? 100) < 95);
+        case "RR":
+            return Boolean((vitals?.respiratoryRate ?? 0) > 20 || (vitals?.respiratoryRate ?? 999) < 10);
+        default:
+            return false;
     }
-
-    return `${patientName}'s intake summary has not been drafted yet. Capture the consultation and complete the SOAP note manually.`;
 };
+
+const InboxCard = ({ item, styles }: { item: IConsultationInboxItem; styles: Record<string, string> }): React.JSX.Element => (
+    <Card className={styles.inboxCard}>
+        <div className={styles.inboxCardHeader}>
+            <div>
+                <Typography.Title level={4} className={styles.inboxPatientName}>
+                    {item.patientName}
+                </Typography.Title>
+                <Typography.Text className={styles.helperText}>{formatVisitStartedAt(item.visitDate)}</Typography.Text>
+            </div>
+            <Space wrap size={8}>
+                <Tag className={styles.queueTag}>{(item.queueStatus || "queue active").replaceAll("_", " ")}</Tag>
+                <Tag className={getUrgencyClassName(item.urgencyLevel || "Routine", styles)}>Triage: {item.urgencyLevel || "Routine"}</Tag>
+            </Space>
+        </div>
+        <Typography.Paragraph className={styles.inboxSummary}>{sanitizeClinicalCopy(item.subjectiveSummary) || item.chiefComplaint || "Resume this consultation note."}</Typography.Paragraph>
+        <div className={styles.inboxMeta}>
+            <span>Note: {item.encounterNoteStatus}</span>
+            <span>{item.lastTranscriptAt || item.finalizedAt ? "Updated today" : "No recent update"}</span>
+        </div>
+        <Link href={item.consultationPath}>
+            <Button type="primary" className={styles.primaryAction} block>
+                {item.encounterNoteStatus === "draft" ? "Resume Draft" : "Open Note"}
+            </Button>
+        </Link>
+    </Card>
+);
 
 export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinicianConsultationPageProps): React.JSX.Element => {
     const { styles } = useClinicianConsultationStyles();
@@ -125,7 +255,10 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     useEffect(() => {
         if (visitId) {
             void actions.loadWorkspace({ visitId, queueTicketId });
+            return;
         }
+
+        void actions.loadInbox();
     }, [actions, queueTicketId, visitId]);
 
     useEffect(() => {
@@ -134,7 +267,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         }
 
         setNoteDraft({
-            subjective: state.workspace.encounterNote.subjective || state.workspace.encounterNote.intakeSubjective || "",
+            subjective: sanitizeClinicalCopy(state.workspace.encounterNote.subjective || state.workspace.encounterNote.intakeSubjective),
             objective: state.workspace.encounterNote.objective || "",
             assessment: state.workspace.encounterNote.assessment || "",
             plan: state.workspace.encounterNote.plan || "",
@@ -154,28 +287,75 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
 
     const workspace = state.workspace;
     const review = state.review;
+    const inbox = state.inbox?.items ?? [];
     const patientName = review?.patientName ?? workspace?.patientContext.patientName ?? "Consultation";
     const queueStatus = review?.queueStatus ?? (workspace?.patientContext.queueStatus as TQueueStatus | undefined);
     const urgencyLevel = (review?.urgencyLevel ?? workspace?.patientContext.urgencyLevel ?? "Priority") as TUrgencyLevel;
-    const aiSummary = review?.clinicianSummary ?? workspace?.patientContext.subjectiveSummary ?? "";
-    const reasoning = review?.reasoning ?? [];
-    const transcriptCount = workspace?.transcripts.length ?? 0;
-    const latestTranscript = transcriptCount > 0 ? workspace?.transcripts[transcriptCount - 1] : null;
     const isFinalized = (workspace?.encounterNote.status ?? "draft") === "finalized";
-    const canCompleteVisit = isFinalized && Boolean(review?.queueTicketId) && queueStatus === "in_consultation";
+    const canCompleteVisit = isFinalized && Boolean(review?.queueTicketId) && review?.queueStatus === "in_consultation";
+    const workflowSteps = useMemo<Array<{ title: string; content: string; status: "wait" | "process" | "finish" }>>(() => [
+        { title: "Capture context", content: workspace?.transcripts.length ? "Transcript attached" : "Attach transcript or typed notes", status: workspace?.transcripts.length ? "finish" : "process" },
+        { title: "Record objective", content: workspace?.latestVitals || noteDraft.objective.trim() ? "Vitals or findings saved" : "Save vitals and exam findings", status: workspace?.latestVitals || noteDraft.objective.trim() ? "finish" : "wait" },
+        { title: "Draft assessment & plan", content: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "Review and refine" : "Generate A/P draft", status: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "finish" : "wait" },
+        { title: "Finalize note", content: isFinalized ? "Note locked" : "Finalize when SOAP is complete", status: isFinalized ? "finish" : "wait" },
+    ], [isFinalized, noteDraft.assessment, noteDraft.objective, noteDraft.plan, workspace?.latestVitals, workspace?.transcripts.length]);
+
+    const objectiveVitalCards = [
+        {
+            key: "bloodPressure",
+            label: "Blood pressure",
+            unit: "mmHg",
+            content: (
+                <div className={styles.bpGrid}>
+                    <Input value={vitalsDraft.bloodPressureSystolic} onChange={(event) => setVitalsDraft((current) => ({ ...current, bloodPressureSystolic: event.target.value }))} placeholder="Systolic" disabled={isFinalized} />
+                    <Input value={vitalsDraft.bloodPressureDiastolic} onChange={(event) => setVitalsDraft((current) => ({ ...current, bloodPressureDiastolic: event.target.value }))} placeholder="Diastolic" disabled={isFinalized} />
+                </div>
+            ),
+        },
+        {
+            key: "heartRate",
+            label: "Heart rate",
+            unit: "bpm",
+            content: <Input value={vitalsDraft.heartRate} onChange={(event) => setVitalsDraft((current) => ({ ...current, heartRate: event.target.value }))} placeholder="Heart rate" disabled={isFinalized} />,
+        },
+        {
+            key: "respiratoryRate",
+            label: "Respiratory rate",
+            unit: "breaths/min",
+            content: <Input value={vitalsDraft.respiratoryRate} onChange={(event) => setVitalsDraft((current) => ({ ...current, respiratoryRate: event.target.value }))} placeholder="Respiratory rate" disabled={isFinalized} />,
+        },
+        {
+            key: "temperature",
+            label: "Temperature",
+            unit: "deg C",
+            content: <Input value={vitalsDraft.temperatureCelsius} onChange={(event) => setVitalsDraft((current) => ({ ...current, temperatureCelsius: event.target.value }))} placeholder="Temperature" disabled={isFinalized} />,
+        },
+        {
+            key: "spo2",
+            label: "Oxygen saturation",
+            unit: "%",
+            content: <Input value={vitalsDraft.oxygenSaturation} onChange={(event) => setVitalsDraft((current) => ({ ...current, oxygenSaturation: event.target.value }))} placeholder="SpO2" disabled={isFinalized} />,
+        },
+        {
+            key: "glucose",
+            label: "Blood glucose",
+            unit: "mmol/L",
+            content: <Input value={vitalsDraft.bloodGlucose} onChange={(event) => setVitalsDraft((current) => ({ ...current, bloodGlucose: event.target.value }))} placeholder="Blood glucose" disabled={isFinalized} />,
+        },
+        {
+            key: "weight",
+            label: "Weight",
+            unit: "kg",
+            content: <Input value={vitalsDraft.weightKg} onChange={(event) => setVitalsDraft((current) => ({ ...current, weightKg: event.target.value }))} placeholder="Weight" disabled={isFinalized} />,
+        },
+    ];
 
     const saveNoteDraft = async (): Promise<void> => {
         if (!workspace) {
             return;
         }
 
-        await actions.saveEncounterNoteDraft({
-            visitId: workspace.visitId,
-            subjective: noteDraft.subjective,
-            objective: noteDraft.objective,
-            assessment: noteDraft.assessment,
-            plan: noteDraft.plan,
-        });
+        await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft });
     };
 
     const finalizeNote = async (): Promise<void> => {
@@ -183,19 +363,10 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             return;
         }
 
-        const saved = await actions.saveEncounterNoteDraft({
-            visitId: workspace.visitId,
-            subjective: noteDraft.subjective,
-            objective: noteDraft.objective,
-            assessment: noteDraft.assessment,
-            plan: noteDraft.plan,
-        });
-
-        if (!saved) {
-            return;
+        const saved = await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft });
+        if (saved) {
+            await actions.finalizeEncounterNote(workspace.visitId);
         }
-
-        await actions.finalizeEncounterNote(workspace.visitId);
     };
 
     const saveVitals = async (): Promise<void> => {
@@ -222,12 +393,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             return;
         }
 
-        const attached = await actions.attachTranscript({
-            visitId: workspace.visitId,
-            inputMode: "typed",
-            rawTranscriptText: transcriptText.trim(),
-        });
-
+        const attached = await actions.attachTranscript({ visitId: workspace.visitId, inputMode: "typed", rawTranscriptText: transcriptText.trim() });
         if (attached) {
             setTranscriptText("");
         }
@@ -240,69 +406,22 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
 
         setNoteDraft((current) => ({
             ...current,
-            subjective: state.subjectiveDraft?.subjective ?? current.subjective,
+            subjective: sanitizeClinicalCopy(state.subjectiveDraft?.subjective ?? current.subjective),
         }));
-        setActiveTab("subjective");
     };
 
     const applyGeneratedAssessmentPlan = (): void => {
-        setNoteDraft((current) => ({
-            ...current,
-            assessment: state.assessmentPlanDraft?.assessment ?? current.assessment,
-            plan: state.assessmentPlanDraft?.plan ?? current.plan,
-        }));
-        setActiveTab("assessment");
-    };
-
-    const completeVisit = async (): Promise<void> => {
-        if (!review?.queueTicketId) {
+        if (!state.assessmentPlanDraft) {
             return;
         }
 
-        const result = await actions.completeVisit(review.queueTicketId);
-        if (result) {
-            router.push(`/clinician/review/${review.queueTicketId}`);
-        }
+        setNoteDraft((current) => ({
+            ...current,
+            assessment: sanitizeClinicalCopy(state.assessmentPlanDraft?.assessment ?? current.assessment),
+            plan: sanitizeClinicalCopy(state.assessmentPlanDraft?.plan ?? current.plan),
+        }));
+        setActiveTab("assessment");
     };
-
-    const aiBannerAction = useMemo(() => {
-        if (!workspace) {
-            return {
-                label: "Preparing Workspace",
-                loading: true,
-                onClick: () => undefined,
-            };
-        }
-
-        if (activeTab === "subjective") {
-            return {
-                label: "Refresh Subjective",
-                loading: state.isGeneratingSubjective,
-                onClick: () => void actions.generateSubjectiveDraft(workspace.visitId),
-            };
-        }
-
-        if (activeTab === "assessment" || activeTab === "plan") {
-            return {
-                label: "Generate Draft",
-                loading: state.isGeneratingAssessmentPlan,
-                onClick: () => void actions.generateAssessmentPlanDraft(workspace.visitId),
-            };
-        }
-
-        return {
-            label: "Save Objective",
-            loading: state.isSavingVitals,
-            onClick: () => void saveVitals(),
-        };
-    }, [
-        actions,
-        activeTab,
-        state.isGeneratingAssessmentPlan,
-        state.isGeneratingSubjective,
-        state.isSavingVitals,
-        workspace,
-    ]);
 
     const noteTabs = [
         {
@@ -312,42 +431,18 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
                         <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>
-                                Subjective
-                            </Typography.Title>
+                            <Typography.Title level={3} className={styles.editorTitle}>Subjective</Typography.Title>
                             <Typography.Text className={styles.editorHint}>Starts from intake, then gets refined with consultation context.</Typography.Text>
                         </div>
-                        <Button
-                            icon={<RobotOutlined />}
-                            className={styles.secondaryAction}
-                            loading={state.isGeneratingSubjective}
-                            onClick={() => workspace && void actions.generateSubjectiveDraft(workspace.visitId)}
-                        >
-                            Refresh With AI
-                        </Button>
+                        <Button icon={<RobotOutlined />} className={styles.signalAction} loading={state.isGeneratingSubjective} disabled={isFinalized} onClick={() => workspace && void actions.generateSubjectiveDraft(workspace.visitId)}>Refresh With AI</Button>
                     </div>
-
                     {state.subjectiveDraft?.subjective ? (
                         <div className={styles.draftPreview}>
-                            <Space orientation="vertical" size={10}>
-                                <Typography.Text strong>Suggested merged subjective</Typography.Text>
-                                <Typography.Paragraph className={styles.bodyText}>{state.subjectiveDraft.summary}</Typography.Paragraph>
-                                <Typography.Paragraph className={styles.bodyText}>{state.subjectiveDraft.subjective}</Typography.Paragraph>
-                                <Space wrap>
-                                    <Button type="primary" className={styles.primaryAction} onClick={applyGeneratedSubjective}>
-                                        Apply Suggested Subjective
-                                    </Button>
-                                </Space>
-                            </Space>
+                            <Typography.Paragraph className={styles.bodyText}>{sanitizeClinicalCopy(state.subjectiveDraft.summary || state.subjectiveDraft.subjective)}</Typography.Paragraph>
+                            <Button type="primary" className={styles.primaryAction} disabled={isFinalized} onClick={applyGeneratedSubjective}>Apply Suggested Subjective</Button>
                         </div>
                     ) : null}
-
-                    <TextArea
-                        value={noteDraft.subjective}
-                        onChange={(event) => setNoteDraft((current) => ({ ...current, subjective: event.target.value }))}
-                        className={styles.editorArea}
-                        placeholder="Capture the patient's history, symptoms, and reported timeline."
-                    />
+                    <TextArea value={noteDraft.subjective} onChange={(event) => setNoteDraft((current) => ({ ...current, subjective: event.target.value }))} className={styles.editorArea} disabled={isFinalized} />
                 </div>
             ),
         },
@@ -358,82 +453,23 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
                         <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>
-                                Objective
-                            </Typography.Title>
-                            <Typography.Text className={styles.editorHint}>Structured vitals first, then free-text findings from the examination.</Typography.Text>
+                            <Typography.Title level={3} className={styles.editorTitle}>Objective</Typography.Title>
+                            <Typography.Text className={styles.editorHint}>Structured vitals first, then free-text findings.</Typography.Text>
                         </div>
-                        <Button icon={<HeartOutlined />} className={styles.secondaryAction} loading={state.isSavingVitals} onClick={() => void saveVitals()}>
-                            Save Vitals
-                        </Button>
+                        <Button icon={<HeartOutlined />} className={styles.signalAction} loading={state.isSavingVitals} disabled={isFinalized} onClick={() => void saveVitals()}>Save Vitals</Button>
                     </div>
-
                     <div className={styles.objectiveGrid}>
-                        <VitalCard
-                            label="Blood pressure"
-                            unit="mmHg"
-                            styles={styles}
-                            body={
-                                <div className={styles.bpGrid}>
-                                    <Input
-                                        value={vitalsDraft.bloodPressureSystolic}
-                                        onChange={(event) => setVitalsDraft((current) => ({ ...current, bloodPressureSystolic: event.target.value }))}
-                                        placeholder="Systolic"
-                                        inputMode="numeric"
-                                    />
-                                    <Input
-                                        value={vitalsDraft.bloodPressureDiastolic}
-                                        onChange={(event) => setVitalsDraft((current) => ({ ...current, bloodPressureDiastolic: event.target.value }))}
-                                        placeholder="Diastolic"
-                                        inputMode="numeric"
-                                    />
+                        {objectiveVitalCards.map((card) => (
+                            <div key={card.key} className={styles.vitalCard}>
+                                <div className={styles.vitalHeader}>
+                                    <span className={styles.vitalName}>{card.label}</span>
+                                    <span className={styles.vitalUnit}>{card.unit}</span>
                                 </div>
-                            }
-                        />
-                        <VitalCard
-                            label="Heart rate"
-                            unit="bpm"
-                            styles={styles}
-                            body={<Input value={vitalsDraft.heartRate} onChange={(event) => setVitalsDraft((current) => ({ ...current, heartRate: event.target.value }))} placeholder="110" inputMode="numeric" />}
-                        />
-                        <VitalCard
-                            label="Temperature"
-                            unit="deg C"
-                            styles={styles}
-                            body={<Input value={vitalsDraft.temperatureCelsius} onChange={(event) => setVitalsDraft((current) => ({ ...current, temperatureCelsius: event.target.value }))} placeholder="37.2" inputMode="decimal" />}
-                        />
-                        <VitalCard
-                            label="SpO2"
-                            unit="%"
-                            styles={styles}
-                            body={<Input value={vitalsDraft.oxygenSaturation} onChange={(event) => setVitalsDraft((current) => ({ ...current, oxygenSaturation: event.target.value }))} placeholder="94" inputMode="numeric" />}
-                        />
-                        <VitalCard
-                            label="Respiratory rate"
-                            unit="breaths/min"
-                            styles={styles}
-                            body={<Input value={vitalsDraft.respiratoryRate} onChange={(event) => setVitalsDraft((current) => ({ ...current, respiratoryRate: event.target.value }))} placeholder="22" inputMode="numeric" />}
-                        />
-                        <VitalCard
-                            label="Blood glucose"
-                            unit="mmol/L"
-                            styles={styles}
-                            body={<Input value={vitalsDraft.bloodGlucose} onChange={(event) => setVitalsDraft((current) => ({ ...current, bloodGlucose: event.target.value }))} placeholder="Optional" inputMode="decimal" />}
-                        />
-                        <VitalCard
-                            label="Weight"
-                            unit="kg"
-                            styles={styles}
-                            body={<Input value={vitalsDraft.weightKg} onChange={(event) => setVitalsDraft((current) => ({ ...current, weightKg: event.target.value }))} placeholder="Optional" inputMode="decimal" />}
-                        />
+                                {card.content}
+                            </div>
+                        ))}
                     </div>
-
-                    <TextArea
-                        value={noteDraft.objective}
-                        onChange={(event) => setNoteDraft((current) => ({ ...current, objective: event.target.value }))}
-                        className={styles.editorArea}
-                        placeholder="Document examination findings, bedside tests, and other objective observations."
-                    />
+                    <TextArea value={noteDraft.objective} onChange={(event) => setNoteDraft((current) => ({ ...current, objective: event.target.value }))} className={styles.editorArea} disabled={isFinalized} placeholder="Document examination findings, focused observations, and any additional objective notes." />
                 </div>
             ),
         },
@@ -444,41 +480,18 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
                         <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>
-                                Assessment
-                            </Typography.Title>
-                            <Typography.Text className={styles.editorHint}>AI can suggest a draft once the consultation notes and objective findings are in place.</Typography.Text>
+                            <Typography.Title level={3} className={styles.editorTitle}>Assessment</Typography.Title>
+                            <Typography.Text className={styles.editorHint}>Draft from consultation notes, vitals, and pathway context, then refine clinically.</Typography.Text>
                         </div>
-                        <Button
-                            icon={<RobotOutlined />}
-                            className={styles.secondaryAction}
-                            loading={state.isGeneratingAssessmentPlan}
-                            onClick={() => workspace && void actions.generateAssessmentPlanDraft(workspace.visitId)}
-                        >
-                            Generate A/P Draft
-                        </Button>
+                        <Button icon={<RobotOutlined />} className={styles.signalAction} loading={state.isGeneratingAssessmentPlan} disabled={isFinalized} onClick={() => workspace && void actions.generateAssessmentPlanDraft(workspace.visitId)}>Generate A/P Draft</Button>
                     </div>
-
                     {state.assessmentPlanDraft?.assessment || state.assessmentPlanDraft?.plan ? (
                         <div className={styles.draftPreview}>
-                            <Space orientation="vertical" size={10}>
-                                <Typography.Text strong>AI suggestion ready</Typography.Text>
-                                <Typography.Paragraph className={styles.bodyText}>{state.assessmentPlanDraft.summary}</Typography.Paragraph>
-                                <Space wrap>
-                                    <Button type="primary" className={styles.primaryAction} onClick={applyGeneratedAssessmentPlan}>
-                                        Apply Assessment & Plan
-                                    </Button>
-                                </Space>
-                            </Space>
+                            <Typography.Paragraph className={styles.bodyText}>{sanitizeClinicalCopy(state.assessmentPlanDraft.summary || "Assessment and plan draft ready for review.")}</Typography.Paragraph>
+                            <Button type="primary" className={styles.primaryAction} disabled={isFinalized} onClick={applyGeneratedAssessmentPlan}>Apply Assessment & Plan</Button>
                         </div>
                     ) : null}
-
-                    <TextArea
-                        value={noteDraft.assessment}
-                        onChange={(event) => setNoteDraft((current) => ({ ...current, assessment: event.target.value }))}
-                        className={styles.editorArea}
-                        placeholder="Describe your clinical impression and working diagnosis."
-                    />
+                    <TextArea value={noteDraft.assessment} onChange={(event) => setNoteDraft((current) => ({ ...current, assessment: event.target.value }))} className={styles.editorArea} disabled={isFinalized} />
                 </div>
             ),
         },
@@ -487,20 +500,8 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             label: "plan",
             children: (
                 <div className={styles.editorPanel}>
-                    <div className={styles.editorHeader}>
-                        <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>
-                                Plan
-                            </Typography.Title>
-                            <Typography.Text className={styles.editorHint}>Orders, medications, referrals, monitoring, and next steps.</Typography.Text>
-                        </div>
-                    </div>
-                    <TextArea
-                        value={noteDraft.plan}
-                        onChange={(event) => setNoteDraft((current) => ({ ...current, plan: event.target.value }))}
-                        className={styles.editorArea}
-                        placeholder="Capture treatment, investigations, safety-netting, and follow-up."
-                    />
+                    <Typography.Title level={3} className={styles.editorTitle}>Plan</Typography.Title>
+                    <TextArea value={noteDraft.plan} onChange={(event) => setNoteDraft((current) => ({ ...current, plan: event.target.value }))} className={styles.editorArea} disabled={isFinalized} />
                 </div>
             ),
         },
@@ -508,89 +509,50 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
 
     return (
         <section className={styles.page}>
-            <header className={styles.topBar}>
-                <div className={styles.topBarLeft}>
-                    <Link href={queueTicketId ? `/clinician/review/${queueTicketId}` : "/clinician"}>
-                        <Button icon={<ArrowLeftOutlined />} className={styles.backButton}>
-                            Back
-                        </Button>
-                    </Link>
-                    <div>
-                        <Typography.Title level={2} className={styles.pageTitle}>
-                            Consultation: {patientName}
-                        </Typography.Title>
-                        <Typography.Text className={styles.pageMeta}>{formatVisitStartedAt(workspace?.patientContext.visitDate)}</Typography.Text>
-                    </div>
-                </div>
-
-                <div className={styles.topActions}>
-                    <Button icon={<SaveOutlined />} className={styles.secondaryAction} loading={state.isSavingDraft} onClick={() => void saveNoteDraft()}>
-                        Save Draft
-                    </Button>
-                    <Button type="primary" icon={<FileDoneOutlined />} className={styles.primaryAction} loading={state.isFinalizing} onClick={() => void finalizeNote()}>
-                        Finalize Note
-                    </Button>
-                    {canCompleteVisit ? (
-                        <Button icon={<CheckCircleOutlined />} className={styles.secondaryAction} loading={state.isCompletingVisit} onClick={() => void completeVisit()}>
-                            Complete Visit
-                        </Button>
-                    ) : null}
-                </div>
-            </header>
-
-            {state.errorMessage ? (
-                <Alert
-                    type="error"
-                    showIcon
-                    message={state.errorMessage}
-                    action={
-                        <Button size="small" onClick={actions.clearMessages}>
-                            Dismiss
-                        </Button>
-                    }
-                />
-            ) : null}
-
-            {state.successMessage ? (
-                <Alert
-                    type="success"
-                    showIcon
-                    message={state.successMessage}
-                    action={
-                        <Button size="small" onClick={actions.clearMessages}>
-                            Close
-                        </Button>
-                    }
-                />
-            ) : null}
+            {state.errorMessage ? <Alert type="error" showIcon message={state.errorMessage} action={<Button size="small" onClick={actions.clearMessages}>Dismiss</Button>} /> : null}
+            {state.successMessage ? <Alert type="success" showIcon message={state.successMessage} action={<Button size="small" onClick={actions.clearMessages}>Close</Button>} /> : null}
 
             {!visitId ? (
-                <Card className={styles.emptyStateCard}>
-                    <Empty description="Open consultation from a queue review so the active visit context is carried into this workspace." />
-                </Card>
+                state.isLoadingWorkspace && !state.inbox ? (
+                    <Card className={styles.panelCard}><Skeleton active paragraph={{ rows: 8 }} /></Card>
+                ) : inbox.length === 0 ? (
+                    <Card className={styles.emptyStateCard}><Empty description="No consultations assigned to you yet today. Start from triage review to open a visit here." /></Card>
+                ) : (
+                    <section className={styles.inboxSection}>
+                        <Typography.Title level={3} className={styles.pageSectionTitle}>Today's consultations</Typography.Title>
+                        <div className={styles.inboxGrid}>{inbox.map((item) => <InboxCard key={item.consultationPath} item={item} styles={styles} />)}</div>
+                    </section>
+                )
             ) : state.isLoadingWorkspace && !workspace ? (
-                <Card className={styles.panelCard}>
-                    <Skeleton active paragraph={{ rows: 12 }} />
-                </Card>
+                <Card className={styles.panelCard}><Skeleton active paragraph={{ rows: 12 }} /></Card>
             ) : !workspace ? (
-                <Card className={styles.emptyStateCard}>
-                    <Empty description="Consultation workspace could not be loaded for this visit." />
-                </Card>
+                <Card className={styles.emptyStateCard}><Empty description="Consultation workspace could not be loaded for this visit." /></Card>
             ) : (
-                <div className={styles.shellGrid}>
-                    <aside className={styles.sideRail}>
-                        <Card className={styles.panelCard}>
-                            <div className={styles.patientCard}>
-                                <Typography.Title level={5} className={styles.sectionHeading}>
-                                    Patient Context
-                                </Typography.Title>
+                <>
+                    <header className={styles.topBar}>
+                        <div className={styles.topBarLeft}>
+                            <Link href={queueTicketId ? `/clinician/review/${queueTicketId}` : "/clinician/consultation"}>
+                                <Button icon={<ArrowLeftOutlined />} className={styles.secondaryAction}>Back</Button>
+                            </Link>
+                            <div>
+                                <Typography.Title level={2} className={styles.pageTitle}>Consultation: {patientName}</Typography.Title>
+                                <Typography.Text className={styles.pageMeta}>{formatVisitStartedAt(workspace.patientContext.visitDate)}</Typography.Text>
+                            </div>
+                        </div>
+                        <div className={styles.topActions}>
+                            <Button icon={<SaveOutlined />} className={styles.secondaryAction} loading={state.isSavingDraft} disabled={isFinalized} onClick={() => void saveNoteDraft()}>Save Draft</Button>
+                            <Button type="primary" icon={<FileDoneOutlined />} className={styles.primaryAction} loading={state.isFinalizing} disabled={isFinalized} onClick={() => void finalizeNote()}>{isFinalized ? "Note Finalized" : "Finalize Note"}</Button>
+                            {canCompleteVisit ? <Button icon={<CheckCircleOutlined />} className={styles.secondaryAction} loading={state.isCompletingVisit} onClick={() => void actions.completeVisit(review!.queueTicketId).then((result) => result && router.push("/clinician/consultation"))}>Complete Visit</Button> : null}
+                        </div>
+                    </header>
+
+                    <div className={styles.shellGrid}>
+                        <aside className={styles.sideRail}>
+                            <Card className={styles.panelCard}>
+                                <Typography.Title level={5} className={styles.sectionHeading}>Patient Context</Typography.Title>
                                 <div className={styles.patientSummaryBox}>
-                                    <Typography.Paragraph className={styles.patientSummaryLead}>
-                                        {workspace.patientContext.patientName}
-                                    </Typography.Paragraph>
-                                    <Typography.Paragraph className={styles.patientSummaryText}>
-                                        {buildPatientSummary(workspace.patientContext.patientName, workspace.patientContext.subjectiveSummary)}
-                                    </Typography.Paragraph>
+                                    <Typography.Paragraph className={styles.patientSummaryLead}>{workspace.patientContext.patientName}</Typography.Paragraph>
+                                    <Typography.Paragraph className={styles.patientSummaryText}>{sanitizeClinicalCopy(workspace.patientContext.subjectiveSummary) || "Intake handoff is not available yet for this visit."}</Typography.Paragraph>
                                 </div>
                                 <div className={styles.tagRow}>
                                     <Tag className={styles.queueTag}>{getStatusLabel(queueStatus)}</Tag>
@@ -598,187 +560,52 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                                 </div>
                                 <div className={styles.summaryGlow}>
                                     <Typography.Text strong>AI handoff summary</Typography.Text>
-                                    <Typography.Paragraph className={styles.bodyText} style={{ marginTop: 8 }}>
-                                        {aiSummary || "A clinician-facing summary is not available yet. Continue with the note manually."}
-                                    </Typography.Paragraph>
+                                    <Typography.Paragraph className={styles.bodyText} style={{ marginTop: 8 }}>{sanitizeClinicalCopy(review?.clinicianSummary ?? workspace.patientContext.subjectiveSummary) || "A clinician-facing summary is not available yet."}</Typography.Paragraph>
                                 </div>
-                            </div>
-                        </Card>
+                            </Card>
 
-                        <Card className={styles.panelCard}>
-                            <Typography.Title level={5} className={styles.sectionHeading}>
-                                Triage Signals
-                            </Typography.Title>
-                            {reasoning.length > 0 ? (
-                                <div className={styles.reasoningList}>
-                                    {reasoning.map((item) => (
-                                        <div key={item} className={styles.reasoningItem}>
-                                            <span className={styles.dot} />
-                                            <span>{item}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <Typography.Paragraph className={styles.bodyText}>
-                                    No explicit triage reasoning was attached to this handoff.
-                                </Typography.Paragraph>
-                            )}
-                        </Card>
+                            <Card className={styles.panelCard}>
+                                <Typography.Title level={5} className={styles.sectionHeading}>Visit Workflow</Typography.Title>
+                                <Steps orientation="vertical" size="small" items={workflowSteps} className={styles.workflowSteps} />
+                            </Card>
 
-                        <Card className={styles.panelCard}>
-                            <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                                    <Typography.Title level={5} className={styles.sectionHeading} style={{ marginBottom: 0 }}>
-                                        Latest Vitals
-                                    </Typography.Title>
-                                    <Button size="small" className={styles.secondaryAction} onClick={() => setActiveTab("objective")}>
-                                        Update
-                                    </Button>
+                            <Card className={styles.panelCard}>
+                                <div className={styles.cardTitleRow}>
+                                    <Typography.Title level={5} className={styles.sectionHeading} style={{ marginBottom: 0 }}>Latest Vitals</Typography.Title>
+                                    <Button size="small" className={styles.secondaryAction} onClick={() => setActiveTab("objective")}>Update</Button>
                                 </div>
                                 <div className={styles.metricStack}>
-                                    <div className={styles.metricRow}>
-                                        <span className={styles.metricLabel}>BP</span>
-                                        <span className={styles.metricValue}>
-                                            {workspace.latestVitals?.bloodPressureSystolic && workspace.latestVitals?.bloodPressureDiastolic
-                                                ? `${workspace.latestVitals.bloodPressureSystolic}/${workspace.latestVitals.bloodPressureDiastolic}`
-                                                : "Not recorded"}
-                                        </span>
-                                    </div>
-                                    <div className={`${styles.metricRow} ${workspace.latestVitals?.heartRate && workspace.latestVitals.heartRate > 100 ? styles.metricRowAlert : ""}`}>
-                                        <span className={styles.metricLabel}>HR</span>
-                                        <span className={styles.metricValue}>
-                                            {workspace.latestVitals?.heartRate ? `${workspace.latestVitals.heartRate} bpm` : "Not recorded"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.metricRow}>
-                                        <span className={styles.metricLabel}>Temp</span>
-                                        <span className={styles.metricValue}>
-                                            {workspace.latestVitals?.temperatureCelsius ? `${workspace.latestVitals.temperatureCelsius} deg C` : "Not recorded"}
-                                        </span>
-                                    </div>
-                                    <div className={styles.metricRow}>
-                                        <span className={styles.metricLabel}>SpO2</span>
-                                        <span className={styles.metricValue}>
-                                            {workspace.latestVitals?.oxygenSaturation ? `${workspace.latestVitals.oxygenSaturation}%` : "Not recorded"}
-                                        </span>
-                                    </div>
+                                    <div className={`${styles.metricRow} ${isConcerning("BP", workspace.latestVitals) ? styles.metricRowAlert : ""}`}><span className={styles.metricLabel}>BP</span><span className={styles.metricValue}>{workspace.latestVitals?.bloodPressureSystolic && workspace.latestVitals?.bloodPressureDiastolic ? `${workspace.latestVitals.bloodPressureSystolic}/${workspace.latestVitals.bloodPressureDiastolic}` : "Not recorded"}</span></div>
+                                    <div className={`${styles.metricRow} ${isConcerning("HR", workspace.latestVitals) ? styles.metricRowAlert : ""}`}><span className={styles.metricLabel}>HR</span><span className={styles.metricValue}>{workspace.latestVitals?.heartRate ? `${workspace.latestVitals.heartRate} bpm` : "Not recorded"}</span></div>
+                                    <div className={`${styles.metricRow} ${isConcerning("Temp", workspace.latestVitals) ? styles.metricRowAlert : ""}`}><span className={styles.metricLabel}>Temp</span><span className={styles.metricValue}>{workspace.latestVitals?.temperatureCelsius ? `${workspace.latestVitals.temperatureCelsius} deg C` : "Not recorded"}</span></div>
+                                    <div className={`${styles.metricRow} ${isConcerning("SpO2", workspace.latestVitals) ? styles.metricRowAlert : ""}`}><span className={styles.metricLabel}>SpO2</span><span className={styles.metricValue}>{workspace.latestVitals?.oxygenSaturation ? `${workspace.latestVitals.oxygenSaturation}%` : "Not recorded"}</span></div>
+                                    <div className={`${styles.metricRow} ${isConcerning("RR", workspace.latestVitals) ? styles.metricRowAlert : ""}`}><span className={styles.metricLabel}>RR</span><span className={styles.metricValue}>{workspace.latestVitals?.respiratoryRate ? `${workspace.latestVitals.respiratoryRate}/min` : "Not recorded"}</span></div>
                                 </div>
-                            </Space>
-                        </Card>
+                            </Card>
 
-                        <Card className={styles.panelCard}>
-                            <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-                                <Typography.Title level={5} className={styles.sectionHeading}>
-                                    Consultation Capture
-                                </Typography.Title>
-                                <Typography.Paragraph className={styles.bodyText}>
-                                    Add typed transcript notes now. Audio upload comes next, but this already gives the AI enough source material to assist.
-                                </Typography.Paragraph>
-                                <TextArea
-                                    value={transcriptText}
-                                    onChange={(event) => setTranscriptText(event.target.value)}
-                                    className={styles.transcriptArea}
-                                    placeholder="Paste or type the consultation transcript, translated notes, or dictated summary here."
-                                />
-                                <Space wrap>
-                                    <Button
-                                        icon={state.isAttachingTranscript ? <LoadingOutlined /> : <AudioOutlined />}
-                                        className={styles.secondaryAction}
-                                        loading={state.isAttachingTranscript}
-                                        onClick={() => void attachTranscript()}
-                                    >
-                                        Attach Transcript
-                                    </Button>
-                                    <span className={styles.transcriptMeta}>
-                                        {transcriptCount > 0
-                                            ? `${transcriptCount} transcript ${transcriptCount === 1 ? "entry" : "entries"} attached`
-                                            : "No transcript attached yet"}
-                                    </span>
+                            <Card className={styles.panelCard}>
+                                <Typography.Title level={5} className={styles.sectionHeading}>Consultation Capture</Typography.Title>
+                                <TextArea value={transcriptText} onChange={(event) => setTranscriptText(event.target.value)} className={styles.transcriptArea} disabled={isFinalized} placeholder="Paste or type the consultation transcript here." />
+                                <Space wrap style={{ marginTop: 12 }}>
+                                    <Button icon={state.isAttachingTranscript ? <LoadingOutlined /> : <AudioOutlined />} className={styles.signalAction} loading={state.isAttachingTranscript} disabled={isFinalized} onClick={() => void attachTranscript()}>Attach Transcript</Button>
+                                    <span className={styles.transcriptMeta}>{workspace.transcripts.length > 0 ? `${workspace.transcripts.length} transcript entries attached` : "No transcript attached yet"}</span>
                                 </Space>
-                                {latestTranscript ? (
-                                    <Typography.Text className={styles.helperText}>
-                                        Latest capture: {new Date(latestTranscript.capturedAt).toLocaleString()}
-                                    </Typography.Text>
-                                ) : null}
-                            </Space>
-                        </Card>
-                    </aside>
+                            </Card>
+                        </aside>
 
-                    <div className={styles.mainColumn}>
-                        <Card className={styles.aiBanner}>
-                            <div className={styles.aiBannerInner}>
-                                <div className={styles.aiBannerLead}>
-                                    <div className={styles.aiIconWrap}>
-                                        <RobotOutlined />
-                                    </div>
-                                    <div>
-                                        <Typography.Title level={4} className={styles.aiBannerTitle}>
-                                            AI Clinical Assistant
-                                        </Typography.Title>
-                                        <Typography.Paragraph className={styles.aiBannerText}>
-                                            {activeTab === "subjective"
-                                                ? "Merge intake context with the consultation transcript before you lock in the final narrative."
-                                                : activeTab === "objective"
-                                                  ? "Objective findings stay clinician-led. Save structured vitals, then continue with exam notes."
-                                                  : "Draft Assessment and Plan from the consultation note, then edit as needed."}
-                                        </Typography.Paragraph>
-                                    </div>
+                        <div className={styles.mainColumn}>
+                            <Card className={styles.workspaceCard}>
+                                <div className={styles.statusStrip}>
+                                    <span className={styles.successPill}>{isFinalized ? "Finalized" : "Draft in progress"}</span>
+                                    <Typography.Text className={styles.helperText}>{review?.chiefComplaint || workspace.patientContext.chiefComplaint || workspace.visitStatus}</Typography.Text>
                                 </div>
-                                <Button type="primary" className={styles.bannerButton} loading={aiBannerAction.loading} onClick={aiBannerAction.onClick}>
-                                    {aiBannerAction.label}
-                                </Button>
-                            </div>
-                        </Card>
-
-                        <Card className={styles.workspaceCard}>
-                            <div className={styles.statusStrip}>
-                                <span className={styles.successPill}>{isFinalized ? "Finalized" : "Draft in progress"}</span>
-                                {workspace.encounterNote.finalizedAt ? (
-                                    <Typography.Text className={styles.helperText}>
-                                        Finalized {new Date(workspace.encounterNote.finalizedAt).toLocaleString()}
-                                    </Typography.Text>
-                                ) : null}
-                                <Typography.Text className={styles.helperText}>
-                                    {review?.chiefComplaint || workspace.patientContext.chiefComplaint || workspace.visitStatus}
-                                </Typography.Text>
-                            </div>
-                            <Tabs activeKey={activeTab} onChange={setActiveTab} items={noteTabs} />
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                                <Typography.Text className={styles.helperText}>
-                                    Clinician retains control over all final SOAP content.
-                                </Typography.Text>
-                                <Space wrap>
-                                    <Button icon={<SaveOutlined />} className={styles.secondaryAction} loading={state.isSavingDraft} onClick={() => void saveNoteDraft()}>
-                                        Save Draft
-                                    </Button>
-                                    <Button type="primary" icon={<FormOutlined />} className={styles.primaryAction} loading={state.isFinalizing} onClick={() => void finalizeNote()}>
-                                        Finalize Note
-                                    </Button>
-                                </Space>
-                            </div>
-                        </Card>
+                                <Tabs activeKey={activeTab} onChange={setActiveTab} items={noteTabs} />
+                                <Typography.Text className={styles.helperText}>{isFinalized ? "Finalized notes are locked for this visit." : "Draft saves persist and can be reopened from the consultation workspace."}</Typography.Text>
+                            </Card>
+                        </div>
                     </div>
-                </div>
+                </>
             )}
         </section>
-    );
-};
-
-interface IVitalCardProps {
-    label: string;
-    unit: string;
-    styles: Record<string, string>;
-    body: React.ReactNode;
-}
-
-const VitalCard = ({ label, unit, styles, body }: IVitalCardProps): React.JSX.Element => {
-    return (
-        <div className={styles.vitalCard}>
-            <div className={styles.vitalHeader}>
-                <span className={styles.vitalName}>{label}</span>
-                <span className={styles.vitalUnit}>{unit}</span>
-            </div>
-            {body}
-        </div>
     );
 };
