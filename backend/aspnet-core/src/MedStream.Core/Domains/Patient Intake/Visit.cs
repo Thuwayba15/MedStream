@@ -26,6 +26,11 @@ public class Visit : FullAuditedEntity<long>, IMustHaveTenant
     public int? FacilityId { get; set; }
 
     /// <summary>
+    /// Gets or sets the clinician user id assigned to this visit when known.
+    /// </summary>
+    public long? AssignedClinicianUserId { get; set; }
+
+    /// <summary>
     /// Gets or sets the visit date and time (UTC).
     /// </summary>
     public DateTime VisitDate { get; set; }

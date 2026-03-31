@@ -36,6 +36,16 @@ public static class PatientIntakeConstants
     public const string VisitStatusQueued = "Queued";
 
     /// <summary>
+    /// Visit status used once a clinician has opened the consultation workspace.
+    /// </summary>
+    public const string VisitStatusInConsultation = "InConsultation";
+
+    /// <summary>
+    /// Visit status used once consultation work has been completed.
+    /// </summary>
+    public const string VisitStatusCompleted = "Completed";
+
+    /// <summary>
     /// Extraction source label for real OpenAI extraction.
     /// </summary>
     public const string ExtractionSourceAi = "ai";
@@ -94,4 +104,34 @@ public static class PatientIntakeConstants
     /// Queue event type recorded when consultation starts from queue.
     /// </summary>
     public const string QueueEventConsultationStarted = "consultation_started";
+
+    /// <summary>
+    /// Encounter note status while it is still editable.
+    /// </summary>
+    public const string EncounterNoteStatusDraft = "draft";
+
+    /// <summary>
+    /// Encounter note status once the clinician finalizes the note.
+    /// </summary>
+    public const string EncounterNoteStatusFinalized = "finalized";
+
+    /// <summary>
+    /// Transcript input mode for typed notes.
+    /// </summary>
+    public const string TranscriptInputModeTyped = "typed";
+
+    /// <summary>
+    /// Transcript input mode for uploaded audio.
+    /// </summary>
+    public const string TranscriptInputModeAudioUpload = "audio_upload";
+
+    /// <summary>
+    /// Vital signs captured during triage.
+    /// </summary>
+    public const string VitalSignsPhaseTriage = "triage";
+
+    /// <summary>
+    /// Vital signs captured during consultation.
+    /// </summary>
+    public const string VitalSignsPhaseConsultation = "consultation";
 }
