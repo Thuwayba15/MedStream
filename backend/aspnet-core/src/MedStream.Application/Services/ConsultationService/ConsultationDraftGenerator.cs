@@ -27,7 +27,7 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
     {
         var fallback = BuildFallbackSubjective(context);
         var aiResult = await TryGenerateJsonAsync(
-            "Create a clinician-reviewable SOAP subjective draft. Merge intake handoff with transcript updates. Keep it readable and a bit more complete than a one-line summary. Use short paragraphs or bullet points when helpful. Do not diagnose. Never echo raw field keys, booleans, or machine labels. Return JSON with keys source, summary, subjective.",
+            "Create a clinician-reviewable SOAP subjective draft. Merge intake handoff with transcript updates into one coherent clinical narrative. Rewrite the history in natural clinician-facing prose and do not simply append a literal transcript excerpt or a section called consultation updates. Preserve useful timing, symptom progression, associated symptoms, and relevant negatives when they are supported by the source material. Keep it readable and a bit more complete than a one-line summary. Use short paragraphs or bullet points only if that genuinely improves readability. Do not diagnose. Never echo raw field keys, booleans, machine labels, or verbatim quote fragments unless clinically necessary. Return JSON with keys source, summary, subjective.",
             new
             {
                 context.PathwayName,
@@ -153,21 +153,21 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             .Take(3));
         var cleanedIntakeSubjective = CleanNarrative(context.IntakeSubjective);
         var cleanedCurrentSubjective = CleanNarrative(context.CurrentSubjective);
-
+        var transcriptHighlights = ExtractNarrativeHighlights(CleanNarrative(transcriptSummary))
+            .Select(NormalizeClinicalPhrase)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .ToList();
+        var intakeParagraph = BuildSubjectiveNarrative(cleanedCurrentSubjective, cleanedIntakeSubjective);
         var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(cleanedIntakeSubjective))
+
+        if (!string.IsNullOrWhiteSpace(intakeParagraph))
         {
-            parts.Add(cleanedIntakeSubjective);
+            parts.Add(intakeParagraph);
         }
 
-        if (!string.IsNullOrWhiteSpace(transcriptSummary))
+        if (transcriptHighlights.Count > 0)
         {
-            parts.Add($"Consultation updates: {transcriptSummary}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(cleanedCurrentSubjective))
-        {
-            parts.Add($"Existing clinician note: {cleanedCurrentSubjective}");
+            parts.Add($"During consultation, the patient additionally reported {JoinWithAnd(transcriptHighlights).ToLowerInvariant()}.");
         }
 
         return new ConsultationDraftResult
@@ -245,7 +245,7 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             assessmentParts.Add($"- {TrimEnding(triageNote)}.");
         }
 
-        planParts.Add("1. Immediate next steps");
+        planParts.Add(actionPlanHints.Count > 0 ? "1. Immediate safety and reassessment" : "1. Immediate next steps");
         var planHints = context.PathwayPlanHints
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .Select(item => TrimEnding(item.Trim()))
@@ -255,7 +255,7 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
 
         if (actionPlanHints.Count > 0)
         {
-            planParts.Add($"   {JoinWithAnd(actionPlanHints.Take(2))}.");
+            planParts.Add($"   {JoinWithAnd(actionPlanHints.Take(3))}.");
         }
         else if (planHints.Count > 0)
         {
@@ -270,17 +270,7 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             planParts.Add("   Continue clinician-directed evaluation and management based on the available findings.");
         }
 
-        planParts.Add("2. Monitoring and reassessment");
-        if (!string.IsNullOrWhiteSpace(vitalsSummary))
-        {
-            planParts.Add($"   Repeat and document vitals as clinically indicated ({vitalsSummary}).");
-        }
-        else
-        {
-            planParts.Add("   Record or repeat vital signs if they are needed to complete the visit assessment.");
-        }
-
-        planParts.Add("3. Focused clinical review");
+        planParts.Add("2. Focused clinical review");
         if (context.ObjectiveFocusHints.Count > 0)
         {
             planParts.Add($"   Complete clinician assessment with focus on {JoinWithAnd(context.ObjectiveFocusHints.Take(3))}.");
@@ -298,8 +288,29 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             planParts.Add("   Confirm the key objective findings that will support the final assessment.");
         }
 
-        planParts.Add("4. Final clinician decision");
-        planParts.Add("   Confirm the final diagnosis and treatment steps clinically before completing the visit.");
+        planParts.Add("3. Monitoring and reassessment");
+        if (!string.IsNullOrWhiteSpace(vitalsSummary))
+        {
+            planParts.Add($"   Repeat and document vitals as clinically indicated ({vitalsSummary}).");
+        }
+        else
+        {
+            planParts.Add("   Record or repeat vital signs if they are needed to complete the visit assessment.");
+        }
+
+        planParts.Add("4. Treatment and disposition planning");
+        if (planHints.Count > 0)
+        {
+            planParts.Add($"   Use the pathway-supported plan as clinically appropriate, including {JoinWithAnd(planHints.Take(3))}, and adjust based on examination findings.");
+        }
+        else if (actionPlanHints.Count > 0)
+        {
+            planParts.Add("   Escalate treatment, investigations, and disposition decisions according to the confirmed bedside findings and overall clinical stability.");
+        }
+        else
+        {
+            planParts.Add("   Confirm the final diagnosis, management steps, and disposition clinically before completing the visit.");
+        }
 
         return new ConsultationDraftResult
         {
@@ -402,21 +413,7 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             return string.Empty;
         }
 
-        var segments = cleanedSubjective
-            .Split('.', StringSplitOptions.RemoveEmptyEntries)
-            .Select(item => item.Trim())
-            .Where(item => !string.IsNullOrWhiteSpace(item))
-            .Where(item =>
-                !item.StartsWith("Key follow-up details", StringComparison.OrdinalIgnoreCase) &&
-                !item.StartsWith("Chief complaint", StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (segments.Count == 0)
-        {
-            return $"{TrimEnding(cleanedSubjective)}.";
-        }
-
-        return $"{TrimEnding(segments[0])}.";
+        return BuildSubjectiveNarrative(cleanedSubjective, string.Empty);
     }
 
     private static string BuildReadableFollowUpSegment(string segment)
@@ -592,6 +589,11 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
             hints.Add("repeat pulse and reassess for causes of tachycardia in the current presentation");
         }
 
+        if (TryReadSingleVital(latestVitalsSummary, "SpO2", out var oxygenSaturation) && oxygenSaturation < 95)
+        {
+            hints.Add("reassess oxygen saturation promptly, review work of breathing, and evaluate for respiratory compromise if clinically indicated");
+        }
+
         if (!string.IsNullOrWhiteSpace(cleanedObjective))
         {
             hints.Add("document any progression or change in the recorded examination findings");
@@ -604,13 +606,168 @@ public class ConsultationDraftGenerator : IConsultationDraftGenerator
 
         if (cleanedSubjective.Contains("dizziness", StringComparison.OrdinalIgnoreCase))
         {
-            hints.Add("review neurological and cardiovascular causes of dizziness based on the bedside assessment");
+            hints.Add("review neurological and cardiovascular contributors to the dizziness during the bedside assessment");
+        }
+
+        if (cleanedSubjective.Contains("nausea", StringComparison.OrdinalIgnoreCase) ||
+            cleanedSubjective.Contains("vomit", StringComparison.OrdinalIgnoreCase))
+        {
+            hints.Add("assess hydration status, oral intake, and any progression of nausea or vomiting");
         }
 
         return hints
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static string BuildSubjectiveNarrative(string cleanedCurrentSubjective, string cleanedIntakeSubjective)
+    {
+        var source = !string.IsNullOrWhiteSpace(cleanedCurrentSubjective) ? cleanedCurrentSubjective : cleanedIntakeSubjective;
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return string.Empty;
+        }
+
+        var symptoms = SplitValueList(ExtractSectionValue(source, "Symptoms reported"));
+        var mainConcern = NormalizeClinicalPhrase(ExtractSectionValue(source, "Main concern"));
+        var onset = NormalizeClinicalPhrase(
+            ExtractSectionValue(source, "When did it start") ??
+            ExtractSectionValue(source, "Symptom onset") ??
+            ExtractSectionValue(source, "How long have you had the cough?"));
+        var detailLines = ExtractKeyDetailLines(source)
+            .Where(item => !item.StartsWith("Main concern:", StringComparison.OrdinalIgnoreCase))
+            .Where(item => !item.StartsWith("When did it start:", StringComparison.OrdinalIgnoreCase))
+            .Where(item => !item.StartsWith("Symptom onset:", StringComparison.OrdinalIgnoreCase))
+            .Where(item => !item.StartsWith("Symptoms reported:", StringComparison.OrdinalIgnoreCase))
+            .Select(NormalizeClinicalPhrase)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Where(item => !symptoms.Any(symptom => string.Equals(symptom, item, StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(4)
+            .ToList();
+
+        var sentences = new List<string>();
+        var openingConcern = !string.IsNullOrWhiteSpace(mainConcern)
+            ? mainConcern
+            : symptoms.Count > 0
+                ? JoinWithAnd(symptoms).ToLowerInvariant()
+                : string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(openingConcern) && !string.IsNullOrWhiteSpace(onset))
+        {
+            sentences.Add($"Patient presents with {openingConcern.ToLowerInvariant()}, which started {onset.ToLowerInvariant()}.");
+        }
+        else if (!string.IsNullOrWhiteSpace(openingConcern))
+        {
+            sentences.Add($"Patient presents with {openingConcern.ToLowerInvariant()}.");
+        }
+        else if (!string.IsNullOrWhiteSpace(onset))
+        {
+            sentences.Add($"Symptoms started {onset.ToLowerInvariant()}.");
+        }
+
+        if (detailLines.Count > 0)
+        {
+            sentences.Add($"Associated reported features include {JoinWithAnd(detailLines).ToLowerInvariant()}.");
+        }
+
+        if (sentences.Count == 0)
+        {
+            var highlights = ExtractNarrativeHighlights(source);
+            if (highlights.Count == 0)
+            {
+                return TrimEnding(source) + ".";
+            }
+
+            return $"The patient reports {JoinWithAnd(highlights).ToLowerInvariant()}.";
+        }
+
+        return string.Join(" ", sentences);
+    }
+
+    private static string ExtractSectionValue(string source, string label)
+    {
+        var prefix = $"{label}:";
+        var line = source
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(item => item.Trim())
+            .FirstOrDefault(item => item.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return string.Empty;
+        }
+
+        return line[prefix.Length..].Trim();
+    }
+
+    private static List<string> SplitValueList(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return new List<string>();
+        }
+
+        return value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeClinicalPhrase)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static List<string> ExtractKeyDetailLines(string source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return new List<string>();
+        }
+
+        var lines = source
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(item => item.Trim())
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .ToList();
+
+        var startIndex = lines.FindIndex(item => item.StartsWith("Key details:", StringComparison.OrdinalIgnoreCase) ||
+                                                item.StartsWith("Key follow-up details:", StringComparison.OrdinalIgnoreCase));
+
+        if (startIndex < 0)
+        {
+            return new List<string>();
+        }
+
+        return lines
+            .Skip(startIndex + 1)
+            .Where(item => !item.Contains("[]", StringComparison.Ordinal))
+            .ToList();
+    }
+
+    private static string NormalizeClinicalPhrase(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = TrimEnding(value)
+            .Replace("I am", "the patient is", StringComparison.OrdinalIgnoreCase)
+            .Replace("I'm", "the patient is", StringComparison.OrdinalIgnoreCase)
+            .Replace("I have", "the patient has", StringComparison.OrdinalIgnoreCase)
+            .Replace("I've", "the patient has", StringComparison.OrdinalIgnoreCase)
+            .Replace("I feel", "the patient feels", StringComparison.OrdinalIgnoreCase)
+            .Replace("my ", "their ", StringComparison.OrdinalIgnoreCase)
+            .Replace("Pain start", "pain started", StringComparison.OrdinalIgnoreCase)
+            .Replace("Body Aches", "body aches", StringComparison.OrdinalIgnoreCase)
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        return char.ToLowerInvariant(normalized[0]) + normalized[1..];
     }
 
     private static bool TryReadVital(string summary, string label, out int left, out int right)

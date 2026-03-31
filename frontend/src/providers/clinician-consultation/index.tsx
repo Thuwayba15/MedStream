@@ -13,6 +13,7 @@ import type {
     IEncounterNote,
     ISaveEncounterNoteDraftRequest,
     ISaveVitalsRequest,
+    ITranscribeConsultationAudioRequest,
 } from "@/services/consultation/types";
 import {
     attachTranscriptFailed,
@@ -94,6 +95,15 @@ const postJson = async <TResponse,>(url: string, payload: object, fallbackMessag
             "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
+    });
+
+    return parseResponse<TResponse>(response, fallbackMessage);
+};
+
+const postFormData = async <TResponse,>(url: string, payload: FormData, fallbackMessage: string): Promise<TResponse> => {
+    const response = await fetch(url, {
+        method: "POST",
+        body: payload,
     });
 
     return parseResponse<TResponse>(response, fallbackMessage);
@@ -186,6 +196,30 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
         [refreshWorkspace]
     );
 
+    const transcribeAudio = useCallback(
+        async (payload: ITranscribeConsultationAudioRequest): Promise<IConsultationTranscript | null> => {
+            dispatch(attachTranscriptStarted());
+            try {
+                const formData = new FormData();
+                formData.append("visitId", String(payload.visitId));
+                formData.append("audio", payload.audioBlob, `consultation.${payload.mimeType?.includes("mp4") ? "mp4" : "webm"}`);
+                if (payload.language?.trim()) {
+                    formData.append("language", payload.language.trim());
+                }
+
+                const transcript = await postFormData<IConsultationTranscript>(API.CLINICIAN_CONSULTATION_TRANSCRIPT_ROUTE, formData, "Unable to transcribe consultation audio.");
+                const workspace = await refreshWorkspace(payload.visitId);
+                dispatch(attachTranscriptSucceeded(workspace));
+                return transcript;
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unable to transcribe consultation audio.";
+                dispatch(attachTranscriptFailed(message));
+                return null;
+            }
+        },
+        [refreshWorkspace]
+    );
+
     const generateSubjectiveDraft = useCallback(async (visitId: number): Promise<IConsultationAiDraft | null> => {
         dispatch(generateSubjectiveStarted());
         try {
@@ -254,13 +288,14 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
             saveEncounterNoteDraft,
             saveVitals,
             attachTranscript,
+            transcribeAudio,
             generateSubjectiveDraft,
             generateAssessmentPlanDraft,
             finalizeEncounterNote,
             completeVisit,
             clearMessages: () => dispatch(clearMessages()),
         }),
-        [attachTranscript, completeVisit, finalizeEncounterNote, generateAssessmentPlanDraft, generateSubjectiveDraft, loadInbox, loadWorkspace, saveEncounterNoteDraft, saveVitals]
+        [attachTranscript, completeVisit, finalizeEncounterNote, generateAssessmentPlanDraft, generateSubjectiveDraft, loadInbox, loadWorkspace, saveEncounterNoteDraft, saveVitals, transcribeAudio]
     );
 
     return (

@@ -122,6 +122,8 @@ public class ConsultationAppService_Tests : MedStreamTestBase
 
         draft.Subjective.ShouldNotBeNullOrWhiteSpace();
         draft.Subjective.ShouldContain("dizziness");
+        draft.Subjective.ShouldNotContain("Consultation updates:", Case.Insensitive);
+        draft.Subjective.ShouldContain("During consultation", Case.Insensitive);
 
         await UsingDbContextAsync(async context =>
         {
@@ -176,7 +178,7 @@ public class ConsultationAppService_Tests : MedStreamTestBase
         draft.Assessment.ShouldNotContain("Follow-up answers:");
         draft.Assessment.ShouldContain("1. Clinical impression");
         draft.Assessment.ShouldContain("\n");
-        draft.Plan.ShouldContain("1. Immediate next steps");
+        draft.Plan.ShouldContain("1. Immediate", Case.Insensitive);
     }
 
     [Fact]
@@ -214,6 +216,7 @@ public class ConsultationAppService_Tests : MedStreamTestBase
         draft.Assessment.ShouldContain("tachycardia", Case.Insensitive);
         draft.Plan.ShouldContain("repeat the glucose measurement promptly", Case.Insensitive);
         draft.Plan.ShouldContain("recheck blood pressure", Case.Insensitive);
+        draft.Plan.ShouldContain("Treatment and disposition planning");
     }
 
     [Fact]

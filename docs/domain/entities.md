@@ -455,8 +455,9 @@ Behavioral notes:
 - captured by Clinician
 
 **Implementation notes**
-- Current backend support includes typed transcript capture or externally-produced transcript text attachment.
-- Audio transcription provider integration can populate this same entity later without changing the consultation note workflow.
+- Current implementation supports typed transcript capture and browser-recorded microphone audio that is transcribed server-side after recording stops.
+- `InputMode` currently includes `typed` and `audio_upload`.
+- Externally-produced transcript text can also populate this same entity without changing the consultation note workflow.
 
 ---
 
