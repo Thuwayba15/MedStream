@@ -119,6 +119,54 @@ test.describe("clinician queue dashboard", () => {
             });
         });
 
+        await page.route("**/api/clinician/consultation?**", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    visitId: 3001,
+                    queueTicketId: 901,
+                    visitStatus: "InConsultation",
+                    patientContext: {
+                        patientUserId: 2001,
+                        patientName: "Thabo Molefe",
+                        chiefComplaint: "Severe chest pain, shortness of breath",
+                        subjectiveSummary: "Patient reports severe crushing chest pain that started two hours ago and has worsened with movement.",
+                        urgencyLevel: "Urgent",
+                        queueStatus: "in_consultation",
+                        visitDate: new Date().toISOString(),
+                    },
+                    encounterNote: {
+                        id: 77,
+                        visitId: 3001,
+                        intakeSubjective: "Initial intake notes already captured chest pain and shortness of breath.",
+                        subjective: "Patient reports severe crushing chest pain that started two hours ago and now includes nausea.",
+                        objective: "Alert, speaking in full sentences, clutching chest intermittently.",
+                        assessment: "",
+                        plan: "",
+                        status: "draft",
+                        finalizedAt: null,
+                    },
+                    latestVitals: {
+                        id: 61,
+                        visitId: 3001,
+                        phase: "consultation",
+                        bloodPressureSystolic: 150,
+                        bloodPressureDiastolic: 95,
+                        heartRate: 110,
+                        respiratoryRate: 24,
+                        temperatureCelsius: 37.2,
+                        oxygenSaturation: 94,
+                        bloodGlucose: null,
+                        weightKg: null,
+                        isLatest: true,
+                        recordedAt: new Date().toISOString(),
+                    },
+                    transcripts: [],
+                }),
+            });
+        });
+
         await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
 
         await page.goto("/clinician", { waitUntil: "domcontentloaded" });
@@ -140,6 +188,11 @@ test.describe("clinician queue dashboard", () => {
 
         await page.getByRole("button", { name: "Start Consultation" }).click();
         await expect(page).toHaveURL(/\/clinician\/consultation\?visitId=3001&queueTicketId=901/);
+        await expect(page.getByRole("heading", { name: "Consultation: Thabo Molefe" })).toBeVisible();
+        await expect(page.getByText("AI handoff summary")).toBeVisible();
+        await expect(page.getByRole("tab", { name: "objective" })).toBeVisible();
+        await page.getByRole("tab", { name: "objective" }).click();
+        await expect(page.getByText("Blood pressure")).toBeVisible();
 
         const urgentRequests = requestUrls.filter((url) => url.includes("urgencyLevel=Urgent"));
         expect(urgentRequests.length).toBeGreaterThan(0);

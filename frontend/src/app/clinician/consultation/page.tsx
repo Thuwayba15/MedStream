@@ -1,6 +1,7 @@
-import { Card, Space } from "antd";
 import { clinicianNavigationItems } from "@/components/clinician/navigation";
+import { ClinicianConsultationPage as ClinicianConsultationWorkspace } from "@/components/clinician/clinicianConsultationPage";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
+import { ClinicianConsultationProvider } from "@/providers/clinician-consultation";
 
 interface IClinicianConsultationPageProps {
     searchParams: Promise<{
@@ -11,17 +12,14 @@ interface IClinicianConsultationPageProps {
 
 const ClinicianConsultationPage = async ({ searchParams }: IClinicianConsultationPageProps): Promise<React.JSX.Element> => {
     const params = await searchParams;
+    const visitId = params.visitId ? Number(params.visitId) : undefined;
+    const queueTicketId = params.queueTicketId ? Number(params.queueTicketId) : undefined;
 
     return (
         <RoleAppShell roleLabel="Clinician" activeKey="clinician-consultation" items={clinicianNavigationItems}>
-            <Card>
-                <Space orientation="vertical" size={10}>
-                    <h1>Consultation</h1>
-                    <p>Consultation workspace is wired for queue handoff. Start from queue review to carry active visit context.</p>
-                    <p>Visit Id: {params.visitId ?? "-"}</p>
-                    <p>Queue Ticket Id: {params.queueTicketId ?? "-"}</p>
-                </Space>
-            </Card>
+            <ClinicianConsultationProvider>
+                <ClinicianConsultationWorkspace visitId={visitId} queueTicketId={queueTicketId} />
+            </ClinicianConsultationProvider>
         </RoleAppShell>
     );
 };
