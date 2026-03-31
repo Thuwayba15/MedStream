@@ -211,6 +211,29 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         color: #7d8ca4;
         font-size: 0.9rem;
     `,
+    capturePanel: css`
+        display: grid;
+        gap: 12px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+        border-radius: ${radius.sm}px;
+        border: 1px solid rgba(224, 123, 42, 0.18);
+        background: linear-gradient(180deg, #fffdfa 0%, #f8f3ec 100%);
+    `,
+    captureHeader: css`
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+    `,
+    recordingTag: css`
+        border-radius: ${radius.pill}px;
+        border-color: rgba(201, 64, 64, 0.28) !important;
+        background: rgba(201, 64, 64, 0.12) !important;
+        color: ${colors.urgent} !important;
+        font-weight: 700;
+    `,
     cardTitleRow: css`
         display: flex;
         justify-content: space-between;

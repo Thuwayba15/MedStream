@@ -12,6 +12,7 @@ import type {
     IEncounterNote,
     ISaveEncounterNoteDraftRequest,
     ISaveVitalsRequest,
+    ITranscribeConsultationAudioRequest,
 } from "@/services/consultation/types";
 
 export interface IClinicianConsultationStateContext {
@@ -43,6 +44,7 @@ export interface IClinicianConsultationActionContext {
     saveEncounterNoteDraft: (payload: ISaveEncounterNoteDraftRequest) => Promise<IEncounterNote | null>;
     saveVitals: (payload: ISaveVitalsRequest) => Promise<IConsultationVitalSigns | null>;
     attachTranscript: (payload: IAttachConsultationTranscriptRequest) => Promise<IConsultationTranscript | null>;
+    transcribeAudio: (payload: ITranscribeConsultationAudioRequest) => Promise<IConsultationTranscript | null>;
     generateSubjectiveDraft: (visitId: number) => Promise<IConsultationAiDraft | null>;
     generateAssessmentPlanDraft: (visitId: number) => Promise<IConsultationAiDraft | null>;
     finalizeEncounterNote: (visitId: number) => Promise<IEncounterNote | null>;
@@ -74,6 +76,7 @@ export const INITIAL_ACTION_STATE: IClinicianConsultationActionContext = {
     saveEncounterNoteDraft: async () => null,
     saveVitals: async () => null,
     attachTranscript: async () => null,
+    transcribeAudio: async () => null,
     generateSubjectiveDraft: async () => null,
     generateAssessmentPlanDraft: async () => null,
     finalizeEncounterNote: async () => null,

@@ -1,10 +1,11 @@
 "use client";
 
-import { AudioOutlined, CheckCircleOutlined, FileDoneOutlined, HeartOutlined, LoadingOutlined, RobotOutlined, SaveOutlined } from "@ant-design/icons";
+import { AudioOutlined, CheckCircleOutlined, FileDoneOutlined, HeartOutlined, LoadingOutlined, RobotOutlined, SaveOutlined, StopOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Empty, Input, Skeleton, Space, Steps, Tabs, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getSupportedRecordingMimeType } from "@/lib/client/audioRecording";
 import { useClinicianConsultationActions, useClinicianConsultationState } from "@/providers/clinician-consultation";
 import type { IConsultationInboxItem, IConsultationWorkspace } from "@/services/consultation/types";
 import type { TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
@@ -296,6 +297,13 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         values: createVitalsDraft(),
     });
     const [transcriptText, setTranscriptText] = useState("");
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingSeconds, setRecordingSeconds] = useState(0);
+    const [recordingError, setRecordingError] = useState<string | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const mediaStreamRef = useRef<MediaStream | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const recordingTimerRef = useRef<number | null>(null);
     const workspace = state.workspace;
     const review = state.review;
     const inbox = state.inbox?.items ?? [];
@@ -308,6 +316,17 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
 
         void actions.loadInbox();
     }, [actions, queueTicketId, visitId]);
+
+    useEffect(() => {
+        return () => {
+            if (recordingTimerRef.current !== null) {
+                window.clearInterval(recordingTimerRef.current);
+            }
+
+            mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop());
+            mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        };
+    }, []);
 
     const hydratedNote = useMemo<INoteDraftState>(() => {
         if (!workspace) {
@@ -577,6 +596,82 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         }
     };
 
+    const startRecording = async (): Promise<void> => {
+        if (!workspace) {
+            return;
+        }
+
+        if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+            setRecordingError("Live transcription is not supported in this browser. You can still paste consultation notes manually.");
+            return;
+        }
+
+        try {
+            setRecordingError(null);
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mimeType = getSupportedRecordingMimeType();
+            const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+            mediaStreamRef.current = stream;
+            mediaRecorderRef.current = recorder;
+            audioChunksRef.current = [];
+            setRecordingSeconds(0);
+            setIsRecording(true);
+            recordingTimerRef.current = window.setInterval(() => {
+                setRecordingSeconds((current) => current + 1);
+            }, 1000);
+
+            recorder.ondataavailable = (event: BlobEvent) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            recorder.onerror = () => {
+                setRecordingError("The browser could not continue recording consultation audio.");
+            };
+
+            recorder.onstop = async () => {
+                if (recordingTimerRef.current !== null) {
+                    window.clearInterval(recordingTimerRef.current);
+                    recordingTimerRef.current = null;
+                }
+
+                setIsRecording(false);
+                const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || mimeType || "audio/webm" });
+                audioChunksRef.current = [];
+                stream.getTracks().forEach((track) => track.stop());
+                mediaRecorderRef.current = null;
+                mediaStreamRef.current = null;
+
+                if (audioBlob.size === 0) {
+                    setRecordingError("No consultation audio was captured. Please try again.");
+                    return;
+                }
+
+                const transcript = await actions.transcribeAudio({
+                    visitId: workspace.visitId,
+                    audioBlob,
+                    mimeType: audioBlob.type,
+                });
+                if (transcript?.rawTranscriptText) {
+                    setTranscriptText(transcript.rawTranscriptText);
+                }
+            };
+
+            recorder.start();
+        } catch (error) {
+            setIsRecording(false);
+            setRecordingError(error instanceof Error ? error.message : "Microphone access was denied.");
+        }
+    };
+
+    const stopRecording = (): void => {
+        if (mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+        }
+    };
+
     const applyGeneratedSubjective = (): void => {
         if (!state.subjectiveDraft?.subjective) {
             return;
@@ -738,6 +833,8 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         },
     ];
 
+    const recordingDurationLabel = new Date(recordingSeconds * 1000).toISOString().slice(14, 19);
+
     return (
         <section className={styles.page}>
             {state.errorMessage ? (
@@ -760,6 +857,18 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                     action={
                         <Button size="small" onClick={actions.clearMessages}>
                             Close
+                        </Button>
+                    }
+                />
+            ) : null}
+            {recordingError ? (
+                <Alert
+                    type="warning"
+                    showIcon
+                    message={recordingError}
+                    action={
+                        <Button size="small" onClick={() => setRecordingError(null)}>
+                            Dismiss
                         </Button>
                     }
                 />
@@ -890,6 +999,38 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                                 <Typography.Title level={5} className={styles.sectionHeading}>
                                     Consultation Capture
                                 </Typography.Title>
+                                <div className={styles.capturePanel}>
+                                    <div className={styles.captureHeader}>
+                                        <div>
+                                            <Typography.Text strong>Live transcription</Typography.Text>
+                                            <Typography.Paragraph className={styles.helperText}>
+                                                Start recording during the consultation, then stop to transcribe and attach the captured notes.
+                                            </Typography.Paragraph>
+                                        </div>
+                                        {isRecording ? <Tag className={styles.recordingTag}>Recording {recordingDurationLabel}</Tag> : null}
+                                    </div>
+                                    <Space wrap>
+                                        <Button
+                                            icon={<AudioOutlined />}
+                                            className={styles.signalAction}
+                                            disabled={isFinalized || isRecording || state.isAttachingTranscript}
+                                            loading={state.isAttachingTranscript && !isRecording}
+                                            onClick={() => void startRecording()}
+                                            data-testid="consultation-start-recording"
+                                        >
+                                            Start Live Transcript
+                                        </Button>
+                                        <Button
+                                            icon={<StopOutlined />}
+                                            className={styles.secondaryAction}
+                                            disabled={isFinalized || !isRecording}
+                                            onClick={stopRecording}
+                                            data-testid="consultation-stop-recording"
+                                        >
+                                            Stop Recording
+                                        </Button>
+                                    </Space>
+                                </div>
                                 <TextArea
                                     value={transcriptText}
                                     onChange={(event) => setTranscriptText(event.target.value)}

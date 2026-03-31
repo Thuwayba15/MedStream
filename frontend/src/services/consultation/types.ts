@@ -127,3 +127,10 @@ export interface IAttachConsultationTranscriptRequest {
     translatedTranscriptText?: string | null;
     languageDetected?: string | null;
 }
+
+export interface ITranscribeConsultationAudioRequest {
+    visitId: number;
+    audioBlob: Blob;
+    mimeType?: string;
+    language?: string;
+}
