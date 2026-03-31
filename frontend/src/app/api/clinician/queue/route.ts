@@ -16,15 +16,17 @@ const parseQueueRequest = (request: Request): IGetClinicianQueueRequest => {
     const searchParams = url.searchParams;
 
     const searchText = (searchParams.get("searchText") ?? "").trim();
-    const queueStatuses = getListParamValues(searchParams, "queueStatus") as TQueueStatus[];
-    const urgencyLevels = getListParamValues(searchParams, "urgencyLevel") as TUrgencyLevel[];
+    const queueStatuses = [...getListParamValues(searchParams, "queueStatus"), ...getListParamValues(searchParams, "queueStatuses")] as TQueueStatus[];
+    const urgencyLevels = [...getListParamValues(searchParams, "urgencyLevel"), ...getListParamValues(searchParams, "urgencyLevels")] as TUrgencyLevel[];
+    const skipCount = Number(searchParams.get("skipCount") ?? "0");
+    const maxResultCount = Number(searchParams.get("maxResultCount") ?? "20");
 
     return {
         searchText,
         queueStatuses,
         urgencyLevels,
-        skipCount: 0,
-        maxResultCount: 200,
+        skipCount: Number.isFinite(skipCount) && skipCount >= 0 ? skipCount : 0,
+        maxResultCount: Number.isFinite(maxResultCount) && maxResultCount > 0 ? maxResultCount : 20,
     };
 };
 

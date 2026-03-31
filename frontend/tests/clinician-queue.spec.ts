@@ -22,6 +22,58 @@ test.describe("clinician queue dashboard", () => {
     test("loads queue rows, opens review, and transitions status", async ({ context, page }) => {
         const requestUrls: string[] = [];
         let queueStatus: "waiting" | "called" | "in_consultation" = "waiting";
+        let transcriptAttached = false;
+
+        await page.addInitScript(() => {
+            class MockMediaRecorder {
+                public static isTypeSupported(): boolean {
+                    return true;
+                }
+
+                public mimeType: string;
+
+                public state: "inactive" | "recording" = "inactive";
+
+                public ondataavailable: ((event: BlobEvent) => void) | null = null;
+
+                public onstop: (() => void) | null = null;
+
+                public onerror: (() => void) | null = null;
+
+                public stream: MediaStream;
+
+                public constructor(stream: MediaStream, options?: MediaRecorderOptions) {
+                    this.stream = stream;
+                    this.mimeType = options?.mimeType || "audio/webm";
+                }
+
+                public start(): void {
+                    this.state = "recording";
+                    window.setTimeout(() => {
+                        this.ondataavailable?.({ data: new Blob(["mock consultation audio"], { type: this.mimeType }) } as BlobEvent);
+                    }, 0);
+                }
+
+                public stop(): void {
+                    this.state = "inactive";
+                    this.onstop?.();
+                }
+            }
+
+            Object.defineProperty(window, "MediaRecorder", {
+                writable: true,
+                value: MockMediaRecorder,
+            });
+
+            Object.defineProperty(navigator, "mediaDevices", {
+                writable: true,
+                value: {
+                    getUserMedia: async () => ({
+                        getTracks: () => [{ stop: () => undefined }],
+                    }),
+                },
+            });
+        });
 
         await page.route("**/api/clinician/queue**", async (route) => {
             requestUrls.push(route.request().url());
@@ -67,6 +119,14 @@ test.describe("clinician queue dashboard", () => {
                 body: JSON.stringify({
                     totalCount: filteredItems.length,
                     items: filteredItems,
+                    summary: {
+                        waitingCount: allItems.filter((item) => item.queueStatus === "waiting").length,
+                        averageWaitingMinutes: 29,
+                        urgentCount: allItems.filter((item) => item.urgencyLevel === "Urgent").length,
+                        seenTodayCount: 4,
+                        calledCount: 0,
+                        inConsultationCount: 0,
+                    },
                 }),
             });
         });
@@ -119,12 +179,90 @@ test.describe("clinician queue dashboard", () => {
             });
         });
 
+        await page.route("**/api/clinician/consultation?**", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    visitId: 3001,
+                    queueTicketId: 901,
+                    visitStatus: "InConsultation",
+                    patientContext: {
+                        patientUserId: 2001,
+                        patientName: "Thabo Molefe",
+                        chiefComplaint: "Severe chest pain, shortness of breath",
+                        subjectiveSummary: "Patient reports severe crushing chest pain that started two hours ago and has worsened with movement.",
+                        urgencyLevel: "Urgent",
+                        queueStatus: "in_consultation",
+                        visitDate: new Date().toISOString(),
+                    },
+                    encounterNote: {
+                        id: 77,
+                        visitId: 3001,
+                        intakeSubjective: "Initial intake notes already captured chest pain and shortness of breath.",
+                        subjective: "Patient reports severe crushing chest pain that started two hours ago and now includes nausea.",
+                        objective: "Alert, speaking in full sentences, clutching chest intermittently.",
+                        assessment: "",
+                        plan: "",
+                        status: "draft",
+                        finalizedAt: null,
+                    },
+                    latestVitals: {
+                        id: 61,
+                        visitId: 3001,
+                        phase: "consultation",
+                        bloodPressureSystolic: 150,
+                        bloodPressureDiastolic: 95,
+                        heartRate: 110,
+                        respiratoryRate: 24,
+                        temperatureCelsius: 37.2,
+                        oxygenSaturation: 94,
+                        bloodGlucose: null,
+                        weightKg: null,
+                        isLatest: true,
+                        recordedAt: new Date().toISOString(),
+                    },
+                    transcripts: transcriptAttached
+                        ? [
+                              {
+                                  id: 71,
+                                  encounterNoteId: 77,
+                                  inputMode: "audio_upload",
+                                  rawTranscriptText: "Patient reports chest pain easing after rest and ongoing nausea.",
+                                  translatedTranscriptText: null,
+                                  languageDetected: "en",
+                                  capturedAt: new Date().toISOString(),
+                              },
+                          ]
+                        : [],
+                }),
+            });
+        });
+
+        await page.route("**/api/clinician/consultation/transcript", async (route) => {
+            transcriptAttached = true;
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    id: 71,
+                    encounterNoteId: 77,
+                    inputMode: "audio_upload",
+                    rawTranscriptText: "Patient reports chest pain easing after rest and ongoing nausea.",
+                    translatedTranscriptText: null,
+                    languageDetected: "en",
+                    capturedAt: new Date().toISOString(),
+                }),
+            });
+        });
+
         await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
 
         await page.goto("/clinician", { waitUntil: "domcontentloaded" });
         await page.waitForResponse((response) => response.url().includes("/api/clinician/queue") && response.status() === 200);
 
-        await expect(page.getByRole("main").getByText("Queue Dashboard", { exact: true })).toBeVisible();
+        await expect(page.getByText("Patients Waiting")).toBeVisible();
+        await expect(page.getByText("Showing 2 patients")).toBeVisible();
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
         await expect(page.getByRole("button", { name: "Review" }).first()).toBeVisible();
 
@@ -132,16 +270,68 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByText("Nomsa Dlamini")).toHaveCount(0);
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
 
-        await page.getByRole("link", { name: "Review" }).first().click();
+        await page.getByRole("button", { name: "Review" }).first().click();
         await expect(page).toHaveURL(/\/clinician\/review\/901$/);
         await expect(page.getByRole("heading", { name: "Triage Review" })).toBeVisible();
         await expect(page.getByText("Thabo Molefe", { exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Start Consultation" })).toBeVisible();
 
-        await page.getByRole("button", { name: "Start Consultation" }).click();
+        await Promise.all([
+            page.waitForResponse((response) => response.url().includes("/api/clinician/queue/901/status") && response.status() === 200),
+            page.getByRole("button", { name: "Start Consultation" }).click(),
+        ]);
+        await page.goto("/clinician/consultation?visitId=3001&queueTicketId=901", { waitUntil: "domcontentloaded" });
         await expect(page).toHaveURL(/\/clinician\/consultation\?visitId=3001&queueTicketId=901/);
+        await expect(page.getByRole("heading", { name: "Consultation: Thabo Molefe" })).toBeVisible();
+        await expect(page.getByText("AI handoff summary")).toBeVisible();
+        await expect(page.getByRole("tab", { name: "objective" })).toBeVisible();
+        await page.getByTestId("consultation-start-recording").click();
+        await expect(page.getByTestId("consultation-stop-recording")).toBeEnabled();
+        await page.getByTestId("consultation-stop-recording").click();
+        await expect(page.getByText("1 transcript entries attached")).toBeVisible();
+        await expect(page.getByPlaceholder("Paste or type the consultation transcript here.")).toHaveValue("Patient reports chest pain easing after rest and ongoing nausea.");
+        await page.getByRole("tab", { name: "objective" }).click();
+        await expect(page.getByText("Blood pressure")).toBeVisible();
 
         const urgentRequests = requestUrls.filter((url) => url.includes("urgencyLevel=Urgent"));
         expect(urgentRequests.length).toBeGreaterThan(0);
+    });
+
+    test("shows consultation inbox when no active visit is selected", async ({ context, page }) => {
+        await page.route("**/api/clinician/consultation", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    items: [
+                        {
+                            visitId: 4101,
+                            queueTicketId: 991,
+                            patientUserId: 5101,
+                            patientName: "Patient Two",
+                            chiefComplaint: "Cough and fever",
+                            subjectiveSummary: "Chief complaint: I have cough and fever\nSymptoms reported: Cough, Fever\nKey details:\nHave you had a fever?: True",
+                            queueStatus: "in_consultation",
+                            urgencyLevel: "Priority",
+                            encounterNoteStatus: "draft",
+                            visitDate: new Date().toISOString(),
+                            finalizedAt: null,
+                            lastTranscriptAt: new Date().toISOString(),
+                            consultationPath: "/clinician/consultation?visitId=4101&queueTicketId=991",
+                        },
+                    ],
+                }),
+            });
+        });
+
+        await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
+
+        await page.goto("/clinician/consultation", { waitUntil: "domcontentloaded" });
+
+        await expect(page.getByRole("heading", { name: /today's consultations/i })).toBeVisible();
+        await expect(page.getByText("Patient Two")).toBeVisible();
+        await expect(page.getByText("Symptoms reported: Cough, Fever")).toBeVisible();
+        await expect(page.getByText("Have you had a fever?", { exact: false })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Resume Draft" })).toBeVisible();
     });
 });

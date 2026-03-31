@@ -1,15 +1,17 @@
 "use client";
 
 import { ClinicianQueueDashboard } from "@/components/clinician/clinicianQueueDashboard";
-import { clinicianNavigationItems } from "@/components/clinician/navigation";
+import { ClinicianWorkspaceShell } from "@/components/clinician/clinicianWorkspaceShell";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 import { ClinicianQueueProvider } from "@/providers/clinician-queue";
 
 const ClinicianHomePage = () => {
     return (
-        <RoleAppShell roleLabel="Clinician" activeKey="clinician-queue-dashboard" items={clinicianNavigationItems}>
+        <RoleAppShell roleLabel="Clinician" items={[]}>
             <ClinicianQueueProvider>
-                <ClinicianQueueDashboard />
+                <ClinicianWorkspaceShell activeKey="queue" title="Clinician Workspace" subtitle="Manage the live queue, pick up consultations, and return to patients you have already seen today.">
+                    <ClinicianQueueDashboard />
+                </ClinicianWorkspaceShell>
             </ClinicianQueueProvider>
         </RoleAppShell>
     );

@@ -133,6 +133,8 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
         review.ChiefComplaint.ShouldNotBeNullOrWhiteSpace();
         review.Reasoning.Count.ShouldBeGreaterThan(0);
         review.ClinicianSummary.ShouldNotBeNullOrWhiteSpace();
+        review.ClinicianSummary.ShouldNotContain("urgentSevereBreathing");
+        review.ClinicianSummary.ShouldContain("Severe difficulty breathing reported");
         review.ConsultationPath.ShouldContain("/clinician/consultation");
         review.PatientHistoryPath.ShouldContain("/clinician/history");
     }
@@ -194,6 +196,7 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
             QueueTicketId = triageResult.Queue.QueueTicketId,
             NewStatus = PatientIntakeConstants.QueueStatusInConsultation
         });
+        await FinalizeEncounterNoteForVisitByQueueTicketIdAsync(triageResult.Queue.QueueTicketId);
         await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
         {
             QueueTicketId = triageResult.Queue.QueueTicketId,
@@ -333,6 +336,45 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
             var queueTicket = await context.QueueTickets.SingleAsync(item => item.Id == queueTicketId);
             var triageAssessment = await context.TriageAssessments.SingleAsync(item => item.Id == queueTicket.TriageAssessmentId);
             triageAssessment.PriorityScore = priorityScore;
+            await context.SaveChangesAsync();
+        });
+    }
+
+    private async Task FinalizeEncounterNoteForVisitByQueueTicketIdAsync(long queueTicketId)
+    {
+        await UsingDbContextAsync(async context =>
+        {
+            var queueTicket = await context.QueueTickets.SingleAsync(item => item.Id == queueTicketId);
+            var intake = await context.SymptomIntakes.FirstOrDefaultAsync(item => item.VisitId == queueTicket.VisitId);
+            var note = await context.EncounterNotes.FirstOrDefaultAsync(item => item.VisitId == queueTicket.VisitId);
+            if (note == null)
+            {
+                note = new EncounterNote
+                {
+                    TenantId = 1,
+                    VisitId = queueTicket.VisitId,
+                    CreatedByClinicianUserId = queueTicket.CurrentClinicianUserId ?? queueTicket.ConsultationStartedByClinicianUserId ?? 1,
+                    IntakeSubjective = intake?.SubjectiveSummary ?? "Seeded subjective",
+                    Subjective = intake?.SubjectiveSummary ?? "Seeded subjective",
+                    Objective = "Objective findings documented for queue completion test.",
+                    Assessment = "Assessment documented for queue completion test.",
+                    Plan = "Plan documented for queue completion test.",
+                    Status = PatientIntakeConstants.EncounterNoteStatusFinalized,
+                    FinalizedAt = DateTime.UtcNow
+                };
+
+                await context.EncounterNotes.AddAsync(note);
+            }
+            else
+            {
+                note.Subjective = string.IsNullOrWhiteSpace(note.Subjective) ? intake?.SubjectiveSummary ?? "Seeded subjective" : note.Subjective;
+                note.Objective = "Objective findings documented for queue completion test.";
+                note.Assessment = "Assessment documented for queue completion test.";
+                note.Plan = "Plan documented for queue completion test.";
+                note.Status = PatientIntakeConstants.EncounterNoteStatusFinalized;
+                note.FinalizedAt = DateTime.UtcNow;
+            }
+
             await context.SaveChangesAsync();
         });
     }

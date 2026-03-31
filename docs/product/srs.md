@@ -94,6 +94,7 @@ States:
 Draft
 Finalized
 Approved
+Consultation capture currently supports typed transcript attachment and browser microphone recording with transcription after recording stops.
 
 3.5 Patient Timeline
 A chronological record of:
@@ -259,8 +260,10 @@ F6.3 Clinician Queue Visibility
 3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
 3.4 Live queue dashboard must show active queue tickets only; completed and cancelled tickets must leave active queue view
  3.4.1 Queue dashboard updates must be pushed via websocket/SignalR events rather than interval polling
- 3.5 Clinician triage review must show clinician-friendly reasoning and a readable intake summary; internal rule ids or raw intake payload keys must not be shown directly in the UI
- 3.6 If AI summarization is available, clinician review may use it to generate a concise intake handoff summary, with deterministic fallback when AI is unavailable
+ 3.4.2 Queue dashboard may show live facility summary cards such as waiting count, average wait, urgent active count, and seen-today count
+ 3.4.3 Queue dashboard must support pagination for active queue rows
+3.5 Clinician triage review must show clinician-friendly reasoning and a readable intake summary; internal rule ids or raw intake payload keys must not be shown directly in the UI
+3.6 If AI summarization is available, clinician review may use it to generate a concise intake handoff summary, with deterministic fallback when AI is unavailable
 
 F6.4 Clinician Triage Review and Handoff
 4.1 Clinician must be able to open a queue ticket and view combined triage + intake context for that visit
@@ -293,10 +296,17 @@ Objective
 Assessment
 Plan
  1.3 `Subjective` must be seeded from persisted intake data (`SymptomIntake`) including free-text complaint, extracted symptoms, and follow-up answer summary
+ 1.4 Consultation access must remain restricted to the assigned or current consultation clinician for the visit
+ 1.5 Transcript text may be attached to the encounter note as typed consultation capture, browser-recorded microphone audio that is transcribed after recording stops, or externally-transcribed consultation content
+ 1.6 The system may generate clinician-reviewable AI draft suggestions for `Subjective`, `Assessment`, and `Plan` using intake, transcript, vitals, and current note context
+ 1.7 AI draft generation must not silently overwrite clinician-authored note content; the clinician must explicitly review and apply or edit suggested content
+ 1.8 Current live transcription behavior is start/stop capture with server-side transcription after stop, not streaming partial transcript updates
 
 F8.2 Draft & Finalize
 2.1 Notes must support draft state
+ 2.1.1 Clinician consultation workspace must allow saved draft notes to be reopened later from a clinician-facing consultation list or inbox for the same day
  2.2 Notes must be finalized before completion
+ 2.3 Queue or visit completion must be blocked until the encounter note is finalized
 
 F9. Medical Reports
 F9.1 Upload Report

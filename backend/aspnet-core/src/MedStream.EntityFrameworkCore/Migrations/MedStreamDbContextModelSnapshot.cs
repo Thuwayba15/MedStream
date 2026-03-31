@@ -63,7 +63,7 @@ namespace MedStream.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpEditions", (string)null);
+                    b.ToTable("AbpEditions");
                 });
 
             modelBuilder.Entity("Abp.Application.Features.FeatureSetting", b =>
@@ -100,7 +100,7 @@ namespace MedStream.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpFeatures", (string)null);
+                    b.ToTable("AbpFeatures");
 
                     b.HasDiscriminator().HasValue("FeatureSetting");
 
@@ -180,7 +180,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpAuditLogs", (string)null);
+                    b.ToTable("AbpAuditLogs");
                 });
 
             modelBuilder.Entity("Abp.Authorization.PermissionSetting", b =>
@@ -217,7 +217,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "Name");
 
-                    b.ToTable("AbpPermissions", (string)null);
+                    b.ToTable("AbpPermissions");
 
                     b.HasDiscriminator().HasValue("PermissionSetting");
 
@@ -257,7 +257,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "ClaimType");
 
-                    b.ToTable("AbpRoleClaims", (string)null);
+                    b.ToTable("AbpRoleClaims");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserAccount", b =>
@@ -318,7 +318,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "UserName");
 
-                    b.ToTable("AbpUserAccounts", (string)null);
+                    b.ToTable("AbpUserAccounts");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserClaim", b =>
@@ -354,7 +354,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "ClaimType");
 
-                    b.ToTable("AbpUserClaims", (string)null);
+                    b.ToTable("AbpUserClaims");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserLogin", b =>
@@ -392,7 +392,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "LoginProvider", "ProviderKey");
 
-                    b.ToTable("AbpUserLogins", (string)null);
+                    b.ToTable("AbpUserLogins");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserLoginAttempt", b =>
@@ -445,7 +445,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenancyName", "UserNameOrEmailAddress", "Result");
 
-                    b.ToTable("AbpUserLoginAttempts", (string)null);
+                    b.ToTable("AbpUserLoginAttempts");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserOrganizationUnit", b =>
@@ -480,7 +480,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpUserOrganizationUnits", (string)null);
+                    b.ToTable("AbpUserOrganizationUnits");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserRole", b =>
@@ -514,7 +514,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpUserRoles", (string)null);
+                    b.ToTable("AbpUserRoles");
                 });
 
             modelBuilder.Entity("Abp.Authorization.Users.UserToken", b =>
@@ -552,7 +552,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpUserTokens", (string)null);
+                    b.ToTable("AbpUserTokens");
                 });
 
             modelBuilder.Entity("Abp.BackgroundJobs.BackgroundJobInfo", b =>
@@ -598,7 +598,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("IsAbandoned", "NextTryTime");
 
-                    b.ToTable("AbpBackgroundJobs", (string)null);
+                    b.ToTable("AbpBackgroundJobs");
                 });
 
             modelBuilder.Entity("Abp.Configuration.Setting", b =>
@@ -642,7 +642,7 @@ namespace MedStream.Migrations
                     b.HasIndex("TenantId", "Name", "UserId")
                         .IsUnique();
 
-                    b.ToTable("AbpSettings", (string)null);
+                    b.ToTable("AbpSettings");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicEntityProperty", b =>
@@ -670,7 +670,7 @@ namespace MedStream.Migrations
                     b.HasIndex("EntityFullName", "DynamicPropertyId", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("AbpDynamicEntityProperties", (string)null);
+                    b.ToTable("AbpDynamicEntityProperties");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicEntityPropertyValue", b =>
@@ -698,7 +698,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("DynamicEntityPropertyId");
 
-                    b.ToTable("AbpDynamicEntityPropertyValues", (string)null);
+                    b.ToTable("AbpDynamicEntityPropertyValues");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicProperty", b =>
@@ -730,7 +730,7 @@ namespace MedStream.Migrations
                     b.HasIndex("PropertyName", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("AbpDynamicProperties", (string)null);
+                    b.ToTable("AbpDynamicProperties");
                 });
 
             modelBuilder.Entity("Abp.DynamicEntityProperties.DynamicPropertyValue", b =>
@@ -755,7 +755,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("DynamicPropertyId");
 
-                    b.ToTable("AbpDynamicPropertyValues", (string)null);
+                    b.ToTable("AbpDynamicPropertyValues");
                 });
 
             modelBuilder.Entity("Abp.EntityHistory.EntityChange", b =>
@@ -792,7 +792,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("EntityTypeFullName", "EntityId");
 
-                    b.ToTable("AbpEntityChanges", (string)null);
+                    b.ToTable("AbpEntityChanges");
                 });
 
             modelBuilder.Entity("Abp.EntityHistory.EntityChangeSet", b =>
@@ -845,7 +845,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "UserId");
 
-                    b.ToTable("AbpEntityChangeSets", (string)null);
+                    b.ToTable("AbpEntityChangeSets");
                 });
 
             modelBuilder.Entity("Abp.EntityHistory.EntityPropertyChange", b =>
@@ -888,7 +888,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("EntityChangeId");
 
-                    b.ToTable("AbpEntityPropertyChanges", (string)null);
+                    b.ToTable("AbpEntityPropertyChanges");
                 });
 
             modelBuilder.Entity("Abp.Localization.ApplicationLanguage", b =>
@@ -944,7 +944,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "Name");
 
-                    b.ToTable("AbpLanguages", (string)null);
+                    b.ToTable("AbpLanguages");
                 });
 
             modelBuilder.Entity("Abp.Localization.ApplicationLanguageText", b =>
@@ -994,7 +994,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "Source", "LanguageName", "Key");
 
-                    b.ToTable("AbpLanguageTexts", (string)null);
+                    b.ToTable("AbpLanguageTexts");
                 });
 
             modelBuilder.Entity("Abp.Notifications.NotificationInfo", b =>
@@ -1055,7 +1055,7 @@ namespace MedStream.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpNotifications", (string)null);
+                    b.ToTable("AbpNotifications");
                 });
 
             modelBuilder.Entity("Abp.Notifications.NotificationSubscriptionInfo", b =>
@@ -1102,7 +1102,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "NotificationName", "EntityTypeName", "EntityId", "UserId");
 
-                    b.ToTable("AbpNotificationSubscriptions", (string)null);
+                    b.ToTable("AbpNotificationSubscriptions");
                 });
 
             modelBuilder.Entity("Abp.Notifications.TenantNotificationInfo", b =>
@@ -1152,7 +1152,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("AbpTenantNotifications", (string)null);
+                    b.ToTable("AbpTenantNotifications");
                 });
 
             modelBuilder.Entity("Abp.Notifications.UserNotificationInfo", b =>
@@ -1184,7 +1184,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("UserId", "State", "CreationTime");
 
-                    b.ToTable("AbpUserNotifications", (string)null);
+                    b.ToTable("AbpUserNotifications");
                 });
 
             modelBuilder.Entity("Abp.Organizations.OrganizationUnit", b =>
@@ -1238,7 +1238,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "Code");
 
-                    b.ToTable("AbpOrganizationUnits", (string)null);
+                    b.ToTable("AbpOrganizationUnits");
                 });
 
             modelBuilder.Entity("Abp.Organizations.OrganizationUnitRole", b =>
@@ -1273,7 +1273,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "RoleId");
 
-                    b.ToTable("AbpOrganizationUnitRoles", (string)null);
+                    b.ToTable("AbpOrganizationUnitRoles");
                 });
 
             modelBuilder.Entity("Abp.Webhooks.WebhookEvent", b =>
@@ -1303,7 +1303,7 @@ namespace MedStream.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpWebhookEvents", (string)null);
+                    b.ToTable("AbpWebhookEvents");
                 });
 
             modelBuilder.Entity("Abp.Webhooks.WebhookSendAttempt", b =>
@@ -1337,7 +1337,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("WebhookEventId");
 
-                    b.ToTable("AbpWebhookSendAttempts", (string)null);
+                    b.ToTable("AbpWebhookSendAttempts");
                 });
 
             modelBuilder.Entity("Abp.Webhooks.WebhookSubscriptionInfo", b =>
@@ -1374,7 +1374,7 @@ namespace MedStream.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AbpWebhookSubscriptions", (string)null);
+                    b.ToTable("AbpWebhookSubscriptions");
                 });
 
             modelBuilder.Entity("MedStream.Authorization.Roles.Role", b =>
@@ -1449,7 +1449,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "NormalizedName");
 
-                    b.ToTable("AbpRoles", (string)null);
+                    b.ToTable("AbpRoles");
                 });
 
             modelBuilder.Entity("MedStream.Authorization.Users.User", b =>
@@ -1637,7 +1637,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "NormalizedUserName");
 
-                    b.ToTable("AbpUsers", (string)null);
+                    b.ToTable("AbpUsers");
                 });
 
             modelBuilder.Entity("MedStream.Facilities.Facility", b =>
@@ -1770,7 +1770,154 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenancyName");
 
-                    b.ToTable("AbpTenants", (string)null);
+                    b.ToTable("AbpTenants");
+                });
+
+            modelBuilder.Entity("MedStream.PatientIntake.ConsultationTranscript", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("CapturedByClinicianUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatorUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("DeleterUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("EncounterNoteId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("InputMode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LanguageDetected")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("LastModifierUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RawTranscriptText")
+                        .HasMaxLength(32000)
+                        .HasColumnType("character varying(32000)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TranslatedTranscriptText")
+                        .HasMaxLength(32000)
+                        .HasColumnType("character varying(32000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EncounterNoteId");
+
+                    b.HasIndex("TenantId", "CapturedByClinicianUserId", "CapturedAt");
+
+                    b.HasIndex("TenantId", "EncounterNoteId", "CapturedAt");
+
+                    b.ToTable("ConsultationTranscripts", (string)null);
+                });
+
+            modelBuilder.Entity("MedStream.PatientIntake.EncounterNote", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Assessment")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<long>("CreatedByClinicianUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatorUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("DeleterUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FinalizedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IntakeSubjective")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("LastModifierUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Objective")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<string>("Plan")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Subjective")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("VisitId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VisitId");
+
+                    b.HasIndex("TenantId", "VisitId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "CreatedByClinicianUserId", "Status");
+
+                    b.ToTable("EncounterNotes", (string)null);
                 });
 
             modelBuilder.Entity("MedStream.PatientIntake.QueueEvent", b =>
@@ -2106,6 +2253,9 @@ namespace MedStream.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<long?>("AssignedClinicianUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -2153,9 +2303,100 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "Status");
 
+                    b.HasIndex("TenantId", "AssignedClinicianUserId", "Status");
+
                     b.HasIndex("TenantId", "PatientUserId", "CreationTime");
 
                     b.ToTable("Visits", (string)null);
+                });
+
+            modelBuilder.Entity("MedStream.PatientIntake.VitalSigns", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal?>("BloodGlucose")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<int?>("BloodPressureDiastolic")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("BloodPressureSystolic")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatorUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("DeleterUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("HeartRate")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsLatest")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("LastModifierUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("OxygenSaturation")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Phase")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("RecordedByClinicianUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("RespiratoryRate")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("TemperatureCelsius")
+                        .HasPrecision(4, 1)
+                        .HasColumnType("numeric(4,1)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("VisitId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VisitId");
+
+                    b.HasIndex("TenantId", "VisitId", "IsLatest")
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false AND \"IsLatest\" = true");
+
+                    b.HasIndex("TenantId", "VisitId", "RecordedAt");
+
+                    b.ToTable("VitalSigns", (string)null);
                 });
 
             modelBuilder.Entity("Abp.Application.Features.EditionFeatureSetting", b =>
@@ -2167,7 +2408,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("EditionId", "Name");
 
-                    b.ToTable("AbpFeatures", (string)null);
+                    b.ToTable("AbpFeatures");
 
                     b.HasDiscriminator().HasValue("EditionFeatureSetting");
                 });
@@ -2178,7 +2419,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("TenantId", "Name");
 
-                    b.ToTable("AbpFeatures", (string)null);
+                    b.ToTable("AbpFeatures");
 
                     b.HasDiscriminator().HasValue("TenantFeatureSetting");
                 });
@@ -2192,7 +2433,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AbpPermissions", (string)null);
+                    b.ToTable("AbpPermissions");
 
                     b.HasDiscriminator().HasValue("RolePermissionSetting");
                 });
@@ -2206,7 +2447,7 @@ namespace MedStream.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AbpPermissions", (string)null);
+                    b.ToTable("AbpPermissions");
 
                     b.HasDiscriminator().HasValue("UserPermissionSetting");
                 });
@@ -2403,6 +2644,24 @@ namespace MedStream.Migrations
                     b.Navigation("LastModifierUser");
                 });
 
+            modelBuilder.Entity("MedStream.PatientIntake.ConsultationTranscript", b =>
+                {
+                    b.HasOne("MedStream.PatientIntake.EncounterNote", null)
+                        .WithMany()
+                        .HasForeignKey("EncounterNoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MedStream.PatientIntake.EncounterNote", b =>
+                {
+                    b.HasOne("MedStream.PatientIntake.Visit", null)
+                        .WithMany()
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MedStream.PatientIntake.QueueEvent", b =>
                 {
                     b.HasOne("MedStream.PatientIntake.QueueTicket", null)
@@ -2437,6 +2696,15 @@ namespace MedStream.Migrations
                 });
 
             modelBuilder.Entity("MedStream.PatientIntake.TriageAssessment", b =>
+                {
+                    b.HasOne("MedStream.PatientIntake.Visit", null)
+                        .WithMany()
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MedStream.PatientIntake.VitalSigns", b =>
                 {
                     b.HasOne("MedStream.PatientIntake.Visit", null)
                         .WithMany()

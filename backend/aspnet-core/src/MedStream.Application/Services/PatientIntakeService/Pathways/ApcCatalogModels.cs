@@ -114,6 +114,32 @@ public class ApcSummaryJson
     /// Gets or sets AI fallback guidance metadata.
     /// </summary>
     public ApcSummaryAiFallbackGuidanceJson AiFallbackGuidance { get; set; }
+
+    /// <summary>
+    /// Gets or sets clinician objective focus guidance.
+    /// </summary>
+    public List<string> ClinicianObjectiveFocus { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets likely linked APC pathways.
+    /// </summary>
+    public List<ApcSummaryLinkedPathwayJson> LikelyLinks { get; set; } = new();
+}
+
+/// <summary>
+/// APC summary linked pathway metadata.
+/// </summary>
+public class ApcSummaryLinkedPathwayJson
+{
+    /// <summary>
+    /// Gets or sets target pathway id.
+    /// </summary>
+    public string TargetPathwayId { get; set; }
+
+    /// <summary>
+    /// Gets or sets APC source page.
+    /// </summary>
+    public int? Page { get; set; }
 }
 
 /// <summary>

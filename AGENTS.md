@@ -45,7 +45,7 @@ For any backend task under `aspnet-core/src` or `aspnet-core/test`, use the `bac
 Before backend implementation, review:
 - `docs/product/srs.md`
 - `docs/domain/entities.md`
-- `docs/structure/BACKEND-STRUCTURE.md`
+- `docs/structure/BACKEND_STRUCTURE.md`
 
 Backend changes must:
 - follow the ABP layered architecture and folder structure used by this repo

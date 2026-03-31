@@ -7,7 +7,7 @@
 - If `Clinician.Role` is kept, it should be treated as a **domain or operational role label** (for example doctor, nurse practitioner, triage nurse, medical officer), **not** as the source of authorization. Authorization should come from ABP roles/permissions.
 - For implementation, it is recommended that `Patient` and `Clinician` profiles each support linkage to an ABP user account, even if that link is optional for some onboarding flows. The current domain diagram focuses on the clinical model, not the ABP tables.
 - Most workflow data is facility-scoped.
-- For current MVP, SOAP documentation is manual and `MedicalReport` upload is deferred.
+- Current implementation supports manual SOAP editing plus clinician-reviewed AI draft suggestions returned by the consultation application service. These suggestions are not yet persisted as a separate entity.
 - For MVP, multilingual support is not a core workflow requirement, but some language-related fields still exist on `Person`, `SymptomIntake`, and `ConsultationTranscript` because they are already part of the current model. fileciteturn4file10turn4file7
 
 ## ABP Identity / authorization mapping
@@ -418,21 +418,22 @@ Behavioral notes:
 - VisitId
 - CreatedByClinicianId
 - IntakeSubjective
-- ConsultationSubjectiveDraft
-- FinalSubjective
-- ObjectiveText
-- AssessmentDraft
-- PlanDraft
-- FinalApprovedSoapNote
-- ApprovalStatus
-- ApprovedAt
+- Subjective
+- Objective
+- Assessment
+- Plan
+- Status
+- FinalizedAt
 
 **Relationships**
 - belongs to Visit
 - created by Clinician
-- approved by Clinician
-- has many ClinicalSuggestions
 - has many ConsultationTranscripts
+
+**Implementation notes**
+- `IntakeSubjective` stores the handoff baseline from `SymptomIntake.SubjectiveSummary`.
+- `Subjective`, `Objective`, `Assessment`, and `Plan` are the evolving clinician-editable SOAP sections.
+- AI draft suggestions are currently generated at the application-service layer and returned to the client for clinician review rather than being stored as a dedicated entity.
 
 ---
 
@@ -453,29 +454,14 @@ Behavioral notes:
 - belongs to EncounterNote
 - captured by Clinician
 
----
-
-## 16. ClinicalSuggestion
-**Purpose:** AI-assisted suggestion linked to the encounter note for clinician review.
-
-**Key fields**
-- Id
-- EncounterNoteId
-- GeneratedFrom
-- SuggestionType
-- Title
-- ReasoningSummary
-- ConfidenceLabel
-- GuidelineReference
-- VisibleTo
-- GeneratedAt
-
-**Relationships**
-- belongs to EncounterNote
+**Implementation notes**
+- Current implementation supports typed transcript capture and browser-recorded microphone audio that is transcribed server-side after recording stops.
+- `InputMode` currently includes `typed` and `audio_upload`.
+- Externally-produced transcript text can also populate this same entity without changing the consultation note workflow.
 
 ---
 
-## 17. PatientCondition
+## 16. PatientCondition
 **Purpose:** Longitudinal patient condition/problem list.
 
 **Key fields**
@@ -500,7 +486,7 @@ Behavioral notes:
 
 ---
 
-## 18. Allergy
+## 17. Allergy
 **Purpose:** Longitudinal allergy history.
 
 **Key fields**
@@ -525,7 +511,7 @@ Behavioral notes:
 
 ---
 
-## 19. Medication
+## 18. Medication
 **Purpose:** Longitudinal medication history.
 
 **Key fields**
@@ -552,7 +538,7 @@ Behavioral notes:
 
 ---
 
-## 20. Referral
+## 19. Referral
 **Purpose:** Referral created from a visit to another facility.
 
 **Key fields**
@@ -573,7 +559,7 @@ Behavioral notes:
 
 ---
 
-## 21. MedicalReport (Deferred)
+## 20. MedicalReport (Deferred)
 **Purpose:** Uploaded report linked to a visit.
 
 **Status**
@@ -582,7 +568,7 @@ Behavioral notes:
 
 ---
 
-## 22. PatientAccessGrant
+## 21. PatientAccessGrant
 **Purpose:** Defines whether a clinician currently has explicit access to a patient's detailed clinical record.
 
 **Key fields**
@@ -612,7 +598,7 @@ Behavioral notes:
 
 ---
 
-## 23. PatientAccessAudit
+## 22. PatientAccessAudit
 **Purpose:** Audit trail for detailed patient data access.
 
 **Key fields**

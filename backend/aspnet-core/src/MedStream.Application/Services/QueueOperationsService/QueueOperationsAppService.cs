@@ -1,4 +1,3 @@
-using Abp.Application.Services.Dto;
 using Abp.Authorization;
 using Abp.Authorization.Users;
 using Abp.Domain.Repositories;
@@ -58,6 +57,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
     private readonly IRepository<TriageAssessment, long> _triageAssessmentRepository;
     private readonly IRepository<SymptomIntake, long> _symptomIntakeRepository;
     private readonly IRepository<Visit, long> _visitRepository;
+    private readonly IRepository<EncounterNote, long> _encounterNoteRepository;
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
     private readonly IConfiguration _configuration;
@@ -69,6 +69,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         IRepository<TriageAssessment, long> triageAssessmentRepository,
         IRepository<SymptomIntake, long> symptomIntakeRepository,
         IRepository<Visit, long> visitRepository,
+        IRepository<EncounterNote, long> encounterNoteRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
         IQueueRealtimeNotifier queueRealtimeNotifier,
@@ -79,6 +80,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         _triageAssessmentRepository = triageAssessmentRepository;
         _symptomIntakeRepository = symptomIntakeRepository;
         _visitRepository = visitRepository;
+        _encounterNoteRepository = encounterNoteRepository;
         _userRepository = userRepository;
         _userManager = userManager;
         _configuration = configuration;
@@ -86,7 +88,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
     }
 
     /// <inheritdoc />
-    public async Task<PagedResultDto<ClinicianQueueItemDto>> GetClinicianQueue(GetClinicianQueueInput input)
+    public async Task<ClinicianQueueDashboardDto> GetClinicianQueue(GetClinicianQueueInput input)
     {
         var clinician = await EnsureCurrentClinicianAsync();
         var tenantId = AbpSession.TenantId ?? 1;
@@ -170,7 +172,50 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
             IsActive = item.IsActive
         }).ToList();
 
-        return new PagedResultDto<ClinicianQueueItemDto>(totalCount, outputRows);
+        var startOfTodayUtc = nowUtc.Date;
+        var summaryRows = await (
+            from queueTicket in _queueTicketRepository.GetAll()
+            join triageAssessment in _triageAssessmentRepository.GetAll() on queueTicket.TriageAssessmentId equals triageAssessment.Id
+            where queueTicket.TenantId == tenantId &&
+                  queueTicket.FacilityId == facilityId &&
+                  !queueTicket.IsDeleted
+            select new
+            {
+                queueTicket.QueueStatus,
+                queueTicket.IsActive,
+                queueTicket.EnteredQueueAt,
+                queueTicket.CompletedAt,
+                triageAssessment.UrgencyLevel,
+            }).ToListAsync();
+
+        var waitingRows = summaryRows
+            .Where(item => item.IsActive && string.Equals(item.QueueStatus, PatientIntakeConstants.QueueStatusWaiting, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return new ClinicianQueueDashboardDto
+        {
+            TotalCount = totalCount,
+            Items = outputRows,
+            Summary = new ClinicianQueueSummaryDto
+            {
+                WaitingCount = waitingRows.Count,
+                AverageWaitingMinutes = waitingRows.Count == 0
+                    ? 0
+                    : (int)Math.Round(waitingRows.Average(item => Math.Max(0, (nowUtc - item.EnteredQueueAt).TotalMinutes))),
+                UrgentCount = summaryRows.Count(item =>
+                    item.IsActive &&
+                    string.Equals(item.UrgencyLevel, "Urgent", StringComparison.OrdinalIgnoreCase)),
+                SeenTodayCount = summaryRows.Count(item =>
+                    item.CompletedAt.HasValue &&
+                    item.CompletedAt.Value >= startOfTodayUtc),
+                CalledCount = summaryRows.Count(item =>
+                    item.IsActive &&
+                    string.Equals(item.QueueStatus, PatientIntakeConstants.QueueStatusCalled, StringComparison.OrdinalIgnoreCase)),
+                InConsultationCount = summaryRows.Count(item =>
+                    item.IsActive &&
+                    string.Equals(item.QueueStatus, PatientIntakeConstants.QueueStatusInConsultation, StringComparison.OrdinalIgnoreCase))
+            }
+        };
     }
 
     /// <inheritdoc />
@@ -322,6 +367,23 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         });
 
         var visit = await _visitRepository.GetAsync(queueTicket.VisitId);
+        if (string.Equals(normalizedNewStatus, PatientIntakeConstants.QueueStatusCompleted, StringComparison.OrdinalIgnoreCase))
+        {
+            var encounterNote = await _encounterNoteRepository.FirstOrDefaultAsync(item =>
+                item.TenantId == tenantId &&
+                item.VisitId == visit.Id &&
+                !item.IsDeleted);
+            if (encounterNote == null || !string.Equals(encounterNote.Status, PatientIntakeConstants.EncounterNoteStatusFinalized, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UserFriendlyException("Encounter note must be finalized before completing the visit.");
+            }
+        }
+
+        if (string.Equals(normalizedNewStatus, PatientIntakeConstants.QueueStatusInConsultation, StringComparison.OrdinalIgnoreCase))
+        {
+            visit.AssignedClinicianUserId ??= clinician.Id;
+        }
+
         visit.Status = GetVisitStatusForQueueStatus(normalizedNewStatus);
         await _visitRepository.UpdateAsync(visit);
 
@@ -491,11 +553,12 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         string triageExplanation,
         IReadOnlyList<string> reasoning)
     {
+        var followUpHighlights = BuildFollowUpHighlights(followUpAnswers);
         var fallbackSummary = BuildDeterministicClinicianSummary(
             chiefComplaint,
             selectedSymptoms,
             extractedPrimarySymptoms,
-            followUpAnswers,
+            followUpHighlights,
             urgencyLevel,
             triageExplanation,
             reasoning);
@@ -531,7 +594,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
                         chiefComplaint,
                         selectedSymptoms,
                         extractedPrimarySymptoms,
-                        followUpAnswers,
+                        followUpHighlights,
                         urgencyLevel,
                         triageExplanation,
                         reasoning
@@ -580,7 +643,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         string chiefComplaint,
         IReadOnlyList<string> selectedSymptoms,
         IReadOnlyList<string> extractedPrimarySymptoms,
-        IReadOnlyDictionary<string, object> followUpAnswers,
+        IReadOnlyList<string> followUpHighlights,
         string urgencyLevel,
         string triageExplanation,
         IReadOnlyList<string> reasoning)
@@ -597,14 +660,9 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
             summaryParts.Add($"Symptoms reported: {string.Join(", ", symptomSource)}.");
         }
 
-        var positiveAnswers = followUpAnswers
-            .Where(item => IsPositiveAnswer(item.Value))
-            .Select(item => $"{GetAnswerLabel(item.Key)}: {FormatAnswerValue(item.Value)}")
-            .Take(3)
-            .ToList();
-        if (positiveAnswers.Count > 0)
+        if (followUpHighlights.Count > 0)
         {
-            summaryParts.Add($"Key positives: {string.Join("; ", positiveAnswers)}.");
+            summaryParts.Add($"Key positives: {string.Join("; ", followUpHighlights.Take(3))}.");
         }
 
         if (!string.IsNullOrWhiteSpace(urgencyLevel))
@@ -622,6 +680,28 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         }
 
         return string.Join(" ", summaryParts.Where(item => !string.IsNullOrWhiteSpace(item))).Trim();
+    }
+
+    private static List<string> BuildFollowUpHighlights(IReadOnlyDictionary<string, object> followUpAnswers)
+    {
+        return followUpAnswers
+            .Where(item => IsPositiveAnswer(item.Value))
+            .Select(item => BuildReadableFollowUpHighlight(item.Key, item.Value))
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string BuildReadableFollowUpHighlight(string key, object answer)
+    {
+        var label = GetAnswerLabel(key);
+        if (answer is bool booleanValue)
+        {
+            return booleanValue ? label : string.Empty;
+        }
+
+        var formattedValue = FormatAnswerValue(answer);
+        return string.IsNullOrWhiteSpace(formattedValue) ? string.Empty : $"{label}: {formattedValue}";
     }
 
     private static List<string> BuildReasoningItems(string triageExplanation, string serializedRedFlags, IReadOnlyDictionary<string, object> followUpAnswers)
