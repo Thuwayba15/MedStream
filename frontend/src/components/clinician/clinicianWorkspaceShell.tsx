@@ -19,26 +19,23 @@ interface IClinicianWorkspaceShellProps {
 export const ClinicianWorkspaceShell = ({ activeKey, title, subtitle, extra, reviewQueueTicketId, children }: IClinicianWorkspaceShellProps): React.JSX.Element => {
     const { styles } = useClinicianWorkspaceShellStyles();
 
-    const tabs = useMemo(
-        () => {
-            const items: Array<{ key: TClinicianWorkspaceTabKey; label: string; href: string }> = [
-                { key: "queue", label: "Queue Dashboard", href: "/clinician" },
-                ...(reviewQueueTicketId ? [{ key: "review" as const, label: "Triage Review", href: `/clinician/review/${reviewQueueTicketId}` }] : []),
-                { key: "consultation", label: "Consultation", href: "/clinician/consultation" },
-                { key: "history", label: "Patient Timeline", href: "/clinician/history" },
-            ];
+    const tabs = useMemo(() => {
+        const items: Array<{ key: TClinicianWorkspaceTabKey; label: string; href: string }> = [
+            { key: "queue", label: "Queue Dashboard", href: "/clinician" },
+            ...(reviewQueueTicketId ? [{ key: "review" as const, label: "Triage Review", href: `/clinician/review/${reviewQueueTicketId}` }] : []),
+            { key: "consultation", label: "Consultation", href: "/clinician/consultation" },
+            { key: "history", label: "Patient Timeline", href: "/clinician/history" },
+        ];
 
-            return items.map((item) => ({
-                key: item.key,
-                label: (
-                    <Link href={item.href} className={styles.tabLink}>
-                        {item.label}
-                    </Link>
-                ),
-            }));
-        },
-        [reviewQueueTicketId, styles.tabLink]
-    );
+        return items.map((item) => ({
+            key: item.key,
+            label: (
+                <Link href={item.href} className={styles.tabLink}>
+                    {item.label}
+                </Link>
+            ),
+        }));
+    }, [reviewQueueTicketId, styles.tabLink]);
 
     return (
         <section className={styles.page}>

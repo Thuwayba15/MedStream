@@ -302,9 +302,7 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         border-radius: 28px;
         border: 1px solid rgba(224, 123, 42, 0.14);
         box-shadow: ${shadows.soft};
-        background:
-            radial-gradient(circle at top right, rgba(224, 123, 42, 0.08), transparent 30%),
-            ${colors.white};
+        background: radial-gradient(circle at top right, rgba(224, 123, 42, 0.08), transparent 30%), ${colors.white};
 
         .ant-tabs-nav {
             margin: 0 0 22px !important;

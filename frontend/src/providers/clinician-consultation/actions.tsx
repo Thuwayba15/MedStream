@@ -1,14 +1,7 @@
 import { createAction } from "redux-actions";
 import type { IClinicianConsultationStateContext } from "./context";
 import type { IClinicianQueueReview, IUpdateQueueStatusResponse } from "@/services/queue-operations/types";
-import type {
-    IConsultationAiDraft,
-    IConsultationInbox,
-    IConsultationTranscript,
-    IConsultationVitalSigns,
-    IConsultationWorkspace,
-    IEncounterNote,
-} from "@/services/consultation/types";
+import type { IConsultationAiDraft, IConsultationInbox, IConsultationWorkspace } from "@/services/consultation/types";
 
 export enum ClinicianConsultationActionEnums {
     loadInboxStarted = "CLINICIAN_CONSULTATION_LOAD_INBOX_STARTED",
@@ -95,15 +88,12 @@ export const saveDraftStarted = createAction<IClinicianConsultationStatePayload>
     successMessage: undefined,
 }));
 
-export const saveDraftSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace, string>(
-    ClinicianConsultationActionEnums.saveDraftSucceeded,
-    (workspace, message) => ({
-        workspace,
-        isSavingDraft: false,
-        successMessage: message,
-        errorMessage: undefined,
-    })
-);
+export const saveDraftSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace, string>(ClinicianConsultationActionEnums.saveDraftSucceeded, (workspace, message) => ({
+    workspace,
+    isSavingDraft: false,
+    successMessage: message,
+    errorMessage: undefined,
+}));
 
 export const saveDraftFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.saveDraftFailed, (message) => ({
     isSavingDraft: false,
@@ -116,15 +106,12 @@ export const saveVitalsStarted = createAction<IClinicianConsultationStatePayload
     successMessage: undefined,
 }));
 
-export const saveVitalsSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace>(
-    ClinicianConsultationActionEnums.saveVitalsSucceeded,
-    (workspace) => ({
-        workspace,
-        isSavingVitals: false,
-        successMessage: "Vitals updated for this consultation.",
-        errorMessage: undefined,
-    })
-);
+export const saveVitalsSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace>(ClinicianConsultationActionEnums.saveVitalsSucceeded, (workspace) => ({
+    workspace,
+    isSavingVitals: false,
+    successMessage: "Vitals updated for this consultation.",
+    errorMessage: undefined,
+}));
 
 export const saveVitalsFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.saveVitalsFailed, (message) => ({
     isSavingVitals: false,
@@ -137,23 +124,17 @@ export const attachTranscriptStarted = createAction<IClinicianConsultationStateP
     successMessage: undefined,
 }));
 
-export const attachTranscriptSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace>(
-    ClinicianConsultationActionEnums.attachTranscriptSucceeded,
-    (workspace) => ({
-        workspace,
-        isAttachingTranscript: false,
-        successMessage: "Consultation transcript attached.",
-        errorMessage: undefined,
-    })
-);
+export const attachTranscriptSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace>(ClinicianConsultationActionEnums.attachTranscriptSucceeded, (workspace) => ({
+    workspace,
+    isAttachingTranscript: false,
+    successMessage: "Consultation transcript attached.",
+    errorMessage: undefined,
+}));
 
-export const attachTranscriptFailed = createAction<IClinicianConsultationStatePayload, string>(
-    ClinicianConsultationActionEnums.attachTranscriptFailed,
-    (message) => ({
-        isAttachingTranscript: false,
-        errorMessage: message,
-    })
-);
+export const attachTranscriptFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.attachTranscriptFailed, (message) => ({
+    isAttachingTranscript: false,
+    errorMessage: message,
+}));
 
 export const generateSubjectiveStarted = createAction<IClinicianConsultationStatePayload>(ClinicianConsultationActionEnums.generateSubjectiveStarted, () => ({
     isGeneratingSubjective: true,
@@ -161,23 +142,17 @@ export const generateSubjectiveStarted = createAction<IClinicianConsultationStat
     successMessage: undefined,
 }));
 
-export const generateSubjectiveSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationAiDraft>(
-    ClinicianConsultationActionEnums.generateSubjectiveSucceeded,
-    (subjectiveDraft) => ({
-        subjectiveDraft,
-        isGeneratingSubjective: false,
-        successMessage: "Updated subjective draft is ready for review.",
-        errorMessage: undefined,
-    })
-);
+export const generateSubjectiveSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationAiDraft>(ClinicianConsultationActionEnums.generateSubjectiveSucceeded, (subjectiveDraft) => ({
+    subjectiveDraft,
+    isGeneratingSubjective: false,
+    successMessage: "Updated subjective draft is ready for review.",
+    errorMessage: undefined,
+}));
 
-export const generateSubjectiveFailed = createAction<IClinicianConsultationStatePayload, string>(
-    ClinicianConsultationActionEnums.generateSubjectiveFailed,
-    (message) => ({
-        isGeneratingSubjective: false,
-        errorMessage: message,
-    })
-);
+export const generateSubjectiveFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.generateSubjectiveFailed, (message) => ({
+    isGeneratingSubjective: false,
+    errorMessage: message,
+}));
 
 export const generateAssessmentPlanStarted = createAction<IClinicianConsultationStatePayload>(ClinicianConsultationActionEnums.generateAssessmentPlanStarted, () => ({
     isGeneratingAssessmentPlan: true,
@@ -195,13 +170,10 @@ export const generateAssessmentPlanSucceeded = createAction<IClinicianConsultati
     })
 );
 
-export const generateAssessmentPlanFailed = createAction<IClinicianConsultationStatePayload, string>(
-    ClinicianConsultationActionEnums.generateAssessmentPlanFailed,
-    (message) => ({
-        isGeneratingAssessmentPlan: false,
-        errorMessage: message,
-    })
-);
+export const generateAssessmentPlanFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.generateAssessmentPlanFailed, (message) => ({
+    isGeneratingAssessmentPlan: false,
+    errorMessage: message,
+}));
 
 export const finalizeStarted = createAction<IClinicianConsultationStatePayload>(ClinicianConsultationActionEnums.finalizeStarted, () => ({
     isFinalizing: true,
@@ -209,15 +181,12 @@ export const finalizeStarted = createAction<IClinicianConsultationStatePayload>(
     successMessage: undefined,
 }));
 
-export const finalizeSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace>(
-    ClinicianConsultationActionEnums.finalizeSucceeded,
-    (workspace) => ({
-        workspace,
-        isFinalizing: false,
-        successMessage: "SOAP note finalized.",
-        errorMessage: undefined,
-    })
-);
+export const finalizeSucceeded = createAction<IClinicianConsultationStatePayload, IConsultationWorkspace>(ClinicianConsultationActionEnums.finalizeSucceeded, (workspace) => ({
+    workspace,
+    isFinalizing: false,
+    successMessage: "SOAP note finalized.",
+    errorMessage: undefined,
+}));
 
 export const finalizeFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.finalizeFailed, (message) => ({
     isFinalizing: false,

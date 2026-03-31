@@ -123,14 +123,7 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
     useEffect(() => {
         const unsubscribe = subscribeToQueueRealtime(() => {
             const currentState = stateRef.current;
-            void loadQueueByFilters(
-                currentState.searchText,
-                currentState.queueStatusFilter,
-                currentState.urgencyTabFilter,
-                currentState.page,
-                currentState.pageSize,
-                "refresh"
-            );
+            void loadQueueByFilters(currentState.searchText, currentState.queueStatusFilter, currentState.urgencyTabFilter, currentState.page, currentState.pageSize, "refresh");
         });
 
         return unsubscribe;
