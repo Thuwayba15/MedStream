@@ -22,6 +22,58 @@ test.describe("clinician queue dashboard", () => {
     test("loads queue rows, opens review, and transitions status", async ({ context, page }) => {
         const requestUrls: string[] = [];
         let queueStatus: "waiting" | "called" | "in_consultation" = "waiting";
+        let transcriptAttached = false;
+
+        await page.addInitScript(() => {
+            class MockMediaRecorder {
+                public static isTypeSupported(): boolean {
+                    return true;
+                }
+
+                public mimeType: string;
+
+                public state: "inactive" | "recording" = "inactive";
+
+                public ondataavailable: ((event: BlobEvent) => void) | null = null;
+
+                public onstop: (() => void) | null = null;
+
+                public onerror: (() => void) | null = null;
+
+                public stream: MediaStream;
+
+                public constructor(stream: MediaStream, options?: MediaRecorderOptions) {
+                    this.stream = stream;
+                    this.mimeType = options?.mimeType || "audio/webm";
+                }
+
+                public start(): void {
+                    this.state = "recording";
+                    window.setTimeout(() => {
+                        this.ondataavailable?.({ data: new Blob(["mock consultation audio"], { type: this.mimeType }) } as BlobEvent);
+                    }, 0);
+                }
+
+                public stop(): void {
+                    this.state = "inactive";
+                    this.onstop?.();
+                }
+            }
+
+            Object.defineProperty(window, "MediaRecorder", {
+                writable: true,
+                value: MockMediaRecorder,
+            });
+
+            Object.defineProperty(navigator, "mediaDevices", {
+                writable: true,
+                value: {
+                    getUserMedia: async () => ({
+                        getTracks: () => [{ stop: () => undefined }],
+                    }),
+                },
+            });
+        });
 
         await page.route("**/api/clinician/queue**", async (route) => {
             requestUrls.push(route.request().url());
@@ -170,7 +222,36 @@ test.describe("clinician queue dashboard", () => {
                         isLatest: true,
                         recordedAt: new Date().toISOString(),
                     },
-                    transcripts: [],
+                    transcripts: transcriptAttached
+                        ? [
+                              {
+                                  id: 71,
+                                  encounterNoteId: 77,
+                                  inputMode: "audio_upload",
+                                  rawTranscriptText: "Patient reports chest pain easing after rest and ongoing nausea.",
+                                  translatedTranscriptText: null,
+                                  languageDetected: "en",
+                                  capturedAt: new Date().toISOString(),
+                              },
+                          ]
+                        : [],
+                }),
+            });
+        });
+
+        await page.route("**/api/clinician/consultation/transcript", async (route) => {
+            transcriptAttached = true;
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    id: 71,
+                    encounterNoteId: 77,
+                    inputMode: "audio_upload",
+                    rawTranscriptText: "Patient reports chest pain easing after rest and ongoing nausea.",
+                    translatedTranscriptText: null,
+                    languageDetected: "en",
+                    capturedAt: new Date().toISOString(),
                 }),
             });
         });
@@ -189,17 +270,26 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByText("Nomsa Dlamini")).toHaveCount(0);
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
 
-        await page.getByRole("link", { name: "Review" }).first().click();
+        await page.getByRole("button", { name: "Review" }).first().click();
         await expect(page).toHaveURL(/\/clinician\/review\/901$/);
         await expect(page.getByRole("heading", { name: "Triage Review" })).toBeVisible();
         await expect(page.getByText("Thabo Molefe", { exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Start Consultation" })).toBeVisible();
 
-        await page.getByRole("button", { name: "Start Consultation" }).click();
+        await Promise.all([
+            page.waitForResponse((response) => response.url().includes("/api/clinician/queue/901/status") && response.status() === 200),
+            page.getByRole("button", { name: "Start Consultation" }).click(),
+        ]);
+        await page.goto("/clinician/consultation?visitId=3001&queueTicketId=901", { waitUntil: "domcontentloaded" });
         await expect(page).toHaveURL(/\/clinician\/consultation\?visitId=3001&queueTicketId=901/);
         await expect(page.getByRole("heading", { name: "Consultation: Thabo Molefe" })).toBeVisible();
         await expect(page.getByText("AI handoff summary")).toBeVisible();
         await expect(page.getByRole("tab", { name: "objective" })).toBeVisible();
+        await page.getByTestId("consultation-start-recording").click();
+        await expect(page.getByTestId("consultation-stop-recording")).toBeEnabled();
+        await page.getByTestId("consultation-stop-recording").click();
+        await expect(page.getByText("1 transcript entries attached")).toBeVisible();
+        await expect(page.getByPlaceholder("Paste or type the consultation transcript here.")).toHaveValue("Patient reports chest pain easing after rest and ongoing nausea.");
         await page.getByRole("tab", { name: "objective" }).click();
         await expect(page.getByText("Blood pressure")).toBeVisible();
 
@@ -238,7 +328,7 @@ test.describe("clinician queue dashboard", () => {
 
         await page.goto("/clinician/consultation", { waitUntil: "domcontentloaded" });
 
-        await expect(page.getByRole("heading", { name: "Today's consultations" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: /today's consultations/i })).toBeVisible();
         await expect(page.getByText("Patient Two")).toBeVisible();
         await expect(page.getByText("Symptoms reported: Cough, Fever")).toBeVisible();
         await expect(page.getByText("Have you had a fever?", { exact: false })).toBeVisible();
