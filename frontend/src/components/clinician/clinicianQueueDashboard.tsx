@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { ClockCircleOutlined, EyeOutlined, ReloadOutlined, WarningOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Empty, Input, Segmented, Skeleton, Space, Statistic, Tag, Typography } from "antd";
+import { Alert, Button, Card, Empty, Input, Pagination, Segmented, Skeleton, Space, Statistic, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useClinicianQueueActions, useClinicianQueueState } from "@/providers/clinician-queue";
@@ -70,51 +70,37 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
     const actions = useClinicianQueueActions();
 
     const summaryCards = useMemo<ISummaryCard[]>(() => {
-        const waitingItems = state.items.filter((item) => item.queueStatus === "waiting");
-        const urgentCount = state.items.filter((item) => item.urgencyLevel === "Urgent" && item.isActive).length;
-        const completedToday = state.items.filter((item) => item.queueStatus === "completed").length;
-        const averageWaitingMinutes = waitingItems.length === 0 ? 0 : Math.round(waitingItems.reduce((sum, item) => sum + item.waitingMinutes, 0) / waitingItems.length);
-
         return [
             {
                 title: "Patients Waiting",
-                value: waitingItems.length,
+                value: state.summary.waitingCount,
                 hint: "In the queue now",
                 tone: "neutral",
             },
             {
                 title: "Average Wait",
-                value: averageWaitingMinutes,
+                value: state.summary.averageWaitingMinutes,
                 suffix: "m",
-                hint: "Across all visible cases",
+                hint: "Across waiting patients",
                 tone: "warning",
             },
             {
                 title: "Urgent Cases",
-                value: urgentCount,
+                value: state.summary.urgentCount,
                 hint: "Needs immediate attention",
                 tone: "danger",
             },
             {
                 title: "Seen Today",
-                value: completedToday,
+                value: state.summary.seenTodayCount,
                 hint: "Consultations completed",
                 tone: "success",
             },
         ];
-    }, [state.items]);
+    }, [state.summary]);
 
     return (
         <section className={styles.queuePage}>
-            <header className={styles.pageHeader}>
-                <div>
-                    <Typography.Title level={1} className={styles.pageTitle}>
-                        Queue Dashboard
-                    </Typography.Title>
-                </div>
-                <Tag className={styles.liveTag}>Live - Auto-updating</Tag>
-            </header>
-
             {state.errorMessage ? (
                 <Alert
                     type="error"
@@ -150,9 +136,7 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                     <Button type="primary" className={styles.refreshButton} icon={<ReloadOutlined />} loading={state.isRefreshing} onClick={() => void actions.loadQueue("refresh")}>
                         Refresh
                     </Button>
-                </div>
-                <div className={styles.filterBottomRow}>
-                    <Space size={8} wrap>
+                    <Space size={8} wrap className={styles.filterGroup}>
                         <Typography.Text className={styles.filterLabel}>Status</Typography.Text>
                         <Segmented
                             data-testid="queue-status-filter"
@@ -166,7 +150,7 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                             onChange={(value) => actions.setQueueStatusFilter(value as "all" | "waiting" | "called" | "in_consultation")}
                         />
                     </Space>
-                    <Space size={8} wrap>
+                    <Space size={8} wrap className={styles.filterGroup}>
                         <Typography.Text className={styles.filterLabel}>Urgency</Typography.Text>
                         <Segmented
                             data-testid="queue-urgency-filter"
@@ -203,11 +187,23 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                         <Empty description="No queue entries match current filters." />
                     </Card>
                 ) : (
-                    <div className={styles.queueList}>
-                        {state.items.map((item) => (
-                            <QueueRow key={item.queueTicketId} item={item} />
-                        ))}
-                    </div>
+                    <>
+                        <div className={styles.queueList}>
+                            {state.items.map((item) => (
+                                <QueueRow key={item.queueTicketId} item={item} />
+                            ))}
+                        </div>
+                        <div className={styles.paginationRow}>
+                            <Pagination
+                                current={state.page}
+                                pageSize={state.pageSize}
+                                total={state.totalCount}
+                                showSizeChanger
+                                pageSizeOptions={["8", "12", "20"]}
+                                onChange={(page, pageSize) => actions.setPage(page, pageSize)}
+                            />
+                        </div>
+                    </>
                 )}
             </section>
         </section>

@@ -1,5 +1,5 @@
 import { ClinicianTriageReviewPage } from "@/components/clinician/clinicianTriageReviewPage";
-import { clinicianNavigationItems } from "@/components/clinician/navigation";
+import { ClinicianWorkspaceShell } from "@/components/clinician/clinicianWorkspaceShell";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 import { ClinicianQueueReviewProvider } from "@/providers/clinician-queue-review";
 
@@ -14,9 +14,16 @@ const ClinicianReviewPage = async ({ params }: IClinicianReviewPageProps): Promi
     const parsedQueueTicketId = Number(queueTicketId);
 
     return (
-        <RoleAppShell roleLabel="Clinician" activeKey="clinician-queue-dashboard" items={clinicianNavigationItems}>
+        <RoleAppShell roleLabel="Clinician" items={[]}>
             <ClinicianQueueReviewProvider>
-                <ClinicianTriageReviewPage queueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : 0} />
+                <ClinicianWorkspaceShell
+                    activeKey="review"
+                    reviewQueueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : 0}
+                    title="Clinician Workspace"
+                    subtitle="Review triage reasoning, then move directly into the consultation note."
+                >
+                    <ClinicianTriageReviewPage queueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : 0} />
+                </ClinicianWorkspaceShell>
             </ClinicianQueueReviewProvider>
         </RoleAppShell>
     );

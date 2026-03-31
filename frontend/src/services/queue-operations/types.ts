@@ -20,6 +20,16 @@ export interface IClinicianQueueItem {
 export interface IClinicianQueueResponse {
     totalCount: number;
     items: IClinicianQueueItem[];
+    summary: IClinicianQueueSummary;
+}
+
+export interface IClinicianQueueSummary {
+    waitingCount: number;
+    averageWaitingMinutes: number;
+    urgentCount: number;
+    seenTodayCount: number;
+    calledCount: number;
+    inConsultationCount: number;
 }
 
 export interface IGetClinicianQueueRequest {

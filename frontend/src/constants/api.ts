@@ -71,6 +71,30 @@ export const API = {
     /** ABP clinician queue urgency-override endpoint. */
     QUEUE_OPERATIONS_OVERRIDE_QUEUE_URGENCY_ENDPOINT: "/api/services/app/QueueOperations/OverrideQueueTicketUrgency",
 
+    /** ABP consultation workspace endpoint. */
+    CONSULTATION_GET_WORKSPACE_ENDPOINT: "/api/services/app/Consultation/GetConsultationWorkspace",
+
+    /** ABP consultation inbox endpoint. */
+    CONSULTATION_GET_INBOX_ENDPOINT: "/api/services/app/Consultation/GetConsultationInbox",
+
+    /** ABP consultation vitals save endpoint. */
+    CONSULTATION_SAVE_VITALS_ENDPOINT: "/api/services/app/Consultation/SaveVitals",
+
+    /** ABP consultation note draft save endpoint. */
+    CONSULTATION_SAVE_NOTE_DRAFT_ENDPOINT: "/api/services/app/Consultation/SaveEncounterNoteDraft",
+
+    /** ABP consultation transcript attach endpoint. */
+    CONSULTATION_ATTACH_TRANSCRIPT_ENDPOINT: "/api/services/app/Consultation/AttachConsultationTranscript",
+
+    /** ABP consultation subjective draft endpoint. */
+    CONSULTATION_GENERATE_SUBJECTIVE_ENDPOINT: "/api/services/app/Consultation/GenerateSubjectiveDraft",
+
+    /** ABP consultation assessment/plan draft endpoint. */
+    CONSULTATION_GENERATE_ASSESSMENT_PLAN_ENDPOINT: "/api/services/app/Consultation/GenerateAssessmentPlanDraft",
+
+    /** ABP consultation finalize endpoint. */
+    CONSULTATION_FINALIZE_NOTE_ENDPOINT: "/api/services/app/Consultation/FinalizeEncounterNote",
+
     /** Internal Next route for auth login. */
     AUTH_LOGIN_ROUTE: "/api/auth/login",
 
@@ -133,6 +157,27 @@ export const API = {
 
     /** Internal Next route prefix for clinician queue ticket details/status. */
     CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX: "/api/clinician/queue",
+
+    /** Internal Next route for clinician consultation workspace data. */
+    CLINICIAN_CONSULTATION_ROUTE: "/api/clinician/consultation",
+
+    /** Internal Next route for clinician consultation vitals saves. */
+    CLINICIAN_CONSULTATION_VITALS_ROUTE: "/api/clinician/consultation/vitals",
+
+    /** Internal Next route for clinician consultation note draft saves. */
+    CLINICIAN_CONSULTATION_NOTE_ROUTE: "/api/clinician/consultation/note",
+
+    /** Internal Next route for clinician consultation transcript attachment. */
+    CLINICIAN_CONSULTATION_TRANSCRIPT_ROUTE: "/api/clinician/consultation/transcript",
+
+    /** Internal Next route for clinician consultation subjective draft generation. */
+    CLINICIAN_CONSULTATION_SUBJECTIVE_DRAFT_ROUTE: "/api/clinician/consultation/drafts/subjective",
+
+    /** Internal Next route for clinician consultation assessment/plan draft generation. */
+    CLINICIAN_CONSULTATION_ASSESSMENT_PLAN_DRAFT_ROUTE: "/api/clinician/consultation/drafts/assessment-plan",
+
+    /** Internal Next route for clinician consultation note finalization. */
+    CLINICIAN_CONSULTATION_FINALIZE_ROUTE: "/api/clinician/consultation/finalize",
 
     /** Backend SignalR hub path for queue realtime updates. */
     QUEUE_SIGNALR_HUB_PATH: "/signalr/queue",

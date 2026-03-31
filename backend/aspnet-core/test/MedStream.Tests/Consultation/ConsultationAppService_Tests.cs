@@ -145,6 +145,78 @@ public class ConsultationAppService_Tests : MedStreamTestBase
     }
 
     [Fact]
+    public async Task GenerateAssessmentPlanDraft_Should_Return_Readable_Assessment()
+    {
+        var scenario = await PrepareConsultationScenarioAsync();
+
+        await _consultationAppService.SaveVitals(new SaveVitalsInput
+        {
+            VisitId = scenario.VisitId,
+            Phase = PatientIntakeConstants.VitalSignsPhaseConsultation,
+            HeartRate = 120,
+            RespiratoryRate = 22,
+            TemperatureCelsius = 38.0m,
+            OxygenSaturation = 94
+        });
+
+        await _consultationAppService.SaveEncounterNoteDraft(new SaveEncounterNoteDraftInput
+        {
+            VisitId = scenario.VisitId,
+            Objective = "Bruise visible on chest."
+        });
+
+        var draft = await _consultationAppService.GenerateAssessmentPlanDraft(new GenerateConsultationDraftInput
+        {
+            VisitId = scenario.VisitId
+        });
+
+        draft.Assessment.ShouldNotBeNullOrWhiteSpace();
+        draft.Assessment.ShouldContain("Bruise visible on chest");
+        draft.Assessment.ShouldNotContain("urgentSevereBreathing");
+        draft.Assessment.ShouldNotContain("Follow-up answers:");
+        draft.Assessment.ShouldContain("1. Clinical impression");
+        draft.Assessment.ShouldContain("\n");
+        draft.Plan.ShouldContain("1. Immediate next steps");
+    }
+
+    [Fact]
+    public async Task GenerateAssessmentPlanDraft_Should_Interpret_Vitals_And_Produce_Actionable_Plan()
+    {
+        var scenario = await PrepareConsultationScenarioAsync();
+
+        await _consultationAppService.SaveVitals(new SaveVitalsInput
+        {
+            VisitId = scenario.VisitId,
+            Phase = PatientIntakeConstants.VitalSignsPhaseConsultation,
+            BloodPressureSystolic = 100,
+            BloodPressureDiastolic = 60,
+            HeartRate = 100,
+            RespiratoryRate = 22,
+            TemperatureCelsius = 37.0m,
+            OxygenSaturation = 98,
+            BloodGlucose = 2.8m,
+            WeightKg = 80m
+        });
+
+        await _consultationAppService.SaveEncounterNoteDraft(new SaveEncounterNoteDraftInput
+        {
+            VisitId = scenario.VisitId,
+            Subjective = "Symptoms reported: Dizziness, Fatigue.\nKey details: Type of dizziness: spinning. Symptom onset: yesterday.",
+            Objective = "Patient alert and oriented. No focal neurological deficit documented on this exam."
+        });
+
+        var draft = await _consultationAppService.GenerateAssessmentPlanDraft(new GenerateConsultationDraftInput
+        {
+            VisitId = scenario.VisitId
+        });
+
+        draft.Assessment.ShouldContain("low blood pressure", Case.Insensitive);
+        draft.Assessment.ShouldContain("tachycardia", Case.Insensitive);
+        draft.Plan.ShouldContain("repeat the glucose measurement promptly", Case.Insensitive);
+        draft.Plan.ShouldContain("recheck blood pressure", Case.Insensitive);
+    }
+
+    [Fact]
     public async Task UpdateQueueTicketStatus_Should_Require_Finalized_Note_Before_Completion()
     {
         var scenario = await PrepareConsultationScenarioAsync();

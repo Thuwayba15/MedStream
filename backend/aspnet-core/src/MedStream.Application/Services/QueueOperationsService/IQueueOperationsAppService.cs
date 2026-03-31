@@ -1,5 +1,4 @@
 using Abp.Application.Services;
-using Abp.Application.Services.Dto;
 using MedStream.QueueOperations.Dto;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ public interface IQueueOperationsAppService : IApplicationService
     /// <summary>
     /// Returns prioritized queue rows for the current clinician facility.
     /// </summary>
-    Task<PagedResultDto<ClinicianQueueItemDto>> GetClinicianQueue(GetClinicianQueueInput input);
+    Task<ClinicianQueueDashboardDto> GetClinicianQueue(GetClinicianQueueInput input);
 
     /// <summary>
     /// Returns detailed queue + triage + intake context for clinician review.

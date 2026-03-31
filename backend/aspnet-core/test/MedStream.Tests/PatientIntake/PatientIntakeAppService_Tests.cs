@@ -177,7 +177,8 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
             intake.FollowUpAnswersJson.ShouldNotBeNullOrWhiteSpace();
             intake.SubjectiveSummary.ShouldNotBeNullOrWhiteSpace();
             intake.SubjectiveSummary.ShouldContain("Chief complaint");
-            intake.SubjectiveSummary.ShouldContain("Follow-up answers");
+            intake.SubjectiveSummary.ShouldContain("Key details");
+            intake.SubjectiveSummary.ShouldNotContain("urgentSevereBreathing");
 
             var queueTicket = await context.Set<QueueTicket>().FirstOrDefaultAsync(item => item.VisitId == checkIn.VisitId && item.IsActive);
             queueTicket.ShouldNotBeNull();
@@ -190,6 +191,49 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
 
             var visit = await context.Set<Visit>().FirstAsync(item => item.Id == checkIn.VisitId);
             visit.Status.ShouldBe(PatientIntakeConstants.VisitStatusQueued);
+        });
+    }
+
+    [Fact]
+    public async Task AssessTriage_Should_Format_General_Complaint_Summary_Readably()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await _patientIntakeAppService.CheckIn();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "Dizziness and fatigue",
+            SelectedSymptoms = new List<string> { "Dizziness", "Fatigue" }
+        });
+
+        await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "Dizziness and fatigue",
+            SelectedSymptoms = new List<string> { "Dizziness", "Fatigue" },
+            ExtractedPrimarySymptoms = new List<string> { "Dizziness", "Fatigue" },
+            Answers = new Dictionary<string, object>
+            {
+                { "Please describe your main concern in one sentence.", "Dizziness and fatigue" },
+                { "Select any danger signs now.", new List<object>() },
+                { "fainting", true },
+                { "DizzinessType", "spinning" },
+                { "SymptomOnset", "yesterday" }
+            }
+        });
+
+        await UsingDbContextAsync(async context =>
+        {
+            var intake = await context.Set<SymptomIntake>().FirstOrDefaultAsync(item => item.VisitId == checkIn.VisitId);
+            intake.ShouldNotBeNull();
+            intake.SubjectiveSummary.ShouldNotBeNullOrWhiteSpace();
+            intake.SubjectiveSummary.ShouldContain("Symptoms reported: Dizziness, Fatigue");
+            intake.SubjectiveSummary.ShouldContain("Main concern: Dizziness and fatigue.");
+            intake.SubjectiveSummary.ShouldContain("Fainting.");
+            intake.SubjectiveSummary.ShouldContain("Type of dizziness: spinning.");
+            intake.SubjectiveSummary.ShouldContain("Symptom onset: yesterday.");
+            intake.SubjectiveSummary.ShouldNotContain("[]");
+            intake.SubjectiveSummary.ShouldNotContain("Extracted primary symptoms");
         });
     }
 

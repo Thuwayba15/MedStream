@@ -133,6 +133,8 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
         review.ChiefComplaint.ShouldNotBeNullOrWhiteSpace();
         review.Reasoning.Count.ShouldBeGreaterThan(0);
         review.ClinicianSummary.ShouldNotBeNullOrWhiteSpace();
+        review.ClinicianSummary.ShouldNotContain("urgentSevereBreathing");
+        review.ClinicianSummary.ShouldContain("Severe difficulty breathing reported");
         review.ConsultationPath.ShouldContain("/clinician/consultation");
         review.PatientHistoryPath.ShouldContain("/clinician/history");
     }

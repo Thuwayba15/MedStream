@@ -28,6 +28,10 @@ export const clinicianQueueReducer = handleActions<IClinicianQueueStateContext, 
             ...state,
             ...action.payload,
         }),
+        [ClinicianQueueActionEnums.setPage]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
         [ClinicianQueueActionEnums.clearError]: (state, action) => ({
             ...state,
             ...action.payload,

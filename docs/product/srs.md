@@ -259,8 +259,10 @@ F6.3 Clinician Queue Visibility
 3.3 Queue view must support status filter, urgency filter, and patient/queue-number search
 3.4 Live queue dashboard must show active queue tickets only; completed and cancelled tickets must leave active queue view
  3.4.1 Queue dashboard updates must be pushed via websocket/SignalR events rather than interval polling
- 3.5 Clinician triage review must show clinician-friendly reasoning and a readable intake summary; internal rule ids or raw intake payload keys must not be shown directly in the UI
- 3.6 If AI summarization is available, clinician review may use it to generate a concise intake handoff summary, with deterministic fallback when AI is unavailable
+ 3.4.2 Queue dashboard may show live facility summary cards such as waiting count, average wait, urgent active count, and seen-today count
+ 3.4.3 Queue dashboard must support pagination for active queue rows
+3.5 Clinician triage review must show clinician-friendly reasoning and a readable intake summary; internal rule ids or raw intake payload keys must not be shown directly in the UI
+3.6 If AI summarization is available, clinician review may use it to generate a concise intake handoff summary, with deterministic fallback when AI is unavailable
 
 F6.4 Clinician Triage Review and Handoff
 4.1 Clinician must be able to open a queue ticket and view combined triage + intake context for that visit
@@ -300,6 +302,7 @@ Plan
 
 F8.2 Draft & Finalize
 2.1 Notes must support draft state
+ 2.1.1 Clinician consultation workspace must allow saved draft notes to be reopened later from a clinician-facing consultation list or inbox for the same day
  2.2 Notes must be finalized before completion
  2.3 Queue or visit completion must be blocked until the encounter note is finalized
 
