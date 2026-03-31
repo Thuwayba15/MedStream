@@ -10,7 +10,13 @@ export const GET = async (request: NextRequest): Promise<Response> => {
             return guardResult.errorResponse ?? NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
         }
 
-        const visitId = Number(request.nextUrl.searchParams.get("visitId"));
+        const visitIdValue = request.nextUrl.searchParams.get("visitId");
+        if (!visitIdValue) {
+            const inbox = await consultationService.getConsultationInbox(guardResult.accessToken);
+            return NextResponse.json(inbox);
+        }
+
+        const visitId = Number(visitIdValue);
         const queueTicketIdValue = request.nextUrl.searchParams.get("queueTicketId");
         const queueTicketId = queueTicketIdValue ? Number(queueTicketIdValue) : undefined;
 

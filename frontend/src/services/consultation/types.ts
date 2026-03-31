@@ -74,6 +74,26 @@ export interface IConsultationWorkspace {
     transcripts: IConsultationTranscript[];
 }
 
+export interface IConsultationInboxItem {
+    visitId: number;
+    queueTicketId?: number | null;
+    patientUserId: number;
+    patientName: string;
+    chiefComplaint: string;
+    subjectiveSummary: string;
+    queueStatus: string;
+    urgencyLevel: string;
+    encounterNoteStatus: TConsultationNoteStatus;
+    visitDate: string;
+    finalizedAt?: string | null;
+    lastTranscriptAt?: string | null;
+    consultationPath: string;
+}
+
+export interface IConsultationInbox {
+    items: IConsultationInboxItem[];
+}
+
 export interface IGetConsultationWorkspaceRequest {
     visitId: number;
     queueTicketId?: number;
