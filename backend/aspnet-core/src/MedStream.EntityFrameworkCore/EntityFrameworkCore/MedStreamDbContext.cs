@@ -17,6 +17,9 @@ public class MedStreamDbContext : AbpZeroDbContext<Tenant, Role, User, MedStream
     public DbSet<TriageAssessment> TriageAssessments { get; set; }
     public DbSet<QueueTicket> QueueTickets { get; set; }
     public DbSet<QueueEvent> QueueEvents { get; set; }
+    public DbSet<EncounterNote> EncounterNotes { get; set; }
+    public DbSet<VitalSigns> VitalSignsRecords { get; set; }
+    public DbSet<ConsultationTranscript> ConsultationTranscripts { get; set; }
 
     public MedStreamDbContext(DbContextOptions<MedStreamDbContext> options)
         : base(options)
@@ -39,6 +42,7 @@ public class MedStreamDbContext : AbpZeroDbContext<Tenant, Role, User, MedStream
             entity.ToTable("Visits");
             entity.HasIndex(item => new { item.TenantId, item.PatientUserId, item.CreationTime });
             entity.HasIndex(item => new { item.TenantId, item.Status });
+            entity.HasIndex(item => new { item.TenantId, item.AssignedClinicianUserId, item.Status });
         });
 
         modelBuilder.Entity<SymptomIntake>(entity =>
@@ -88,6 +92,45 @@ public class MedStreamDbContext : AbpZeroDbContext<Tenant, Role, User, MedStream
             entity.HasOne<QueueTicket>()
                 .WithMany()
                 .HasForeignKey(item => item.QueueTicketId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EncounterNote>(entity =>
+        {
+            entity.ToTable("EncounterNotes");
+            entity.HasIndex(item => new { item.TenantId, item.VisitId })
+                .IsUnique();
+            entity.HasIndex(item => new { item.TenantId, item.CreatedByClinicianUserId, item.Status });
+            entity.HasOne<Visit>()
+                .WithMany()
+                .HasForeignKey(item => item.VisitId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<VitalSigns>(entity =>
+        {
+            entity.ToTable("VitalSigns");
+            entity.Property(item => item.TemperatureCelsius).HasPrecision(4, 1);
+            entity.Property(item => item.BloodGlucose).HasPrecision(6, 2);
+            entity.Property(item => item.WeightKg).HasPrecision(6, 2);
+            entity.HasIndex(item => new { item.TenantId, item.VisitId, item.RecordedAt });
+            entity.HasIndex(item => new { item.TenantId, item.VisitId, item.IsLatest })
+                .HasFilter("\"IsDeleted\" = false AND \"IsLatest\" = true")
+                .IsUnique();
+            entity.HasOne<Visit>()
+                .WithMany()
+                .HasForeignKey(item => item.VisitId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ConsultationTranscript>(entity =>
+        {
+            entity.ToTable("ConsultationTranscripts");
+            entity.HasIndex(item => new { item.TenantId, item.EncounterNoteId, item.CapturedAt });
+            entity.HasIndex(item => new { item.TenantId, item.CapturedByClinicianUserId, item.CapturedAt });
+            entity.HasOne<EncounterNote>()
+                .WithMany()
+                .HasForeignKey(item => item.EncounterNoteId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
