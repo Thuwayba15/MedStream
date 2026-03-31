@@ -67,6 +67,14 @@ test.describe("clinician queue dashboard", () => {
                 body: JSON.stringify({
                     totalCount: filteredItems.length,
                     items: filteredItems,
+                    summary: {
+                        waitingCount: allItems.filter((item) => item.queueStatus === "waiting").length,
+                        averageWaitingMinutes: 29,
+                        urgentCount: allItems.filter((item) => item.urgencyLevel === "Urgent").length,
+                        seenTodayCount: 4,
+                        calledCount: 0,
+                        inConsultationCount: 0,
+                    },
                 }),
             });
         });
@@ -172,7 +180,8 @@ test.describe("clinician queue dashboard", () => {
         await page.goto("/clinician", { waitUntil: "domcontentloaded" });
         await page.waitForResponse((response) => response.url().includes("/api/clinician/queue") && response.status() === 200);
 
-        await expect(page.getByRole("main").getByText("Queue Dashboard", { exact: true })).toBeVisible();
+        await expect(page.getByText("Patients Waiting")).toBeVisible();
+        await expect(page.getByText("Showing 2 patients")).toBeVisible();
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
         await expect(page.getByRole("button", { name: "Review" }).first()).toBeVisible();
 
@@ -196,5 +205,43 @@ test.describe("clinician queue dashboard", () => {
 
         const urgentRequests = requestUrls.filter((url) => url.includes("urgencyLevel=Urgent"));
         expect(urgentRequests.length).toBeGreaterThan(0);
+    });
+
+    test("shows consultation inbox when no active visit is selected", async ({ context, page }) => {
+        await page.route("**/api/clinician/consultation", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    items: [
+                        {
+                            visitId: 4101,
+                            queueTicketId: 991,
+                            patientUserId: 5101,
+                            patientName: "Patient Two",
+                            chiefComplaint: "Cough and fever",
+                            subjectiveSummary: "Chief complaint: I have cough and fever\nSymptoms reported: Cough, Fever\nKey details:\nHave you had a fever?: True",
+                            queueStatus: "in_consultation",
+                            urgencyLevel: "Priority",
+                            encounterNoteStatus: "draft",
+                            visitDate: new Date().toISOString(),
+                            finalizedAt: null,
+                            lastTranscriptAt: new Date().toISOString(),
+                            consultationPath: "/clinician/consultation?visitId=4101&queueTicketId=991",
+                        },
+                    ],
+                }),
+            });
+        });
+
+        await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
+
+        await page.goto("/clinician/consultation", { waitUntil: "domcontentloaded" });
+
+        await expect(page.getByRole("heading", { name: "Today's consultations" })).toBeVisible();
+        await expect(page.getByText("Patient Two")).toBeVisible();
+        await expect(page.getByText("Symptoms reported: Cough, Fever")).toBeVisible();
+        await expect(page.getByText("Have you had a fever?", { exact: false })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Resume Draft" })).toBeVisible();
     });
 });
