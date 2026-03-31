@@ -58,6 +58,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
     private readonly IRepository<TriageAssessment, long> _triageAssessmentRepository;
     private readonly IRepository<SymptomIntake, long> _symptomIntakeRepository;
     private readonly IRepository<Visit, long> _visitRepository;
+    private readonly IRepository<EncounterNote, long> _encounterNoteRepository;
     private readonly IRepository<User, long> _userRepository;
     private readonly UserManager _userManager;
     private readonly IConfiguration _configuration;
@@ -69,6 +70,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         IRepository<TriageAssessment, long> triageAssessmentRepository,
         IRepository<SymptomIntake, long> symptomIntakeRepository,
         IRepository<Visit, long> visitRepository,
+        IRepository<EncounterNote, long> encounterNoteRepository,
         IRepository<User, long> userRepository,
         UserManager userManager,
         IQueueRealtimeNotifier queueRealtimeNotifier,
@@ -79,6 +81,7 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         _triageAssessmentRepository = triageAssessmentRepository;
         _symptomIntakeRepository = symptomIntakeRepository;
         _visitRepository = visitRepository;
+        _encounterNoteRepository = encounterNoteRepository;
         _userRepository = userRepository;
         _userManager = userManager;
         _configuration = configuration;
@@ -322,6 +325,23 @@ public class QueueOperationsAppService : MedStreamAppServiceBase, IQueueOperatio
         });
 
         var visit = await _visitRepository.GetAsync(queueTicket.VisitId);
+        if (string.Equals(normalizedNewStatus, PatientIntakeConstants.QueueStatusCompleted, StringComparison.OrdinalIgnoreCase))
+        {
+            var encounterNote = await _encounterNoteRepository.FirstOrDefaultAsync(item =>
+                item.TenantId == tenantId &&
+                item.VisitId == visit.Id &&
+                !item.IsDeleted);
+            if (encounterNote == null || !string.Equals(encounterNote.Status, PatientIntakeConstants.EncounterNoteStatusFinalized, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UserFriendlyException("Encounter note must be finalized before completing the visit.");
+            }
+        }
+
+        if (string.Equals(normalizedNewStatus, PatientIntakeConstants.QueueStatusInConsultation, StringComparison.OrdinalIgnoreCase))
+        {
+            visit.AssignedClinicianUserId ??= clinician.Id;
+        }
+
         visit.Status = GetVisitStatusForQueueStatus(normalizedNewStatus);
         await _visitRepository.UpdateAsync(visit);
 

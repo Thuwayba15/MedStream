@@ -2,6 +2,7 @@
 using Abp.Modules;
 using Abp.Reflection.Extensions;
 using MedStream.Authorization;
+using MedStream.Consultation;
 
 namespace MedStream;
 
@@ -20,6 +21,7 @@ public class MedStreamApplicationModule : AbpModule
         var thisAssembly = typeof(MedStreamApplicationModule).GetAssembly();
 
         IocManager.RegisterAssemblyByConvention(thisAssembly);
+        IocManager.Register<IConsultationDraftGenerator, ConsultationDraftGenerator>();
 
         Configuration.Modules.AbpAutoMapper().Configurators.Add(
             // Scan the assembly for classes which inherit from AutoMapper.Profile
