@@ -92,13 +92,4 @@ export const usePatientHistoryStyles = createStyles(({ css }) => ({
         font-size: 0.92rem;
         padding: 6px 0 0;
     `,
-
-    stickyActions: css`
-        position: sticky;
-        bottom: 0;
-        z-index: 20;
-        background: linear-gradient(180deg, rgba(252, 250, 246, 0) 0%, rgba(252, 250, 246, 0.98) 24%);
-        padding-top: 10px;
-        margin-top: 6px;
-    `,
 }));

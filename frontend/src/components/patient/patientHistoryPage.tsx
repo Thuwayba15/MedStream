@@ -52,6 +52,8 @@ export const PatientHistoryPage = (): React.JSX.Element => {
                 <Typography.Text className={styles.subtitle}>Your past interactions across MedStream facilities.</Typography.Text>
             </header>
 
+            <PatientBottomNav activeKey="history" hasQueueStatus={false} />
+
             {state.errorMessage ? (
                 <Alert
                     type="error"
@@ -99,10 +101,6 @@ export const PatientHistoryPage = (): React.JSX.Element => {
             ) : null}
 
             <Typography.Paragraph className={styles.footNote}>For detailed clinical records or test results, please speak directly with your healthcare provider.</Typography.Paragraph>
-
-            <div className={styles.stickyActions}>
-                <PatientBottomNav activeKey="history" hasQueueStatus={false} />
-            </div>
         </section>
     );
 };
