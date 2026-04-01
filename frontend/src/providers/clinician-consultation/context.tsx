@@ -50,6 +50,7 @@ export interface IClinicianConsultationActionContext {
     generateAssessmentPlanDraft: (visitId: number) => Promise<IConsultationAiDraft | null>;
     finalizeEncounterNote: (payload: IFinalizeEncounterNoteRequest) => Promise<IEncounterNote | null>;
     completeVisit: (queueTicketId: number) => Promise<IUpdateQueueStatusResponse | null>;
+    clearActiveConsultation: () => void;
     clearMessages: () => void;
 }
 
@@ -82,6 +83,7 @@ export const INITIAL_ACTION_STATE: IClinicianConsultationActionContext = {
     generateAssessmentPlanDraft: async () => null,
     finalizeEncounterNote: async () => null,
     completeVisit: async () => null,
+    clearActiveConsultation: () => undefined,
     clearMessages: () => undefined,
 };
 
