@@ -95,6 +95,12 @@ export const API = {
     /** ABP consultation finalize endpoint. */
     CONSULTATION_FINALIZE_NOTE_ENDPOINT: "/api/services/app/Consultation/FinalizeEncounterNote",
 
+    /** ABP clinician patient timeline endpoint. */
+    PATIENT_TIMELINE_GET_ENDPOINT: "/api/services/app/PatientTimeline/GetPatientTimeline",
+
+    /** ABP patient self timeline endpoint. */
+    PATIENT_TIMELINE_GET_MY_ENDPOINT: "/api/services/app/PatientTimeline/GetMyTimeline",
+
     /** Internal Next route for auth login. */
     AUTH_LOGIN_ROUTE: "/api/auth/login",
 
@@ -178,6 +184,9 @@ export const API = {
 
     /** Internal Next route for clinician consultation note finalization. */
     CLINICIAN_CONSULTATION_FINALIZE_ROUTE: "/api/clinician/consultation/finalize",
+
+    /** Internal Next route for clinician patient timeline data. */
+    CLINICIAN_HISTORY_ROUTE: "/api/clinician/history",
 
     /** Backend SignalR hub path for queue realtime updates. */
     QUEUE_SIGNALR_HUB_PATH: "/signalr/queue",
