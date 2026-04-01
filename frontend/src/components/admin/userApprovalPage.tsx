@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { Alert, Empty, Input, Select, Space, Table, Tabs, Tag } from "antd";
+import { Empty, Grid, Input, Select, Space, Table, Tabs, Typography } from "antd";
 import { useAuthDashboardStyles } from "@/components/auth/dashboardStyle";
+import { FacilityGovernanceMobileList } from "@/components/admin/facilityGovernanceMobileList";
+import { GovernanceStats } from "@/components/admin/governanceStats";
 import { useAdminStyles } from "@/components/admin/style";
 import { type ApprovalFilter, type IClinicianApplicant, type IFacility } from "@/providers/admin-governance/context";
-import { useAdminGovernancePage } from "@/hooks/useAdminGovernancePage";
+import { getApprovalStatusTone } from "@/lib/admin/governance";
+import { useAdminGovernancePage } from "@/hooks/admin/useAdminGovernancePage";
 import { buildApprovalColumns, buildFacilityColumns } from "@/components/admin/adminGovernanceColumns";
 import { FacilityCreateForm } from "@/components/admin/facilityCreateForm";
 import { DecisionModal } from "@/components/admin/decisionModal";
@@ -13,9 +16,11 @@ import { EditFacilityModal } from "@/components/admin/editFacilityModal";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 
 export const UserApprovalPage = () => {
+    const screens = Grid.useBreakpoint();
     const { styles } = useAuthDashboardStyles();
     const { styles: adminStyles } = useAdminStyles();
     const viewModel = useAdminGovernancePage();
+    const isMobile = !screens.md;
 
     const approvalColumns = useMemo(
         () =>
@@ -54,23 +59,41 @@ export const UserApprovalPage = () => {
     return (
         <RoleAppShell roleLabel="Admin" items={[]}>
             {viewModel.messageContextHolder}
-            {viewModel.successMessage ? <Alert type="success" title={viewModel.successMessage} showIcon /> : null}
-            {viewModel.errorMessage ? <Alert type="error" title={viewModel.errorMessage} showIcon /> : null}
+            <section className={adminStyles.pageHeader}>
+                <div>
+                    <Typography.Text className={adminStyles.pageEyebrow}>Administration</Typography.Text>
+                    <Typography.Title level={1} className={adminStyles.pageTitle}>
+                        Admin Governance
+                    </Typography.Title>
+                    <Typography.Paragraph className={adminStyles.pageIntro}>
+                        Review clinician applicants, assign facilities, and manage the active facility list from one place.
+                    </Typography.Paragraph>
+                </div>
+            </section>
+
+            <GovernanceStats adminStyles={adminStyles} stats={viewModel.governanceStats} />
 
             <section className={`${styles.dashboardCard} ${adminStyles.panelCard} ${adminStyles.tableCard}`}>
                 <Tabs
+                    defaultActiveKey="approvals"
                     tabBarExtraContent={
-                        <Tag className={adminStyles.pendingBadge} color={viewModel.pendingCount > 0 ? "gold" : "green"}>
-                            {viewModel.pendingCount} pending requests
-                        </Tag>
+                        <div className={adminStyles.pendingLivePill}>
+                            <span className={adminStyles.pendingLiveDot} />
+                            <span>{viewModel.governanceStats.pending} pending requests</span>
+                        </div>
                     }
                     items={[
                         {
                             key: "approvals",
-                            label: "Clinician Approvals",
+                            label: (
+                                <span className={adminStyles.tabLabel}>
+                                    Clinician Approvals
+                                    <span className={adminStyles.tabCountBadge}>{viewModel.governanceStats.pending}</span>
+                                </span>
+                            ),
                             children: (
                                 <Space orientation="vertical" size={16} className={adminStyles.fullWidth}>
-                                    <Space wrap>
+                                    <div className={adminStyles.toolbar}>
                                         <Input.Search
                                             placeholder="Search by name, email, registration or facility"
                                             allowClear
@@ -89,7 +112,7 @@ export const UserApprovalPage = () => {
                                                 { value: "Rejected", label: "Rejected" },
                                             ]}
                                         />
-                                    </Space>
+                                    </div>
 
                                     <div className={adminStyles.tableWrap}>
                                         <Table<IClinicianApplicant>
@@ -97,9 +120,10 @@ export const UserApprovalPage = () => {
                                             loading={viewModel.isLoadingUsers}
                                             columns={approvalColumns}
                                             dataSource={viewModel.filteredUsers}
+                                            rowClassName={(row) => `admin-approval-row admin-approval-row-${getApprovalStatusTone(row.approvalStatus)}`}
                                             locale={{ emptyText: <Empty description="No clinician applications found" /> }}
                                             pagination={{ pageSize: 10 }}
-                                            scroll={{ x: 1700 }}
+                                            scroll={{ x: 1380 }}
                                         />
                                     </div>
                                 </Space>
@@ -107,23 +131,39 @@ export const UserApprovalPage = () => {
                         },
                         {
                             key: "facilities",
-                            label: "Facility Governance",
+                            label: (
+                                <span className={adminStyles.tabLabel}>
+                                    Facility Governance
+                                    <span className={adminStyles.tabCountBadge}>{viewModel.facilities.length}</span>
+                                </span>
+                            ),
                             children: (
                                 <Space orientation="vertical" size={16} className={adminStyles.fullWidth}>
                                     <section className={adminStyles.facilityFormSection}>
                                         <FacilityCreateForm form={viewModel.facilityForm} isMutating={viewModel.isMutating} adminStyles={adminStyles} onCreateFacility={viewModel.onCreateFacility} />
                                     </section>
 
-                                    <div className={adminStyles.tableWrap}>
-                                        <Table<IFacility>
-                                            rowKey="id"
-                                            loading={viewModel.isLoadingFacilities}
-                                            columns={facilityColumns}
-                                            dataSource={viewModel.facilities}
-                                            locale={{ emptyText: <Empty description="No facilities found" /> }}
-                                            pagination={{ pageSize: 10 }}
+                                    {isMobile ? (
+                                        <FacilityGovernanceMobileList
+                                            adminStyles={adminStyles}
+                                            facilities={viewModel.facilities}
+                                            editFacilityForm={viewModel.editFacilityForm}
+                                            isMutating={viewModel.isMutating}
+                                            setEditingFacility={viewModel.setEditingFacility}
+                                            setFacilityActivation={viewModel.setFacilityActivation}
                                         />
-                                    </div>
+                                    ) : (
+                                        <div className={adminStyles.tableWrap}>
+                                            <Table<IFacility>
+                                                rowKey="id"
+                                                loading={viewModel.isLoadingFacilities}
+                                                columns={facilityColumns}
+                                                dataSource={viewModel.facilities}
+                                                locale={{ emptyText: <Empty description="No facilities found" /> }}
+                                                pagination={{ pageSize: 10 }}
+                                            />
+                                        </div>
+                                    )}
                                 </Space>
                             ),
                         },

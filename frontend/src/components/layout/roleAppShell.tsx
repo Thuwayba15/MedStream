@@ -48,17 +48,19 @@ const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps,
                     </span>
                 </div>
 
-                {navigationItems.length > 0 ? (
-                    <Menu mode="horizontal" selectedKeys={activeKey ? [activeKey] : []} className={styles.topMenu} items={navigationItems} />
-                ) : (
-                    <div className={styles.menuSpacer} />
-                )}
+                <div className={styles.headerRightCluster}>
+                    {navigationItems.length > 0 ? (
+                        <Menu mode="horizontal" selectedKeys={activeKey ? [activeKey] : []} className={styles.topMenu} items={navigationItems} />
+                    ) : (
+                        <div className={styles.menuSpacer} />
+                    )}
 
-                <Space size={10} className={styles.actionArea}>
-                    <Avatar icon={<UserOutlined />} className={styles.profileAvatar} />
-                    <Typography.Text className={styles.roleLabel}>{roleLabel}</Typography.Text>
-                    <LogoutButton className={styles.logoutButton} />
-                </Space>
+                    <Space size={10} className={styles.actionArea}>
+                        <Avatar icon={<UserOutlined />} className={styles.profileAvatar} />
+                        <Typography.Text className={styles.roleLabel}>{roleLabel}</Typography.Text>
+                        <LogoutButton className={styles.logoutButton} />
+                    </Space>
+                </div>
 
                 <Button type="text" className={styles.mobileMenuButton} icon={<MenuOutlined />} aria-label="Open navigation" onClick={() => setIsDrawerOpen(true)} />
             </div>

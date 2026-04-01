@@ -89,6 +89,7 @@ Break work into focused pieces such as:
 - Keep separation of concerns clear: hooks for stateful orchestration, helpers for pure logic and mapping, actions for workflow triggers.
 - For provider-related work, enforce the order `hooks`, then `helpers`, then `actions` in supporting files and nearby feature structure.
 - No file should grow beyond 350 lines; split before it becomes hard to navigate.
+- `style.ts` or `styles.ts` files may exceed 350 lines when keeping the visual system together is clearer than splitting them artificially.
 
 ### File naming
 - Use clear, intention-revealing names.
@@ -172,6 +173,7 @@ For this repository, enforce these architecture rules on every frontend task:
 
 When implementing or changing frontend behavior:
 - preserve existing flows unless the task explicitly changes them
+- preserve existing functionality while refactoring unless the user explicitly requests a functional change
 - do not silently remove validation, confirmations, or guardrails
 - keep navigation predictable
 - keep domain terminology consistent with MedStream docs and entities

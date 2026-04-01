@@ -42,16 +42,19 @@ Enforce these structural rules:
 - keep API constants in `src/constants/api.ts`
 - remove unnecessary frontend service files for provider-driven flows
 - keep server-side shared request helpers in `src/lib/server/**` only when reuse is justified
+- remove unnecessary internal `route.ts` proxies when the provider can safely call the backend endpoint directly without losing required auth, cookie, guard, or error-shaping behavior
 - move shared hooks into `src/hooks/**`
 - move shared pure helpers into `src/lib/**` or another existing shared helper area
 - keep clear separation of concerns between hooks, helpers, actions, providers, routes, and components
 - in provider-related work, keep the supporting order `hooks`, then `helpers`, then `actions`
 - keep every file at 350 lines or fewer; split before it becomes hard to navigate
+- allow `style.ts` or `styles.ts` files to exceed 350 lines when that keeps the styling system clearer
 
 ### 3. Clean behavior and feedback
 
 For each refactored section:
 - preserve documented MedStream behavior unless the task explicitly changes it
+- preserve existing functionality while refactoring unless the user explicitly asks for behavior changes
 - ensure loading, success, empty, and error states are explicit
 - prefer inline field-level validation for form problems when that is the established UX for the section
 - keep feedback specific and actionable instead of generic failure messages

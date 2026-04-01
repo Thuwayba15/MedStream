@@ -10,8 +10,49 @@ function createJwt(payload: Record<string, unknown>): string {
     return [encodeBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" })), encodeBase64Url(JSON.stringify(payload)), "signature"].join(".");
 }
 
+const buildAdminUser = (
+    overrides: Partial<{
+        id: number;
+        name: string;
+        surname: string;
+        emailAddress: string;
+        requestedFacility: string;
+        approvalStatus: "PendingApproval" | "Approved" | "Rejected";
+        isClinicianApprovalPending: boolean;
+        clinicianApprovedAt: string | null;
+        clinicianDeclinedAt: string | null;
+        approvalDecisionReason: string | null;
+    }> = {}
+) => ({
+    id: overrides.id ?? 101,
+    userName: `clinician-${overrides.id ?? 101}`,
+    name: overrides.name ?? "Pending",
+    surname: overrides.surname ?? "Clinician",
+    emailAddress: overrides.emailAddress ?? `clinician-${overrides.id ?? 101}@medstream.test`,
+    roleNames: [],
+    requestedRegistrationRole: "Clinician",
+    isClinicianApprovalPending: overrides.isClinicianApprovalPending ?? true,
+    accountType: "Clinician",
+    professionType: "Doctor",
+    regulatoryBody: "HPCSA",
+    registrationNumber: `HPCSA-${overrides.id ?? 101}`,
+    requestedFacility: overrides.requestedFacility ?? "Thembisa Hospital",
+    clinicianFacilityId: 1,
+    approvalStatus: overrides.approvalStatus ?? "PendingApproval",
+    approvalDecisionReason: overrides.approvalDecisionReason ?? null,
+    idNumber: "9001015009087",
+    phoneNumber: "0634113456",
+    clinicianSubmittedAt: "2026-03-26T08:00:00Z",
+    clinicianApprovedAt: overrides.clinicianApprovedAt ?? null,
+    clinicianApprovedByUserId: null,
+    clinicianDeclinedAt: overrides.clinicianDeclinedAt ?? null,
+    clinicianDeclinedByUserId: null,
+    authState: "clinician_pending_approval",
+    isActive: true,
+});
+
 test.describe("admin governance", () => {
-    test.skip("supports clinician approval with decision reason and facility tab rendering", async ({ page, context }) => {
+    test.beforeEach(async ({ context }) => {
         const adminToken = createJwt({
             [roleClaimKey]: "Admin",
             "medstream:approval_state": "approved",
@@ -29,118 +70,77 @@ test.describe("admin governance", () => {
                 url: "http://localhost:3000",
             },
         ]);
+    });
+
+    test("shows approval stats and updates them after approving a clinician", async ({ page }) => {
+        let users = [
+            buildAdminUser({ id: 101, name: "Nomsa", surname: "Dlamini", approvalStatus: "PendingApproval", isClinicianApprovalPending: true }),
+            buildAdminUser({ id: 102, name: "Sipho", surname: "Mokoena", approvalStatus: "Approved", isClinicianApprovalPending: false, clinicianApprovedAt: "2026-03-21T14:30:00Z" }),
+            buildAdminUser({ id: 103, name: "Thandi", surname: "Khumalo", approvalStatus: "Rejected", isClinicianApprovalPending: false, clinicianDeclinedAt: "2026-03-22T10:15:00Z", approvalDecisionReason: "Missing verification documents." }),
+        ];
+
+        const facilities = [
+            {
+                id: 1,
+                name: "Thembisa Hospital",
+                code: "THB",
+                facilityType: "DistrictHospital",
+                province: "Gauteng",
+                district: "Ekurhuleni",
+                address: "Thembisa",
+                isActive: true,
+            },
+        ];
+
+        let approveRequestBody: { userId?: number; decisionReason?: string } | null = null;
 
         await page.route("**/api/auth/admin/users", async (route) => {
             await route.fulfill({
                 status: 200,
                 contentType: "application/json",
-                body: JSON.stringify({
-                    users: [
-                        {
-                            id: 101,
-                            userName: "clinician.pending",
-                            name: "Pending",
-                            surname: "Clinician",
-                            emailAddress: "pending@medstream.test",
-                            roleNames: [],
-                            requestedRegistrationRole: "Clinician",
-                            isClinicianApprovalPending: true,
-                            accountType: "Clinician",
-                            professionType: "Doctor",
-                            regulatoryBody: "HPCSA",
-                            registrationNumber: "HPCSA-111",
-                            requestedFacility: "Thembisa Hospital",
-                            approvalStatus: "PendingApproval",
-                            approvalDecisionReason: null,
-                            idNumber: "9001015009087",
-                            phoneNumber: "0634113456",
-                            clinicianSubmittedAt: "2026-03-26T08:00:00Z",
-                            clinicianApprovedAt: null,
-                            clinicianApprovedByUserId: null,
-                            clinicianDeclinedAt: null,
-                            clinicianDeclinedByUserId: null,
-                            authState: "clinician_pending_approval",
-                            isActive: true,
-                        },
-                    ],
-                }),
+                body: JSON.stringify({ users }),
             });
         });
 
-        let createFacilityBody: Record<string, unknown> | null = null;
-        let updateFacilityBody: Record<string, unknown> | null = null;
         await page.route("**/api/auth/admin/facilities", async (route) => {
-            if (route.request().method() === "GET") {
-                await route.fulfill({
-                    status: 200,
-                    contentType: "application/json",
-                    body: JSON.stringify({
-                        facilities: [
-                            {
-                                id: 1,
-                                name: "Thembisa Hospital",
-                                code: "THB",
-                                facilityType: "Hospital",
-                                province: "Eastern Cape",
-                                district: "Ekurhuleni",
-                                address: "Thembisa",
-                                isActive: true,
-                            },
-                        ],
-                    }),
-                });
-                return;
-            }
-
-            if (route.request().method() === "POST") {
-                createFacilityBody = route.request().postDataJSON() as Record<string, unknown>;
-            }
-
-            if (route.request().method() === "PUT") {
-                updateFacilityBody = route.request().postDataJSON() as Record<string, unknown>;
-            }
-
             await route.fulfill({
                 status: 200,
                 contentType: "application/json",
-                body: JSON.stringify({ facility: { id: 2 } }),
+                body: JSON.stringify({ facilities }),
             });
         });
 
-        let activationBody: { id?: number; isActive?: boolean } | null = null;
-        await page.route("**/api/auth/admin/facilities/activation", async (route) => {
-            activationBody = route.request().postDataJSON() as { id?: number; isActive?: boolean };
-            await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify({ facility: { id: 1, isActive: false } }),
-            });
-        });
-
-        let assignBody: { clinicianUserId?: number; facilityId?: number } | null = null;
-        await page.route("**/api/auth/admin/facilities/assign", async (route) => {
-            assignBody = route.request().postDataJSON() as { clinicianUserId?: number; facilityId?: number };
-            await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify({ success: true }),
-            });
-        });
-
-        let approveRequestBody: { userId?: number; decisionReason?: string } | null = null;
         await page.route("**/api/auth/admin/approve", async (route) => {
             approveRequestBody = route.request().postDataJSON() as { userId?: number; decisionReason?: string };
+            users = users.map((user) =>
+                user.id === approveRequestBody?.userId
+                    ? {
+                          ...user,
+                          approvalStatus: "Approved" as const,
+                          isClinicianApprovalPending: false,
+                          clinicianApprovedAt: "2026-03-27T09:15:00Z",
+                          approvalDecisionReason: approveRequestBody?.decisionReason ?? null,
+                      }
+                    : user
+            );
+
             await route.fulfill({
                 status: 200,
                 contentType: "application/json",
-                body: JSON.stringify({ user: { id: 101 } }),
+                body: JSON.stringify({ user: { id: approveRequestBody?.userId } }),
             });
         });
 
-        await page.goto("/admin");
-        await expect(page.getByText("pending requests")).toBeVisible();
+        await page.goto("/admin", { waitUntil: "domcontentloaded" });
 
-        await page.getByRole("button", { name: "Approve" }).click();
+        await expect(page.getByRole("heading", { level: 1, name: "Admin Governance" })).toBeVisible();
+        await expect(page.getByLabel("Governance stats")).toContainText("Pending");
+        await expect(page.getByLabel("Governance stats")).toContainText("1");
+        await expect(page.getByText("1 pending requests")).toBeVisible();
+        await expect(page.getByText("Nomsa Dlamini")).toBeVisible();
+        await expect(page.getByText("pending").first()).toBeVisible();
+
+        await page.getByRole("button", { name: "Approve" }).first().click();
         await page.getByLabel("Decision reason").fill("Credentials verified.");
         await page.getByRole("button", { name: "Approve Clinician" }).click();
 
@@ -149,68 +149,51 @@ test.describe("admin governance", () => {
             decisionReason: "Credentials verified.",
         });
 
-        await page.getByRole("tab", { name: "Facility Governance" }).click();
+        await expect(page.getByText("0 pending requests")).toBeVisible();
+        await expect(page.getByText("No clinician applications found")).toBeVisible();
+        await expect(page.getByText("Clinician approved successfully.")).toBeVisible();
+    });
+
+    test("renders facility governance as cards on mobile", async ({ page }) => {
+        await page.setViewportSize({ width: 700, height: 900 });
+
+        await page.route("**/api/auth/admin/users", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    users: [buildAdminUser()],
+                }),
+            });
+        });
+
+        await page.route("**/api/auth/admin/facilities", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    facilities: [
+                        {
+                            id: 1,
+                            name: "Thembisa Hospital",
+                            code: "THB",
+                            facilityType: "DistrictHospital",
+                            province: "Gauteng",
+                            district: "Ekurhuleni",
+                            address: "Thembisa",
+                            isActive: true,
+                        },
+                    ],
+                }),
+            });
+        });
+
+        await page.goto("/admin", { waitUntil: "domcontentloaded" });
+        await page.getByRole("tab", { name: /Facility Governance/i }).click();
+
         await expect(page.getByRole("button", { name: "Add Facility" })).toBeVisible();
-        await page.getByLabel("Facility name").fill("Alexandra Clinic");
-        await selectAntdByLabel(page, page, "Type", "Clinic");
-        await selectAntdByLabel(page, page, "Province", "Gauteng");
-        await page.getByRole("button", { name: "Add Facility" }).click();
-
-        expect(createFacilityBody).toMatchObject({
-            name: "Alexandra Clinic",
-            facilityType: "Clinic",
-            province: "Gauteng",
-        });
-
-        await page.getByRole("button", { name: "Edit" }).click();
-        const editDialog = page.getByRole("dialog", { name: "Edit Facility" });
-        await expect(editDialog).toBeVisible();
-        await selectAntdByLabel(page, editDialog, "Facility type", "Regional Hospital");
-        await selectAntdByLabel(page, editDialog, "Province", "Western Cape");
-        await editDialog.getByRole("button", { name: "Save" }).click();
-
-        expect(updateFacilityBody).toMatchObject({
-            id: 1,
-            facilityType: "RegionalHospital",
-            province: "Western Cape",
-        });
-
-        await page.getByRole("button", { name: "Deactivate" }).click();
-        expect(activationBody).toEqual({
-            id: 1,
-            isActive: false,
-        });
-
-        await page.getByRole("tab", { name: "Clinician Approvals" }).click();
-        const assignFacilitySelect = page.getByPlaceholder("Assign facility");
-        await assignFacilitySelect.click();
-        await assignFacilitySelect.press("Enter");
-        await page.getByRole("button", { name: "Assign" }).click();
-        expect(assignBody).toEqual({
-            clinicianUserId: 101,
-            facilityId: 1,
-        });
+        await expect(page.getByRole("heading", { name: "Thembisa Hospital" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Deactivate" })).toBeVisible();
     });
 });
-
-async function selectAntdByLabel(page: import("@playwright/test").Page, scope: import("@playwright/test").Locator | import("@playwright/test").Page, label: string, option: string): Promise<void> {
-    const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const combobox = scope.getByRole("combobox", { name: new RegExp(`\\b${escapedLabel}\\b`, "i") }).first();
-
-    if (await combobox.count()) {
-        await combobox.click();
-        await combobox.fill(option);
-    } else {
-        const fallbackSelect = scope
-            .locator(".ant-form-item")
-            .filter({
-                has: scope.locator(".ant-form-item-label label", { hasText: label }),
-            })
-            .locator(".ant-select-selector")
-            .first();
-        await fallbackSelect.click();
-        await page.keyboard.type(option);
-    }
-
-    await page.keyboard.press("Enter");
-}

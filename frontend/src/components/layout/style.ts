@@ -18,6 +18,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         align-items: center;
         gap: 10px;
         min-width: 170px;
+        line-height: 1;
     `,
 
     brandMark: css`
@@ -50,29 +51,41 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         padding: 0;
         background: linear-gradient(90deg, ${colors.navy} 0%, ${colors.navyMid} 100%) !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
     `,
 
     headerInner: css`
-        max-width: ${medstreamTheme.layout.pageMaxWidth}px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: none;
+        margin: 0;
         min-height: 74px;
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: auto minmax(0, 1fr) auto;
         align-items: center;
         gap: 16px;
-        padding: 12px 16px;
+        padding: 12px 100px;
 
         @media (max-width: 960px) {
             grid-template-columns: 1fr auto;
             min-height: 68px;
             gap: 8px;
+            padding: 10px 12px;
         }
+    `,
+
+    headerRightCluster: css`
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        justify-self: end;
+        gap: 14px;
+        min-width: 0;
     `,
 
     topMenu: css`
         background: transparent !important;
         border-bottom: none !important;
-        justify-self: center;
         min-width: 0;
 
         .ant-menu-item {
@@ -80,6 +93,10 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
             border-radius: ${radius.pill}px;
             font-weight: 700;
             margin-inline: 4px;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            min-height: 42px;
         }
 
         .ant-menu-item-selected {
@@ -98,6 +115,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
 
     menuSpacer: css`
         min-height: 1px;
+        justify-self: end;
 
         @media (max-width: 960px) {
             display: none;
@@ -107,6 +125,11 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
     actionArea: css`
         align-items: center;
         justify-self: end;
+
+        .ant-space-item {
+            display: flex;
+            align-items: center;
+        }
 
         @media (max-width: 960px) {
             display: none !important;
@@ -203,7 +226,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
 
     contentInner: css`
         width: 100%;
-        max-width: 1180px;
+        max-width: 85%;
         margin: 0 auto;
         display: grid;
         gap: 16px;

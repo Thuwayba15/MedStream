@@ -2,13 +2,13 @@
 
 import { Form, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { type IDecisionFormValues, type IFacilityFormValues } from "@/components/admin/types";
+import { buildAdminGovernanceStats } from "@/lib/admin/governance";
 import { useAdminGovernanceActions, useAdminGovernanceState } from "@/providers/admin-governance";
 import { type ApprovalFilter, type IFacility } from "@/providers/admin-governance/context";
-import { type IDecisionFormValues, type IFacilityFormValues } from "@/components/admin/types";
 
 export const useAdminGovernancePage = () => {
     const { users, facilities, isLoadingUsers, isLoadingFacilities, isMutating, errorMessage, successMessage, searchText, approvalFilter } = useAdminGovernanceState();
-
     const { loadGovernanceData, setSearchText, setApprovalFilter, clearMessages, approveClinician, declineClinician, createFacility, updateFacility, setFacilityActivation, assignClinicianFacility } =
         useAdminGovernanceActions();
 
@@ -21,6 +21,18 @@ export const useAdminGovernancePage = () => {
     const [editFacilityForm] = Form.useForm<IFacilityFormValues>();
     const [assigningFacilityByUserId, setAssigningFacilityByUserId] = useState<Record<number, number | undefined>>({});
     const hasLoadedGovernanceRef = useRef(false);
+
+    useEffect(() => {
+        if (successMessage) {
+            void messageApi.success(successMessage);
+        }
+    }, [messageApi, successMessage]);
+
+    useEffect(() => {
+        if (errorMessage) {
+            void messageApi.error(errorMessage);
+        }
+    }, [errorMessage, messageApi]);
 
     useEffect(() => {
         if (hasLoadedGovernanceRef.current) {
@@ -43,13 +55,14 @@ export const useAdminGovernancePage = () => {
                 `${user.name} ${user.surname}`.toLowerCase().includes(normalizedSearch) ||
                 user.emailAddress.toLowerCase().includes(normalizedSearch) ||
                 (user.registrationNumber ?? "").toLowerCase().includes(normalizedSearch) ||
-                (user.requestedFacility ?? "").toLowerCase().includes(normalizedSearch);
+                (user.requestedFacility ?? "").toLowerCase().includes(normalizedSearch) ||
+                (user.phoneNumber ?? "").toLowerCase().includes(normalizedSearch);
 
             return matchesStatus && matchesSearch;
         });
     }, [users, searchText, approvalFilter]);
 
-    const pendingCount = useMemo(() => users.filter((row) => row.isClinicianApprovalPending).length, [users]);
+    const governanceStats = useMemo(() => buildAdminGovernanceStats(users), [users]);
 
     const openDecisionModal = (userId: number, mode: "approve" | "decline"): void => {
         clearMessages();
@@ -118,12 +131,10 @@ export const useAdminGovernancePage = () => {
         facilities,
         activeFacilities,
         filteredUsers,
-        pendingCount,
+        governanceStats,
         isLoadingUsers,
         isLoadingFacilities,
         isMutating,
-        errorMessage,
-        successMessage,
         searchText,
         approvalFilter,
         decisionTargetUserId,

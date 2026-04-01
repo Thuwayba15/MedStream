@@ -18,7 +18,6 @@ export const DecisionModal = ({ decisionMode, decisionTargetUserId, isMutating, 
             open={decisionTargetUserId !== null}
             onCancel={() => setDecisionTargetUserId(null)}
             footer={null}
-            destroyOnHidden
         >
             <Form<IDecisionFormValues> form={decisionForm} layout="vertical" onFinish={(values) => void onSubmitDecision(values)}>
                 <Form.Item
