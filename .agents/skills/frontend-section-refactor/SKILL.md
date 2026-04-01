@@ -41,13 +41,14 @@ Enforce these structural rules:
 - keep provider request orchestration inside provider `index.tsx`
 - keep API constants in `src/constants/api.ts`
 - remove unnecessary frontend service files for provider-driven flows
-- keep server-side shared request helpers in `src/lib/server/**` only when reuse is justified
+- do not introduce extra server-side helper layers unless reuse clearly justifies them
 - remove unnecessary internal `route.ts` proxies when the provider can safely call the backend endpoint directly without losing required auth, cookie, guard, or error-shaping behavior
 - move shared hooks into `src/hooks/**`
 - move shared pure helpers into `src/lib/**` or another existing shared helper area
 - keep clear separation of concerns between hooks, helpers, actions, providers, routes, and components
 - in provider-related work, keep the supporting order `hooks`, then `helpers`, then `actions`
 - keep every file at 350 lines or fewer; split before it becomes hard to navigate
+- allow provider files to exceed 350 lines when the provider remains readable and the orchestration is clearer kept together
 - allow `style.ts` or `styles.ts` files to exceed 350 lines when that keeps the styling system clearer
 
 ### 3. Clean behavior and feedback

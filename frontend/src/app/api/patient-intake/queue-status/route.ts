@@ -1,5 +1,7 @@
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requirePatientAccessToken } from "@/lib/server/patientAuthGuard";
-import { patientIntakeService } from "@/services/patient-intake/patientIntakeService";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (request: NextRequest): Promise<Response> => {
@@ -18,9 +20,12 @@ export const GET = async (request: NextRequest): Promise<Response> => {
     }
 
     try {
-        const result = await patientIntakeService.getCurrentQueueStatus({ visitId }, guardResult.accessToken);
-        return NextResponse.json(result);
-    } catch {
-        return NextResponse.json({ message: "Unable to load current queue status." }, { status: 400 });
+        const response = await apiClient.get(API.PATIENT_INTAKE_CURRENT_QUEUE_STATUS_ENDPOINT, {
+            params: { visitId },
+            headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+        });
+        return NextResponse.json(unwrapAbpResponse(response.data));
+    } catch (error) {
+        return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to load current queue status.") }, { status: 400 });
     }
 };

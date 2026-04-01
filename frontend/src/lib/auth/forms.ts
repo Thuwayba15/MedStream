@@ -5,7 +5,7 @@ export type AccountType = "Patient" | "Clinician";
 export type ProfessionType = "Doctor" | "Nurse" | "AlliedHealth" | "Other";
 export type RegulatoryBody = "HPCSA" | "SANC" | "Other";
 
-export interface LoginFormValues extends ILoginRequest {}
+export type LoginFormValues = ILoginRequest;
 
 export interface RegistrationFormValues extends IRegisterRequest {
     accountType: AccountType;

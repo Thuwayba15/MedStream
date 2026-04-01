@@ -1,6 +1,8 @@
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requirePatientAccessToken } from "@/lib/server/patientAuthGuard";
-import { patientIntakeService } from "@/services/patient-intake/patientIntakeService";
-import type { IGetQuestionsRequest } from "@/services/patient-intake/types";
+import type { IGetQuestionsRequest, IQuestionsResponse } from "@/services/patient-intake/types";
 import { NextResponse } from "next/server";
 
 export const POST = async (request: Request): Promise<Response> => {
@@ -27,7 +29,8 @@ export const POST = async (request: Request): Promise<Response> => {
     }
 
     try {
-        const questionSet = await patientIntakeService.getQuestions(
+        const response = await apiClient.post(
+            API.PATIENT_INTAKE_GET_QUESTIONS_ENDPOINT,
             {
                 visitId: payload.visitId,
                 pathwayKey: payload.pathwayKey,
@@ -39,12 +42,14 @@ export const POST = async (request: Request): Promise<Response> => {
                 useApcFallback: payload.useApcFallback ?? false,
                 answers: payload.answers ?? {},
             },
-            guardResult.accessToken
+            { headers: { Authorization: `Bearer ${guardResult.accessToken}` } }
         );
+        const result = unwrapAbpResponse<IQuestionsResponse>(response.data);
+        const questionSet = result.questionSet ?? [];
         return NextResponse.json({ questionSet });
     } catch (error) {
         console.error("[PatientIntake][Questions] Route failed.", error);
-        const debugMessage = error instanceof Error ? error.message : "Unknown error";
+        const debugMessage = getAbpErrorMessage(error, "Unable to load follow-up questions.");
         return NextResponse.json(
             {
                 message: "Unable to load follow-up questions.",
