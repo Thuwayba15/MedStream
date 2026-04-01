@@ -76,7 +76,15 @@ test.describe("admin governance", () => {
         let users = [
             buildAdminUser({ id: 101, name: "Nomsa", surname: "Dlamini", approvalStatus: "PendingApproval", isClinicianApprovalPending: true }),
             buildAdminUser({ id: 102, name: "Sipho", surname: "Mokoena", approvalStatus: "Approved", isClinicianApprovalPending: false, clinicianApprovedAt: "2026-03-21T14:30:00Z" }),
-            buildAdminUser({ id: 103, name: "Thandi", surname: "Khumalo", approvalStatus: "Rejected", isClinicianApprovalPending: false, clinicianDeclinedAt: "2026-03-22T10:15:00Z", approvalDecisionReason: "Missing verification documents." }),
+            buildAdminUser({
+                id: 103,
+                name: "Thandi",
+                surname: "Khumalo",
+                approvalStatus: "Rejected",
+                isClinicianApprovalPending: false,
+                clinicianDeclinedAt: "2026-03-22T10:15:00Z",
+                approvalDecisionReason: "Missing verification documents.",
+            }),
         ];
 
         const facilities = [

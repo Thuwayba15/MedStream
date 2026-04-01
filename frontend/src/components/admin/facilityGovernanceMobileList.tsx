@@ -12,14 +12,7 @@ interface IFacilityGovernanceMobileListProps {
     setFacilityActivation: (id: number, isActive: boolean) => Promise<void>;
 }
 
-export const FacilityGovernanceMobileList = ({
-    adminStyles,
-    facilities,
-    editFacilityForm,
-    isMutating,
-    setEditingFacility,
-    setFacilityActivation,
-}: IFacilityGovernanceMobileListProps) => {
+export const FacilityGovernanceMobileList = ({ adminStyles, facilities, editFacilityForm, isMutating, setEditingFacility, setFacilityActivation }: IFacilityGovernanceMobileListProps) => {
     if (facilities.length === 0) {
         return <Empty description="No facilities found" />;
     }

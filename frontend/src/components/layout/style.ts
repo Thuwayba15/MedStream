@@ -81,6 +81,10 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         justify-self: end;
         gap: 14px;
         min-width: 0;
+
+        @media (max-width: 960px) {
+            display: none;
+        }
     `,
 
     topMenu: css`
@@ -184,6 +188,9 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
 
         @media (max-width: 960px) {
             display: inline-flex !important;
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: end;
             align-items: center;
             justify-content: center;
             color: ${colors.white} !important;
@@ -194,9 +201,36 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
     `,
 
     mobileDrawer: css`
+        .ant-drawer-content,
+        .ant-drawer-header,
+        .ant-drawer-body {
+            background: linear-gradient(180deg, ${colors.amberLight} 0%, ${colors.amber} 100%);
+        }
+
         .ant-drawer-header-title {
             color: ${colors.navy};
             font-family: ${typography.fontDisplay};
+        }
+
+        .ant-drawer-close {
+            color: ${colors.navy};
+        }
+    `,
+
+    mobileDrawerMenu: css`
+        background: transparent !important;
+        border-inline-end: none !important;
+
+        .ant-menu-item {
+            border-radius: ${radius.sm}px;
+            margin-block: 6px;
+            color: ${colors.navy};
+            font-weight: 700;
+        }
+
+        .ant-menu-item-selected {
+            background: rgba(13, 27, 46, 0.1) !important;
+            color: ${colors.navy} !important;
         }
     `,
 
@@ -213,6 +247,17 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         border-radius: ${radius.sm}px !important;
         height: 42px;
         font-weight: 700;
+        border-color: ${colors.amber} !important;
+        color: ${colors.white} !important;
+        background: linear-gradient(180deg, ${colors.amberLight} 0%, ${colors.amber} 100%) !important;
+        box-shadow: 0 10px 24px rgba(224, 123, 42, 0.24);
+
+        &:hover,
+        &:focus {
+            color: ${colors.white} !important;
+            border-color: ${colors.amber} !important;
+            background: linear-gradient(180deg, ${colors.amber} 0%, ${colors.amber} 100%) !important;
+        }
     `,
 
     content: css`

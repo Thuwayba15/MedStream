@@ -66,9 +66,8 @@ const TopNavigation = ({ roleLabel, activeKey, items }: Pick<IRoleAppShellProps,
             </div>
 
             <Drawer title="Navigation" placement="right" open={isDrawerOpen} size="default" onClose={() => setIsDrawerOpen(false)} className={styles.mobileDrawer}>
-                {navigationItems.length > 0 ? <Menu mode="inline" selectedKeys={activeKey ? [activeKey] : []} items={navigationItems} /> : null}
+                {navigationItems.length > 0 ? <Menu mode="inline" selectedKeys={activeKey ? [activeKey] : []} items={navigationItems} className={styles.mobileDrawerMenu} /> : null}
                 <div className={styles.mobileDrawerFooter}>
-                    <Typography.Text type="secondary">Signed in as {roleLabel}</Typography.Text>
                     <LogoutButton className={styles.mobileLogoutButton} />
                 </div>
             </Drawer>

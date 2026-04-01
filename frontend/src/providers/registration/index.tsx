@@ -24,7 +24,7 @@ export const RegistrationProvider = ({ children }: { children: React.ReactNode }
                 dispatch(loadSucceeded(response.data.facilities ?? []));
             } catch (error) {
                 const message = axios.isAxiosError<{ message?: string }>(error)
-                    ? error.response?.data?.message ?? error.message
+                    ? (error.response?.data?.message ?? error.message)
                     : error instanceof Error
                       ? error.message
                       : "Unable to load facilities.";

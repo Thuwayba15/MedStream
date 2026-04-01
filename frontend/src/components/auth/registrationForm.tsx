@@ -4,14 +4,7 @@ import { Button, Card, Form, Input, Radio, Select, Typography } from "antd";
 import Image from "next/image";
 import Link from "next/link";
 import { useRegistrationForm } from "@/hooks/auth/useRegistrationForm";
-import {
-    getDateOfBirthRule,
-    getPasswordStrengthRule,
-    getPhoneNumberRule,
-    getRegistrationNumberRule,
-    validateClinicianIdNumber,
-    validateIdNumber,
-} from "@/lib/auth/forms";
+import { getDateOfBirthRule, getPasswordStrengthRule, getPhoneNumberRule, getRegistrationNumberRule, validateClinicianIdNumber, validateIdNumber } from "@/lib/auth/forms";
 import { useAuthStyles } from "./style";
 import type { RegistrationFormValues } from "@/lib/auth/forms";
 
@@ -70,12 +63,16 @@ export const RegistrationForm = () => {
                                 rules={[{ required: true, message: "Select your role." }]}
                                 help={getFieldError("accountType")}
                                 validateStatus={getFieldError("accountType") ? "error" : undefined}
-                                    >
-                                        <Radio.Group>
-                                            <Radio className={styles.choiceChip} value="Patient">Patient</Radio>
-                                            <Radio className={styles.choiceChip} value="Clinician">Clinician</Radio>
-                                        </Radio.Group>
-                                    </Form.Item>
+                            >
+                                <Radio.Group>
+                                    <Radio className={styles.choiceChip} value="Patient">
+                                        Patient
+                                    </Radio>
+                                    <Radio className={styles.choiceChip} value="Clinician">
+                                        Clinician
+                                    </Radio>
+                                </Radio.Group>
+                            </Form.Item>
 
                             <Form.Item
                                 label="First name"
@@ -113,10 +110,7 @@ export const RegistrationForm = () => {
                             <Form.Item
                                 label="Phone number"
                                 name="phoneNumber"
-                                rules={[
-                                    { required: true, message: "Enter your phone number." },
-                                    getPhoneNumberRule(),
-                                ]}
+                                rules={[{ required: true, message: "Enter your phone number." }, getPhoneNumberRule()]}
                                 help={getFieldError("phoneNumber")}
                                 validateStatus={getFieldError("phoneNumber") ? "error" : undefined}
                             >
@@ -126,11 +120,7 @@ export const RegistrationForm = () => {
                             <Form.Item
                                 label="Password"
                                 name="password"
-                                rules={[
-                                    { required: true, message: "Choose a password." },
-                                    { min: 8, message: "Password must be at least 8 characters." },
-                                    getPasswordStrengthRule(),
-                                ]}
+                                rules={[{ required: true, message: "Choose a password." }, { min: 8, message: "Password must be at least 8 characters." }, getPasswordStrengthRule()]}
                                 help={getFieldError("password")}
                                 validateStatus={getFieldError("password") ? "error" : undefined}
                             >
@@ -200,10 +190,18 @@ export const RegistrationForm = () => {
                                         validateStatus={getFieldError("professionType") ? "error" : undefined}
                                     >
                                         <Radio.Group>
-                                            <Radio className={styles.choiceChip} value="Doctor">Doctor</Radio>
-                                            <Radio className={styles.choiceChip} value="Nurse">Nurse</Radio>
-                                            <Radio className={styles.choiceChip} value="AlliedHealth">Allied health</Radio>
-                                            <Radio className={styles.choiceChip} value="Other">Other</Radio>
+                                            <Radio className={styles.choiceChip} value="Doctor">
+                                                Doctor
+                                            </Radio>
+                                            <Radio className={styles.choiceChip} value="Nurse">
+                                                Nurse
+                                            </Radio>
+                                            <Radio className={styles.choiceChip} value="AlliedHealth">
+                                                Allied health
+                                            </Radio>
+                                            <Radio className={styles.choiceChip} value="Other">
+                                                Other
+                                            </Radio>
                                         </Radio.Group>
                                     </Form.Item>
 
@@ -215,19 +213,22 @@ export const RegistrationForm = () => {
                                         validateStatus={getFieldError("regulatoryBody") ? "error" : undefined}
                                     >
                                         <Radio.Group>
-                                            <Radio className={styles.choiceChip} value="HPCSA">HPCSA</Radio>
-                                            <Radio className={styles.choiceChip} value="SANC">SANC</Radio>
-                                            <Radio className={styles.choiceChip} value="Other">Other</Radio>
+                                            <Radio className={styles.choiceChip} value="HPCSA">
+                                                HPCSA
+                                            </Radio>
+                                            <Radio className={styles.choiceChip} value="SANC">
+                                                SANC
+                                            </Radio>
+                                            <Radio className={styles.choiceChip} value="Other">
+                                                Other
+                                            </Radio>
                                         </Radio.Group>
                                     </Form.Item>
 
                                     <Form.Item
                                         label="Registration number"
                                         name="registrationNumber"
-                                        rules={[
-                                            { required: true, message: "Enter registration number." },
-                                            getRegistrationNumberRule(),
-                                        ]}
+                                        rules={[{ required: true, message: "Enter registration number." }, getRegistrationNumberRule()]}
                                         help={getFieldError("registrationNumber")}
                                         validateStatus={getFieldError("registrationNumber") ? "error" : undefined}
                                     >
@@ -241,11 +242,7 @@ export const RegistrationForm = () => {
                                         help={getFieldError("requestedFacilityId")}
                                         validateStatus={getFieldError("requestedFacilityId") ? "error" : undefined}
                                     >
-                                        <Select
-                                            placeholder="Select requested facility"
-                                            loading={isLoadingFacilities}
-                                            options={facilityOptions}
-                                        />
+                                        <Select placeholder="Select requested facility" loading={isLoadingFacilities} options={facilityOptions} />
                                     </Form.Item>
                                 </>
                             ) : null}

@@ -14,18 +14,11 @@ export const StyleRegistry = ({ children }: PropsWithChildren): React.JSX.Elemen
             once: true,
         });
 
-        if (styleText.includes(".data-ant-cssinjs-cache-path{content:\"\";}")) {
+        if (styleText.includes('.data-ant-cssinjs-cache-path{content:"";}')) {
             return null;
         }
 
-        return (
-            <style
-                id="medstream-antd-cssinjs"
-                data-rc-order="prepend"
-                data-rc-priority="-1000"
-                dangerouslySetInnerHTML={{ __html: styleText }}
-            />
-        );
+        return <style id="medstream-antd-cssinjs" data-rc-order="prepend" data-rc-priority="-1000" dangerouslySetInnerHTML={{ __html: styleText }} />;
     });
 
     return (

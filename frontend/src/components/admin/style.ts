@@ -163,7 +163,7 @@ export const useAdminStyles = createStyles(({ css }) => ({
     statValue: css`
         margin: 0 !important;
         color: ${colors.navy} !important;
-        font-family: ${typography.fontDisplay} ;
+        font-family: ${typography.fontDisplay};
         font-size: 1.7rem !important;
         line-height: 1 !important;
     `,

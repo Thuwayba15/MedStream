@@ -1,14 +1,6 @@
 import { API } from "@/constants/api";
 import { unwrapAbpResponse } from "@/lib/api/abp";
-import type {
-    IAuthenticateResponse,
-    IBackendPagedUsers,
-    IBackendUserListItem,
-    IFacilityListItem,
-    ILoginRequest,
-    IRegisterRequest,
-    IRegisterResponse,
-} from "@/lib/auth/types";
+import type { IAuthenticateResponse, IBackendPagedUsers, IBackendUserListItem, IFacilityListItem, ILoginRequest, IRegisterRequest, IRegisterResponse } from "@/lib/auth/types";
 import { apiClient } from "@/lib/api/client";
 
 const getAuthorizationHeader = (accessToken: string): { Authorization: string } => {
@@ -58,12 +50,7 @@ export const getClinicianApplicants = async (accessToken: string): Promise<IBack
     };
 };
 
-export const decideClinicianApplicant = async (
-    userId: number,
-    decisionReason: string,
-    isApprove: boolean,
-    accessToken: string
-): Promise<IBackendUserListItem> => {
+export const decideClinicianApplicant = async (userId: number, decisionReason: string, isApprove: boolean, accessToken: string): Promise<IBackendUserListItem> => {
     const endpoint = isApprove ? API.USERS_APPROVE_CLINICIAN_ENDPOINT : API.USERS_DECLINE_CLINICIAN_ENDPOINT;
     const response = await apiClient.post(
         endpoint,

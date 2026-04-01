@@ -65,9 +65,7 @@ export const UserApprovalPage = () => {
                     <Typography.Title level={1} className={adminStyles.pageTitle}>
                         Admin Governance
                     </Typography.Title>
-                    <Typography.Paragraph className={adminStyles.pageIntro}>
-                        Review clinician applicants, assign facilities, and manage the active facility list from one place.
-                    </Typography.Paragraph>
+                    <Typography.Paragraph className={adminStyles.pageIntro}>Review clinician applicants, assign facilities, and manage the active facility list from one place.</Typography.Paragraph>
                 </div>
             </section>
 

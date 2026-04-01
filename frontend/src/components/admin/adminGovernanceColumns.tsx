@@ -22,7 +22,9 @@ export const buildApprovalColumns = (args: IBuildApprovalColumnsArgs): ColumnsTy
             key: "applicant",
             render: (_, row) => (
                 <div className={args.adminStyles.applicantCell}>
-                    <div className={`${args.adminStyles.applicantAvatar} ${args.adminStyles[`applicantAvatar${getApprovalStatusTone(row.approvalStatus).charAt(0).toUpperCase()}${getApprovalStatusTone(row.approvalStatus).slice(1)}`]}`}>
+                    <div
+                        className={`${args.adminStyles.applicantAvatar} ${args.adminStyles[`applicantAvatar${getApprovalStatusTone(row.approvalStatus).charAt(0).toUpperCase()}${getApprovalStatusTone(row.approvalStatus).slice(1)}`]}`}
+                    >
                         {getApplicantInitials(row)}
                     </div>
                     <div className={args.adminStyles.applicantMeta}>
@@ -102,7 +104,13 @@ export const buildApprovalColumns = (args: IBuildApprovalColumnsArgs): ColumnsTy
             title: "Status",
             key: "status",
             width: 130,
-            render: (_, row) => <span className={`${args.adminStyles.statusPill} ${args.adminStyles[`statusPill${getApprovalStatusTone(row.approvalStatus).charAt(0).toUpperCase()}${getApprovalStatusTone(row.approvalStatus).slice(1)}`]}`}>{getApprovalStatusLabel(row.approvalStatus)}</span>,
+            render: (_, row) => (
+                <span
+                    className={`${args.adminStyles.statusPill} ${args.adminStyles[`statusPill${getApprovalStatusTone(row.approvalStatus).charAt(0).toUpperCase()}${getApprovalStatusTone(row.approvalStatus).slice(1)}`]}`}
+                >
+                    {getApprovalStatusLabel(row.approvalStatus)}
+                </span>
+            ),
         },
         {
             title: "Actions",

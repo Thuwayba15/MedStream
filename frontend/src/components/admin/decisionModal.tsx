@@ -13,12 +13,7 @@ interface IDecisionModalProps {
 
 export const DecisionModal = ({ decisionMode, decisionTargetUserId, isMutating, decisionForm, onSubmitDecision, setDecisionTargetUserId }: IDecisionModalProps) => {
     return (
-        <Modal
-            title={decisionMode === "approve" ? "Approve Clinician" : "Decline Clinician"}
-            open={decisionTargetUserId !== null}
-            onCancel={() => setDecisionTargetUserId(null)}
-            footer={null}
-        >
+        <Modal title={decisionMode === "approve" ? "Approve Clinician" : "Decline Clinician"} open={decisionTargetUserId !== null} onCancel={() => setDecisionTargetUserId(null)} footer={null}>
             <Form<IDecisionFormValues> form={decisionForm} layout="vertical" onFinish={(values) => void onSubmitDecision(values)}>
                 <Form.Item
                     label="Decision reason"
