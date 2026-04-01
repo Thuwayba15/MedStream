@@ -7,26 +7,32 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         border-radius: ${radius.lg}px;
         border: 1px solid rgba(13, 27, 46, 0.08);
         box-shadow: ${shadows.soft};
-        background: {colors.offWhite};
-        padding: 20px 26px 16px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, ${colors.white} 100%);
+        padding: 26px 30px 18px;
         display: grid;
-        gap: 18px;
-        width: 80%;
+        gap: 22px;
+        width: min(85%, 1320px);
         min-height: 540px;
-        /* Adjust min-height as needed for your tallest step */
         margin: 0 auto;
+        margin-inline: auto;
+        justify-self: center;
+
+        @media (max-width: 1200px) {
+            width: calc(100% - 48px);
+        }
 
         @media (max-width: 768px) {
             border-radius: ${radius.md}px;
-            padding: 14px 14px 12px;
+            width: calc(100% - 24px);
+            padding: 18px 14px 12px;
             min-height: 420px;
         }
     `,
 
     stepHeader: css`
         display: grid;
-        gap: 8px;
-        text-align: center;
+        gap: 12px;
+        font-style: 
     `,
 
     progressRow: css`
@@ -38,18 +44,43 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         font-weight: 800;
         letter-spacing: 0.12em;
         text-transform: uppercase;
+
+        .ant-typography {
+            color: ${colors.navy};
+            font-size: 0.82rem;
+        }
+    `,
+
+    stepDots: css`
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    `,
+
+    stepDot: css`
+        width: 8px;
+        height: 8px;
+        border-radius: ${radius.pill}px;
+        background: rgba(138, 154, 181, 0.26);
+        transition: width 0.2s ease, background 0.2s ease;
+    `,
+
+    stepDotActive: css`
+        width: 26px;
+        background: linear-gradient(90deg, ${colors.amber} 0%, ${colors.amberLight} 100%);
     `,
 
     subtitleText: css`
         color: ${colors.slate};
-        font-size: 1.05rem;
+        font-size: 1rem;
         text-align: center;
     `,
 
     stepTitle: css`
         margin: 4px 0 0 !important;
         color: ${colors.navy} !important;
-        font-family: ${typography.fontDisplay};
+        font-family: ${typography.fontDisplay} !important;
         text-align: center;
         font-size: clamp(2rem, 4.2vw, 3.1rem) !important;
     `,
@@ -79,8 +110,249 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         text-align: center;
     `,
 
+    checkInSection: css`
+        display: grid;
+        gap: 20px;
+        width: 100%;
+        max-width: 1080px;
+        margin: 0 auto;
+    `,
+
+    checkInBanner: css`
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 18px 20px;
+        border-radius: ${radius.lg}px;
+        background: linear-gradient(135deg, ${colors.navy} 0%, ${colors.navyMid} 100%);
+        box-shadow: 0 18px 36px rgba(13, 27, 46, 0.14);
+        color: ${colors.white};
+
+        @media (max-width: 768px) {
+            padding: 16px;
+        }
+    `,
+
+    checkInBannerIcon: css`
+        width: 38px;
+        height: 38px;
+        border-radius: ${radius.md}px;
+        background: rgba(224, 123, 42, 0.16);
+        display: grid;
+        place-items: center;
+        color: ${colors.amber};
+        flex-shrink: 0;
+        font-size: 1rem;
+    `,
+
+    checkInBannerText: css`
+        color: rgba(255, 255, 255, 0.9) !important;
+        line-height: 1.7;
+        font-size: 0.94rem;
+    `,
+
+    checkInGrid: css`
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        gap: 20px;
+        align-items: stretch;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    `,
+
+    checkInInfoCard: css`
+        border-radius: ${radius.lg}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: ${colors.white};
+        padding: 22px;
+        display: grid;
+        gap: 14px;
+        box-shadow: 0 10px 28px rgba(13, 27, 46, 0.05);
+
+        @media (max-width: 768px) {
+            padding: 18px;
+        }
+    `,
+
+    sectionEyebrow: css`
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: ${colors.amber};
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+
+        &::before {
+            content: "";
+            width: 18px;
+            height: 2px;
+            background: ${colors.amber};
+            border-radius: ${radius.pill}px;
+        }
+    `,
+
+    checkInCardTitle: css`
+        margin: 0 !important;
+        color: ${colors.navy} !important;
+        font-family: ${typography.fontDisplay} !important;
+        font-size: clamp(1.45rem, 2.2vw, 1.8rem) !important;
+    `,
+
+    checkInCardText: css`
+        color: ${colors.slate} !important;
+        line-height: 1.7;
+        font-size: 0.96rem;
+    `,
+
     facilitySelect: css`
-        width: min(560px, 100%);
+        width: 100%;
+
+        .ant-select-selector {
+            min-height: 52px !important;
+            padding-inline: 14px !important;
+            border-radius: ${radius.md}px !important;
+            border-color: rgba(13, 27, 46, 0.12) !important;
+            background: ${colors.offWhite} !important;
+            box-shadow: none !important;
+        }
+
+        &.ant-select-focused .ant-select-selector,
+        &:hover .ant-select-selector {
+            border-color: rgba(224, 123, 42, 0.5) !important;
+        }
+    `,
+
+    selectedFacilitySummary: css`
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: ${radius.md}px;
+        background: rgba(26, 158, 110, 0.08);
+        border: 1px solid rgba(26, 158, 110, 0.18);
+    `,
+
+    selectedFacilityIcon: css`
+        width: 32px;
+        height: 32px;
+        border-radius: ${radius.pill}px;
+        background: #1a9e6e;
+        color: ${colors.white};
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    `,
+
+    selectedFacilityLabel: css`
+        display: block;
+        color: rgba(26, 158, 110, 0.85) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.7rem;
+        font-weight: 800;
+    `,
+
+    selectedFacilityValue: css`
+        display: block;
+        color: #1a9e6e !important;
+        font-size: 0.96rem;
+        font-weight: 700;
+        margin-top: 2px;
+    `,
+
+    nextStepsCard: css`
+        border-radius: ${radius.lg}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: ${colors.white};
+        padding: 22px;
+        display: grid;
+        gap: 16px;
+        box-shadow: 0 10px 28px rgba(13, 27, 46, 0.05);
+
+        @media (max-width: 768px) {
+            padding: 18px;
+        }
+    `,
+
+    nextStepsList: css`
+        display: grid;
+        gap: 0;
+    `,
+
+    nextStepItem: css`
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 0;
+        border-bottom: 1px solid rgba(13, 27, 46, 0.08);
+
+        &:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+    `,
+
+    nextStepItemActive: css`
+        .ant-typography {
+            color: ${colors.navy};
+        }
+    `,
+
+    nextStepBadge: css`
+        width: 28px;
+        height: 28px;
+        border-radius: ${radius.pill}px;
+        background: rgba(138, 154, 181, 0.16);
+        color: ${colors.slate};
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        font-family: ${typography.fontDisplay};
+        font-weight: 700;
+    `,
+
+    nextStepBadgeActive: css`
+        background: ${colors.amber};
+        color: ${colors.white};
+        box-shadow: 0 8px 20px rgba(224, 123, 42, 0.22);
+    `,
+
+    nextStepContent: css`
+        display: grid;
+        gap: 4px;
+    `,
+
+    nextStepTitle: css`
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        color: ${colors.navy} !important;
+        font-size: 0.95rem;
+        font-weight: 700;
+    `,
+
+    nextStepCurrent: css`
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: ${radius.pill}px;
+        background: rgba(224, 123, 42, 0.12);
+        color: ${colors.amber};
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    `,
+
+    nextStepDescription: css`
+        color: ${colors.slate} !important;
+        line-height: 1.6;
+        font-size: 0.84rem;
     `,
 
     symptomTextArea: css`

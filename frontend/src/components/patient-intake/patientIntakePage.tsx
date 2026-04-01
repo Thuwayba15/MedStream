@@ -148,7 +148,6 @@ export const PatientIntakePage = () => {
                     facilityName={state.facilityName}
                     selectedFacilityId={state.selectedFacilityId}
                     facilities={state.availableFacilities}
-                    startedAt={state.startedAt}
                     styles={styles}
                     onSelectFacility={actions.setSelectedFacilityId}
                 />
@@ -228,38 +227,102 @@ const CheckInStep = ({
     facilityName,
     selectedFacilityId,
     facilities,
-    startedAt,
     styles,
     onSelectFacility,
 }: {
     facilityName: string;
     selectedFacilityId: number | null;
     facilities: Array<{ id: number; name: string }>;
-    startedAt: string | null;
     styles: Record<string, string>;
     onSelectFacility: (value: number) => void;
 }): React.JSX.Element => {
     return (
-        <Space orientation="vertical" size={14} className={`${styles.panel} ${styles.centeredBlock}`}>
-            <Typography.Text className={styles.centeredText}>We will use your responses to prioritize your visit safely and quickly. You can review answers before final submission.</Typography.Text>
-            <Select<number>
-                aria-label="Hospital"
-                className={styles.facilitySelect}
-                value={selectedFacilityId ?? undefined}
-                placeholder="Select your hospital"
-                showSearch
-                optionFilterProp="label"
-                options={facilities.map((facility) => ({ value: facility.id, label: facility.name }))}
-                suffixIcon={<EnvironmentOutlined />}
-                onChange={onSelectFacility}
-            />
-            <Typography.Text className={styles.centeredText}>
-                <strong>Selected:</strong> {facilityName || "Not selected"}
-            </Typography.Text>
-            <Typography.Text className={styles.centeredText}>
-                <strong>Session started:</strong> {startedAt ? new Date(startedAt).toLocaleString() : "Now"}
-            </Typography.Text>
-        </Space>
+        <div className={styles.checkInSection}>
+            <div className={styles.checkInBanner}>
+                <div className={styles.checkInBannerIcon}>
+                    <SafetyCertificateOutlined />
+                </div>
+                <Typography.Text className={styles.checkInBannerText}>
+                    Your answers help us understand how urgent your visit is and guide you to the next step. You can review everything before you finish.
+                </Typography.Text>
+            </div>
+
+            <div className={styles.checkInGrid}>
+                <div className={styles.checkInInfoCard}>
+                    <div className={styles.sectionEyebrow}>Visit Check-In</div>
+                    <Typography.Title level={4} className={styles.checkInCardTitle}>
+                        Choose where you are being seen today
+                    </Typography.Title>
+                    
+                    <Select<number>
+                        aria-label="Hospital"
+                        className={styles.facilitySelect}
+                        value={selectedFacilityId ?? undefined}
+                        placeholder="Select your hospital"
+                        showSearch
+                        optionFilterProp="label"
+                        options={facilities.map((facility) => ({ value: facility.id, label: facility.name }))}
+                        suffixIcon={<EnvironmentOutlined />}
+                        onChange={onSelectFacility}
+                    />
+
+                    <div className={styles.selectedFacilitySummary}>
+                        <div className={styles.selectedFacilityIcon}>
+                            <EnvironmentOutlined />
+                        </div>
+                        <div>
+                            <Typography.Text className={styles.selectedFacilityLabel}>Selected hospital</Typography.Text>
+                            <Typography.Text className={styles.selectedFacilityValue}>{facilityName || "Choose a hospital to continue"}</Typography.Text>
+                        </div>
+                    </div>
+                </div>
+
+                <div className={styles.nextStepsCard}>
+                    <div className={styles.sectionEyebrow}>What Happens Next</div>
+                    <div className={styles.nextStepsList}>
+                        {[
+                            {
+                                step: 1,
+                                title: "Check-in",
+                                description: "Choose your hospital and start your intake.",
+                                active: true,
+                            },
+                            {
+                                step: 2,
+                                title: "Quick safety questions",
+                                description: "We ask a few important questions to spot urgent warning signs early.",
+                            },
+                            {
+                                step: 3,
+                                title: "Tell us your symptoms",
+                                description: "You can type or speak about what brought you in today.",
+                            },
+                            {
+                                step: 4,
+                                title: "A few follow-up questions",
+                                description: "We may ask for a little more detail to understand your symptoms better.",
+                            },
+                            {
+                                step: 5,
+                                title: "See your queue status",
+                                description: "We show your triage result and where you are in the visit flow.",
+                            },
+                        ].map((item) => (
+                            <div key={item.step} className={`${styles.nextStepItem} ${item.active ? styles.nextStepItemActive : ""}`}>
+                                <div className={`${styles.nextStepBadge} ${item.active ? styles.nextStepBadgeActive : ""}`}>{item.step}</div>
+                                <div className={styles.nextStepContent}>
+                                    <Typography.Text className={styles.nextStepTitle}>
+                                        {item.title}
+                                        {item.active ? <span className={styles.nextStepCurrent}>You are here</span> : null}
+                                    </Typography.Text>
+                                    <Typography.Text className={styles.nextStepDescription}>{item.description}</Typography.Text>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -500,22 +563,22 @@ const StatusStep = ({
 
 const stepDescription = (step: number): string => {
     if (step === 0) {
-        return "Confirm your visit context and begin intake.";
+        return "Choose your hospital and get ready to begin your visit check-in.";
     }
 
     if (step === 1) {
-        return "We quickly check urgent danger signs before deeper follow-up.";
+        return "We ask a few quick safety questions before moving on.";
     }
 
     if (step === 2) {
-        return "Tell us what you are feeling using text, chips, or speech.";
+        return "Tell us what you are feeling in your own words, by typing or speaking.";
     }
 
     if (step === 3) {
-        return "Answer follow-up questions generated from your symptoms.";
+        return "Answer a few follow-up questions so we can understand your symptoms better.";
     }
 
-    return "Review your triage urgency and current queue status.";
+    return "See your triage result and current queue status.";
 };
 
 const resolveSpeechRecognitionApi = (): SpeechRecognitionConstructor | null => {
