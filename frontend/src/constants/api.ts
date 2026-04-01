@@ -158,6 +158,9 @@ export const API = {
     /** Internal Next route to read the current patient's queue status for a visit. */
     PATIENT_INTAKE_QUEUE_STATUS_ROUTE: "/api/patient-intake/queue-status",
 
+    /** Internal Next route for patient self-history timeline data. */
+    PATIENT_HISTORY_ROUTE: "/api/patient/history",
+
     /** Internal Next route for clinician queue dashboard data. */
     CLINICIAN_QUEUE_ROUTE: "/api/clinician/queue",
 
