@@ -154,6 +154,8 @@ For this repository, enforce these architecture rules on every frontend task:
 - Provider state must follow the exact 4-file pattern per feature: `actions.tsx`, `context.tsx`, `reducer.tsx`, `index.tsx`.
 - Provider actions must use `redux-actions` (`createAction`) and reducers must use `redux-actions` (`handleActions`) to mirror the standard provider structure.
 - Provider `index.tsx` files own the client-side API workflow for that provider feature (pending/success/error dispatch around network operations).
+- Do not add a separate client-side service file for provider request flows unless the task explicitly needs shared logic beyond a single provider.
+- Add short operation comments above provider request methods, for example `// Get Single User` and `// GET /api/users/{id}`.
 - Components and pages must call provider actions; they must not perform business API calls directly.
 - Server route handlers under `src/app/api/**` stay thin and delegate backend calls to server-side services under `src/services/auth/**`.
 - Components and route pages should not call `fetch` directly for business flows; they should use provider actions.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { AppProviders } from "@/providers/appProviders";
+import { StyleRegistry } from "@/providers/styleRegistry";
 import "./globals.css";
 
 const playfair = localFont({
@@ -31,7 +32,9 @@ const RootLayout = ({
     return (
         <html lang="en" className={playfair.variable}>
             <body>
-                <AppProviders>{children}</AppProviders>
+                <StyleRegistry>
+                    <AppProviders>{children}</AppProviders>
+                </StyleRegistry>
             </body>
         </html>
     );
