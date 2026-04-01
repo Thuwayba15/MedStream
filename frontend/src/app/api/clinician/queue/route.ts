@@ -1,6 +1,7 @@
-import { getAbpErrorMessage } from "@/lib/api/abp";
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
-import { queueOperationsService } from "@/services/queue-operations/queueOperationsService";
 import type { IGetClinicianQueueRequest, TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
 import { NextResponse } from "next/server";
 
@@ -38,7 +39,20 @@ export const GET = async (request: Request): Promise<Response> => {
         }
 
         const payload = parseQueueRequest(request);
-        const queue = await queueOperationsService.getClinicianQueue(payload, guardResult.accessToken);
+        const query = new URLSearchParams();
+        if (payload.searchText?.trim()) {
+            query.set("searchText", payload.searchText.trim());
+        }
+
+        (payload.queueStatuses ?? []).forEach((status) => query.append("queueStatuses", status));
+        (payload.urgencyLevels ?? []).forEach((urgency) => query.append("urgencyLevels", urgency));
+        query.set("skipCount", String(payload.skipCount ?? 0));
+        query.set("maxResultCount", String(payload.maxResultCount ?? 20));
+
+        const response = await apiClient.get(`${API.QUEUE_OPERATIONS_GET_CLINICIAN_QUEUE_ENDPOINT}?${query.toString()}`, {
+            headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+        });
+        const queue = unwrapAbpResponse(response.data);
 
         return NextResponse.json(queue);
     } catch (error) {

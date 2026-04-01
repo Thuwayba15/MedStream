@@ -1,6 +1,7 @@
-import { getAbpErrorMessage } from "@/lib/api/abp";
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
-import { consultationService } from "@/services/consultation/consultationService";
 import { NextResponse } from "next/server";
 
 interface IDraftBody {
@@ -19,8 +20,12 @@ export const POST = async (request: Request): Promise<Response> => {
             return NextResponse.json({ message: "Visit id is required." }, { status: 400 });
         }
 
-        const result = await consultationService.generateAssessmentPlanDraft(body.visitId, guardResult.accessToken);
-        return NextResponse.json(result);
+        const response = await apiClient.post(
+            API.CONSULTATION_GENERATE_ASSESSMENT_PLAN_ENDPOINT,
+            { visitId: body.visitId },
+            { headers: { Authorization: `Bearer ${guardResult.accessToken}` } }
+        );
+        return NextResponse.json(unwrapAbpResponse(response.data));
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to generate assessment and plan draft.") }, { status: 400 });
     }

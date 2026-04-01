@@ -1,6 +1,7 @@
-import { getAbpErrorMessage } from "@/lib/api/abp";
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
-import { queueOperationsService } from "@/services/queue-operations/queueOperationsService";
 import type { TUrgencyLevel } from "@/services/queue-operations/types";
 import { NextResponse } from "next/server";
 
@@ -33,16 +34,19 @@ export const POST = async (request: Request, context: IRouteContext): Promise<Re
             return NextResponse.json({ message: "Urgency level is required." }, { status: 400 });
         }
 
-        const result = await queueOperationsService.overrideQueueTicketUrgency(
+        const response = await apiClient.post(
+            API.QUEUE_OPERATIONS_OVERRIDE_QUEUE_URGENCY_ENDPOINT,
             {
                 queueTicketId: parsedQueueTicketId,
                 urgencyLevel: body.urgencyLevel,
                 note: body.note ?? "",
             },
-            guardResult.accessToken
+            {
+                headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+            }
         );
 
-        return NextResponse.json(result);
+        return NextResponse.json(unwrapAbpResponse(response.data));
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to override urgency.") }, { status: 400 });
     }
