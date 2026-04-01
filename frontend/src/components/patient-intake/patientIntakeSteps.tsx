@@ -1,10 +1,10 @@
 "use client";
 
 import { AudioOutlined, ClockCircleOutlined, EnvironmentOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Input, InputNumber, Radio, Select, Space, Tag, Typography } from "antd";
+import { Button, Card, Input, InputNumber, Radio, Select, Space, Tag, Typography } from "antd";
 import { COMMON_SYMPTOMS } from "@/constants/patientIntake";
 import type { IIntakeQuestion } from "@/services/patient-intake/types";
-import type { ICheckInStepProps, IFollowUpStepProps, IStatusStepProps, ISymptomsStepProps, IUrgentCheckStepProps } from "./patientIntakeUtils";
+import { getIntakeJourneyItems, type ICheckInStepProps, type IFollowUpStepProps, type IStatusStepProps, type ISymptomsStepProps, type IUrgentCheckStepProps } from "./patientIntakeUtils";
 
 export const CheckInStep = ({ facilityName, selectedFacilityId, facilities, styles, onSelectFacility }: ICheckInStepProps): React.JSX.Element => {
     return (
@@ -18,59 +18,56 @@ export const CheckInStep = ({ facilityName, selectedFacilityId, facilities, styl
                 </Typography.Text>
             </div>
 
-            <div className={styles.checkInGrid}>
-                <div className={styles.checkInInfoCard}>
-                    <div className={styles.sectionEyebrow}>Visit Check-In</div>
-                    <Typography.Title level={4} className={styles.checkInCardTitle}>
-                        Choose where you are being seen today
-                    </Typography.Title>
+            <div className={styles.checkInInfoCard}>
+                <div className={styles.sectionEyebrow}>Visit Check-In</div>
+                <Typography.Title level={4} className={styles.checkInCardTitle}>
+                    Choose where you are being seen today
+                </Typography.Title>
 
-                    <Select<number>
-                        aria-label="Hospital"
-                        className={styles.facilitySelect}
-                        value={selectedFacilityId ?? undefined}
-                        placeholder="Select your hospital"
-                        showSearch
-                        optionFilterProp="label"
-                        options={facilities.map((facility) => ({ value: facility.id, label: facility.name }))}
-                        suffixIcon={<EnvironmentOutlined />}
-                        onChange={onSelectFacility}
-                    />
+                <Select<number>
+                    aria-label="Hospital"
+                    data-testid="patient-hospital-select"
+                    className={styles.facilitySelect}
+                    value={selectedFacilityId ?? undefined}
+                    placeholder="Select your hospital"
+                    showSearch
+                    optionFilterProp="label"
+                    options={facilities.map((facility) => ({ value: facility.id, label: facility.name }))}
+                    suffixIcon={<EnvironmentOutlined />}
+                    onChange={onSelectFacility}
+                />
 
-                    <div className={styles.selectedFacilitySummary}>
-                        <div className={styles.selectedFacilityIcon}>
-                            <EnvironmentOutlined />
-                        </div>
-                        <div>
-                            <Typography.Text className={styles.selectedFacilityLabel}>Selected hospital</Typography.Text>
-                            <Typography.Text className={styles.selectedFacilityValue}>{facilityName || "Choose a hospital to continue"}</Typography.Text>
-                        </div>
+                <div className={styles.selectedFacilitySummary}>
+                    <div className={styles.selectedFacilityIcon}>
+                        <EnvironmentOutlined />
+                    </div>
+                    <div>
+                        <Typography.Text className={styles.selectedFacilityLabel}>Selected hospital</Typography.Text>
+                        <Typography.Text className={styles.selectedFacilityValue}>{facilityName || "Choose a hospital to continue"}</Typography.Text>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
 
-                <div className={styles.nextStepsCard}>
-                    <div className={styles.sectionEyebrow}>What Happens Next</div>
-                    <div className={styles.nextStepsList}>
-                        {[
-                            { step: 1, title: "Check-in", description: "Choose your hospital and start your intake.", active: true },
-                            { step: 2, title: "Quick safety questions", description: "We ask a few important questions to spot urgent warning signs early." },
-                            { step: 3, title: "Tell us your symptoms", description: "You can type or speak about what brought you in today." },
-                            { step: 4, title: "A few follow-up questions", description: "We may ask for a little more detail to understand your symptoms better." },
-                            { step: 5, title: "See your queue status", description: "We show your triage result and where you are in the visit flow." },
-                        ].map((item) => (
-                            <div key={item.step} className={`${styles.nextStepItem} ${item.active ? styles.nextStepItemActive : ""}`}>
-                                <div className={`${styles.nextStepBadge} ${item.active ? styles.nextStepBadgeActive : ""}`}>{item.step}</div>
-                                <div className={styles.nextStepContent}>
-                                    <Typography.Text className={styles.nextStepTitle}>
-                                        {item.title}
-                                        {item.active ? <span className={styles.nextStepCurrent}>You are here</span> : null}
-                                    </Typography.Text>
-                                    <Typography.Text className={styles.nextStepDescription}>{item.description}</Typography.Text>
-                                </div>
-                            </div>
-                        ))}
+export const IntakeJourneyPanel = ({ currentStep, styles }: { currentStep: number; styles: Record<string, string> }): React.JSX.Element => {
+    return (
+        <div className={styles.nextStepsCard}>
+            <div className={styles.sectionEyebrow}>What Happens Next</div>
+            <div className={styles.nextStepsList}>
+                {getIntakeJourneyItems(currentStep).map((item) => (
+                    <div key={item.step} className={`${styles.nextStepItem} ${item.active ? styles.nextStepItemActive : ""}`}>
+                        <div className={`${styles.nextStepBadge} ${item.active ? styles.nextStepBadgeActive : ""}`}>{item.step}</div>
+                        <div className={styles.nextStepContent}>
+                            <Typography.Text className={styles.nextStepTitle}>
+                                {item.title}
+                                {item.active ? <span className={styles.nextStepCurrent}>You are here</span> : null}
+                            </Typography.Text>
+                            <Typography.Text className={styles.nextStepDescription}>{item.description}</Typography.Text>
+                        </div>
                     </div>
-                </div>
+                ))}
             </div>
         </div>
     );
@@ -105,19 +102,6 @@ export const SymptomsStep = ({ freeText, selectedSymptoms, styles, isListening, 
                     autoSize={{ minRows: 5, maxRows: 8 }}
                 />
             </Space>
-
-            <div>
-                <Typography.Text strong className={styles.symptomChipTitle}>
-                    Common Symptoms
-                </Typography.Text>
-                <div className={`${styles.chipsWrap} ${styles.centeredWrap}`}>
-                    {COMMON_SYMPTOMS.map((symptom) => (
-                        <Button key={symptom} size="small" className={styles.chipButton} type={selectedSymptoms.includes(symptom) ? "primary" : "default"} onClick={() => onToggleSymptom(symptom)}>
-                            {symptom}
-                        </Button>
-                    ))}
-                </div>
-            </div>
         </Space>
     );
 };
@@ -142,12 +126,15 @@ export const FollowUpStep = ({ extractedPrimarySymptoms, questions, answers, onS
 export const UrgentCheckStep = ({ questions, answers, onSetAnswer, urgentMessage, urgentTriggered, styles }: IUrgentCheckStepProps): React.JSX.Element => {
     return (
         <Space orientation="vertical" size={14} className={styles.centeredBlock}>
-            <Alert
-                type={urgentTriggered ? "error" : "warning"}
-                showIcon
-                title={urgentTriggered ? "Urgent signs detected" : "Complete urgent safety check"}
-                description={urgentMessage ?? "Answer these urgent safety questions before continuing."}
-            />
+            <div className={`${styles.urgentMessageCard} ${urgentTriggered ? styles.urgentMessageCardCritical : ""}`}>
+                <div className={styles.urgentMessageIcon}>
+                    <SafetyCertificateOutlined />
+                </div>
+                <div className={styles.urgentMessageContent}>
+                    <Typography.Text className={styles.urgentMessageTitle}>{urgentTriggered ? "Urgent signs detected" : "Complete urgent safety check"}</Typography.Text>
+                    <Typography.Text className={styles.urgentMessageDescription}>{ "Answer these urgent safety questions before continuing."}</Typography.Text>
+                </div>
+            </div>
 
             <div className={styles.questionList}>
                 {questions.map((question) => (

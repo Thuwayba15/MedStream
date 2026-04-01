@@ -117,10 +117,8 @@ test.describe("patient intake flow", () => {
 type TMockMode = "approved-json" | "apc-fallback" | "urgent-fast-track";
 
 async function selectHospital(page: import("@playwright/test").Page): Promise<void> {
-    const hospitalSelect = page.getByRole("combobox", { name: "Hospital" }).first();
-    await hospitalSelect.click();
-    await hospitalSelect.fill("Chris Hani");
-    await page.keyboard.press("Enter");
+    await page.getByTestId("patient-hospital-select").click();
+    await page.getByTitle("Chris Hani Baragwanath Hospital").click();
 }
 
 async function installPatientIntakeMocks(page: import("@playwright/test").Page, options: { mode: TMockMode; onQuestionsPayload?: (payload: Record<string, unknown>) => void }): Promise<void> {

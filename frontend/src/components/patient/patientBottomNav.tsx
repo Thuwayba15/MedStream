@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "antd";
 import Link from "next/link";
 import { usePatientBottomNavStyles } from "./patientBottomNavStyle";
 
@@ -19,25 +18,27 @@ export const PatientBottomNav = ({ activeKey, hasQueueStatus, onSelectMyQueue, o
     return (
         <div className={styles.bottomNavWrap} data-testid="patient-bottom-nav">
             <div className={styles.navRow}>
-                <Link href="/patient">
-                    <Button className={`${styles.navButton} ${activeKey === "new-visit" ? styles.navButtonActive : ""}`} data-testid="patient-nav-new-visit" onClick={() => onSelectNewVisit?.()}>
-                        New Visit
-                    </Button>
+                <Link
+                    href="/patient"
+                    className={`${styles.navButton} ${activeKey === "new-visit" ? styles.navButtonActive : ""}`}
+                    data-testid="patient-nav-new-visit"
+                    onClick={onSelectNewVisit}
+                >
+                    New Visit
                 </Link>
-                <Link href="/patient">
-                    <Button
-                        className={`${styles.navButton} ${activeKey === "my-queue" ? styles.navButtonActive : ""}`}
-                        data-testid="patient-nav-my-queue"
-                        disabled={!hasQueueStatus}
-                        onClick={() => onSelectMyQueue?.()}
-                    >
-                        My Queue
-                    </Button>
-                </Link>
-                <Link href="/patient/history">
-                    <Button className={`${styles.navButton} ${activeKey === "history" ? styles.navButtonActive : ""}`} data-testid="patient-nav-history">
-                        History
-                    </Button>
+                <button
+                    type="button"
+                    className={`${styles.navButton} ${activeKey === "my-queue" ? styles.navButtonActive : ""}`}
+                    data-testid="patient-nav-my-queue"
+                    disabled={!hasQueueStatus}
+                    onClick={() => {
+                        onSelectMyQueue?.();
+                    }}
+                >
+                    My Queue
+                </button>
+                <Link href="/patient/history" className={`${styles.navButton} ${activeKey === "history" ? styles.navButtonActive : ""}`} data-testid="patient-nav-history">
+                    History
                 </Link>
             </div>
         </div>

@@ -8,7 +8,7 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         border: 1px solid rgba(13, 27, 46, 0.08);
         box-shadow: ${shadows.soft};
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, ${colors.white} 100%);
-        padding: 26px 30px 18px;
+        padding: 18px 30px 18px;
         display: grid;
         gap: 22px;
         width: min(85%, 1320px);
@@ -24,15 +24,14 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         @media (max-width: 768px) {
             border-radius: ${radius.md}px;
             width: calc(100% - 24px);
-            padding: 18px 14px 12px;
+            padding: 14px 14px 12px;
             min-height: 420px;
         }
     `,
 
     stepHeader: css`
         display: grid;
-        gap: 12px;
-        font-style: 
+        gap: 10px;
     `,
 
     progressRow: css`
@@ -44,31 +43,12 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         font-weight: 800;
         letter-spacing: 0.12em;
         text-transform: uppercase;
+        margin-top: 2px;
 
         .ant-typography {
             color: ${colors.navy};
             font-size: 0.82rem;
         }
-    `,
-
-    stepDots: css`
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    `,
-
-    stepDot: css`
-        width: 8px;
-        height: 8px;
-        border-radius: ${radius.pill}px;
-        background: rgba(138, 154, 181, 0.26);
-        transition: width 0.2s ease, background 0.2s ease;
-    `,
-
-    stepDotActive: css`
-        width: 26px;
-        background: linear-gradient(90deg, ${colors.amber} 0%, ${colors.amberLight} 100%);
     `,
 
     subtitleText: css`
@@ -355,6 +335,31 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         font-size: 0.84rem;
     `,
 
+    intakeBodyGrid: css`
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+        gap: 22px;
+        align-items: start;
+
+        @media (max-width: 980px) {
+            grid-template-columns: 1fr;
+        }
+    `,
+
+    intakeMainColumn: css`
+        min-width: 0;
+        display: grid;
+        gap: 18px;
+    `,
+
+    intakeSideColumn: css`
+        min-width: 0;
+
+        @media (max-width: 980px) {
+            order: 2;
+        }
+    `,
+
     symptomTextArea: css`
         min-height: 130px !important;
         border-radius: ${radius.md}px;
@@ -566,5 +571,46 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         text-align: center;
         display: block;
         width: 100%;
+    `,
+
+    urgentMessageCard: css`
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 18px;
+        border-radius: ${radius.md}px;
+        border: 1px solid rgba(224, 123, 42, 0.2);
+        background: ${colors.amberPale};
+    `,
+
+    urgentMessageCardCritical: css`
+        border-color: rgba(201, 64, 64, 0.22);
+        background: rgba(201, 64, 64, 0.06);
+    `,
+
+    urgentMessageIcon: css`
+        width: 34px;
+        height: 34px;
+        border-radius: ${radius.md}px;
+        background: rgba(224, 123, 42, 0.16);
+        color: ${colors.amber};
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    `,
+
+    urgentMessageContent: css`
+        display: grid;
+        gap: 4px;
+    `,
+
+    urgentMessageTitle: css`
+        color: ${colors.navy} !important;
+        font-weight: 700;
+    `,
+
+    urgentMessageDescription: css`
+        color: ${colors.slate} !important;
+        line-height: 1.6;
     `,
 }));

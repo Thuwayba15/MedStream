@@ -31,7 +31,7 @@ const RootLayout = ({
 }>) => {
     return (
         <html lang="en" className={playfair.variable}>
-            <body>
+            <body className={playfair.variable}>
                 <StyleRegistry>
                     <AppProviders>{children}</AppProviders>
                 </StyleRegistry>

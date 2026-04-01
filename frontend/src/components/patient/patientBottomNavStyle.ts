@@ -4,17 +4,17 @@ const { colors, radius } = medstreamTheme;
 
 export const usePatientBottomNavStyles = createStyles(({ css }) => ({
     bottomNavWrap: css`
-        padding: 0 0 14px;
-        border-bottom: 1px solid rgba(13, 27, 46, 0.08);
-        margin-bottom: 14px;
+        padding: 0 0 8px;
+        border-bottom: 1px solid rgba(13, 27, 46, 0.12);
+        margin-bottom: 0;
         width: 100%;
     `,
 
     navRow: css`
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 8px;
+        justify-content: flex-start;
+        gap: 2px;
         overflow-x: auto;
         scrollbar-width: none;
 
@@ -24,12 +24,12 @@ export const usePatientBottomNavStyles = createStyles(({ css }) => ({
 
         @media (max-width: 768px) {
             justify-content: flex-start;
-            gap: 2px;
+            gap: 0;
         }
     `,
 
     navButton: css`
-        min-height: 48px;
+        min-height: 44px;
         padding-inline: 14px !important;
         font-weight: 600;
         color: ${colors.slate} !important;
@@ -38,6 +38,7 @@ export const usePatientBottomNavStyles = createStyles(({ css }) => ({
         border-radius: 0 !important;
         background: transparent !important;
         box-shadow: none !important;
+        flex: 0 0 auto;
 
         &:hover,
         &:focus {

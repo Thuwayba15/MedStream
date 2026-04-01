@@ -261,10 +261,12 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
     `,
 
     content: css`
+        min-height: calc(100vh - 74px);
         padding: 22px 16px 26px;
         background: ${pageBackground} !important;
 
         @media (max-width: 768px) {
+            min-height: calc(100vh - 68px);
             padding: 14px 12px 20px;
         }
     `,
@@ -276,5 +278,9 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         display: grid;
         gap: 16px;
         background: transparent;
+
+        @media (max-width: 1100px) {
+            max-width: 100%;
+        }
     `,
 }));

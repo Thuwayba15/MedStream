@@ -85,9 +85,16 @@ export interface IStatusStepProps {
     styles: Record<string, string>;
 }
 
+export interface IIntakeJourneyItem {
+    step: number;
+    title: string;
+    description: string;
+    active: boolean;
+}
+
 export const stepDescription = (step: number): string => {
     if (step === 0) {
-        return "Choose your hospital and get ready to begin your visit check-in.";
+        return "Choose your facility and get ready to begin your visit check-in.";
     }
 
     if (step === 1) {
@@ -103,6 +110,41 @@ export const stepDescription = (step: number): string => {
     }
 
     return "See your triage result and current queue status.";
+};
+
+export const getIntakeJourneyItems = (currentStep: number): IIntakeJourneyItem[] => {
+    return [
+        {
+            step: 1,
+            title: "Check-in",
+            description: "Choose your hospital and start your intake.",
+            active: currentStep === 0,
+        },
+        {
+            step: 2,
+            title: "Quick safety questions",
+            description: "We ask a few important questions to spot urgent warning signs early.",
+            active: currentStep === 1,
+        },
+        {
+            step: 3,
+            title: "Tell us your symptoms",
+            description: "You can type or speak about what brought you in today.",
+            active: currentStep === 2,
+        },
+        {
+            step: 4,
+            title: "A few follow-up questions",
+            description: "We may ask for a little more detail to understand your symptoms better.",
+            active: currentStep === 3,
+        },
+        {
+            step: 5,
+            title: "See your queue status",
+            description: "We show your triage result and where you are in the visit flow.",
+            active: currentStep === 4,
+        },
+    ];
 };
 
 export const resolveSpeechRecognitionApi = (): SpeechRecognitionConstructor | null => {

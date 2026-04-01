@@ -3,10 +3,25 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    min-height: 100vh;
+    background: var(--off-white);
+    font-family: var(--font-sans);
+}
+
+body {
+    color: var(--navy);
+    background: var(--off-white);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
 }
 
 :root {
     --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+    --font-playfair: "Playfair Display", Georgia, serif;
     --navy: #0d1b2e;
     --navy-mid: #162540;
     --navy-light: #1e3150;
@@ -23,4 +38,12 @@ body {
     --urgent: #c94040;
     --priority: #e07b2a;
     --routine: #2a7be0;
+}
+
+h1,
+h2,
+h3,
+h4,
+.medstream-display {
+    font-family: var(--font-playfair);
 }

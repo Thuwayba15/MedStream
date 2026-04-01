@@ -1,12 +1,12 @@
 "use client";
 
-import { Alert, Button, Card, Progress, Typography } from "antd";
+import { Button, Card, Progress, message, Typography } from "antd";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { PATIENT_INTAKE_STEPS } from "@/constants/patientIntake";
 import { PatientBottomNav } from "@/components/patient/patientBottomNav";
 import { usePatientIntakeActions, usePatientIntakeState } from "@/providers/patient-intake";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
-import { CheckInStep, FollowUpStep, StatusStep, SymptomsStep, UrgentCheckStep } from "./patientIntakeSteps";
+import { CheckInStep, FollowUpStep, IntakeJourneyPanel, StatusStep, SymptomsStep, UrgentCheckStep } from "./patientIntakeSteps";
 import type { ISpeechRecognition } from "./patientIntakeUtils";
 import { resolveSpeechRecognitionApi, stepDescription } from "./patientIntakeUtils";
 import { usePatientIntakeStyles } from "./style";
@@ -16,6 +16,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
     const state = usePatientIntakeState();
     const actions = usePatientIntakeActions();
     const [isListening, setIsListening] = useState(false);
+    const [messageApi, messageContextHolder] = message.useMessage();
     const hasInitializedRef = useRef(false);
     const recognitionRef = useRef<ISpeechRecognition | null>(null);
     const initializeFlowEvent = useEffectEvent(async () => {
@@ -38,6 +39,15 @@ export const PatientIntakePage = (): React.JSX.Element => {
     const hasQueueStatus = Boolean(state.visitId && state.queue);
     const activeTab = state.currentStep === 4 && hasQueueStatus ? "my-queue" : "new-visit";
     const isContinueDisabled = (state.currentStep === 2 && !state.freeText.trim() && state.selectedSymptoms.length === 0) || state.isProcessing;
+
+    useEffect(() => {
+        if (!state.errorMessage) {
+            return;
+        }
+
+        void messageApi.error(state.errorMessage);
+        actions.clearError();
+    }, [actions, messageApi, state.errorMessage]);
 
     const startSpeechCapture = (): void => {
         const Recognition = resolveSpeechRecognitionApi();
@@ -75,23 +85,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
 
     return (
         <Card className={styles.stepCard}>
-            <div className={styles.stepHeader}>
-                <div className={styles.progressRow}>
-                    <Typography.Text>{currentStepDetails.subtitle}</Typography.Text>
-                    <Typography.Text>{progressPercent}%</Typography.Text>
-                </div>
-                <Progress percent={progressPercent} showInfo={false} strokeColor="#E07B2A" railColor="#E8EDF7" />
-                <div className={styles.stepDots} aria-hidden="true">
-                    {PATIENT_INTAKE_STEPS.map((step, index) => (
-                        <span key={step.key} className={`${styles.stepDot} ${index === state.currentStep ? styles.stepDotActive : ""}`} />
-                    ))}
-                </div>
-                <Typography.Title level={2} className={styles.stepTitle}>
-                    {currentStepDetails.label}
-                </Typography.Title>
-                <Typography.Text className={styles.subtitleText}>{stepDescription(state.currentStep)}</Typography.Text>
-            </div>
-
+            {messageContextHolder}
             <PatientBottomNav
                 activeKey={activeTab}
                 hasQueueStatus={hasQueueStatus}
@@ -103,24 +97,31 @@ export const PatientIntakePage = (): React.JSX.Element => {
                 }}
             />
 
-            {state.errorMessage ? (
-                <Alert
-                    type="error"
-                    showIcon
-                    title={state.errorMessage}
-                    action={
-                        <Button size="small" onClick={actions.clearError}>
-                            Dismiss
-                        </Button>
-                    }
-                />
-            ) : null}
+            <div className={styles.stepHeader}>
+                <div className={styles.progressRow}>
+                    <Typography.Text>{currentStepDetails.subtitle}</Typography.Text>
+                    <Typography.Text>{progressPercent}%</Typography.Text>
+                </div>
+                <Progress percent={progressPercent} showInfo={false} strokeColor="#E07B2A" railColor="#E8EDF7" />
+                <Typography.Title level={2} className={styles.stepTitle}>
+                    {currentStepDetails.label}
+                </Typography.Title>
+                <Typography.Text className={styles.subtitleText}>{stepDescription(state.currentStep)}</Typography.Text>
+            </div>
 
-            {state.currentStep === 0 ? <CheckInStep facilityName={state.facilityName} selectedFacilityId={state.selectedFacilityId} facilities={state.availableFacilities} styles={styles} onSelectFacility={actions.setSelectedFacilityId} /> : null}
-            {state.currentStep === 1 ? <UrgentCheckStep questions={state.urgentQuestionSet} answers={state.answers} onSetAnswer={actions.setAnswer} urgentMessage={state.urgentMessage} urgentTriggered={state.urgentTriggered} styles={styles} /> : null}
-            {state.currentStep === 2 ? <SymptomsStep freeText={state.freeText} selectedSymptoms={state.selectedSymptoms} styles={styles} isListening={isListening} speechSupported={speechSupported} onChangeFreeText={actions.setFreeText} onToggleSymptom={actions.toggleSymptom} onStartSpeech={startSpeechCapture} onStopSpeech={stopSpeechCapture} /> : null}
-            {state.currentStep === 3 ? <FollowUpStep extractedPrimarySymptoms={state.extractedPrimarySymptoms} questions={visibleQuestions} answers={state.answers} onSetAnswer={actions.setAnswer} styles={styles} /> : null}
-            {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
+            <div className={styles.intakeBodyGrid}>
+                <div className={styles.intakeMainColumn}>
+                    {state.currentStep === 0 ? <CheckInStep facilityName={state.facilityName} selectedFacilityId={state.selectedFacilityId} facilities={state.availableFacilities} styles={styles} onSelectFacility={actions.setSelectedFacilityId} /> : null}
+                    {state.currentStep === 1 ? <UrgentCheckStep questions={state.urgentQuestionSet} answers={state.answers} onSetAnswer={actions.setAnswer} urgentMessage={state.urgentMessage} urgentTriggered={state.urgentTriggered} styles={styles} /> : null}
+                    {state.currentStep === 2 ? <SymptomsStep freeText={state.freeText} selectedSymptoms={state.selectedSymptoms} styles={styles} isListening={isListening} speechSupported={speechSupported} onChangeFreeText={actions.setFreeText} onToggleSymptom={actions.toggleSymptom} onStartSpeech={startSpeechCapture} onStopSpeech={stopSpeechCapture} /> : null}
+                    {state.currentStep === 3 ? <FollowUpStep extractedPrimarySymptoms={state.extractedPrimarySymptoms} questions={visibleQuestions} answers={state.answers} onSetAnswer={actions.setAnswer} styles={styles} /> : null}
+                    {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
+                </div>
+
+                <div className={styles.intakeSideColumn}>
+                    <IntakeJourneyPanel currentStep={state.currentStep} styles={styles} />
+                </div>
+            </div>
 
             <div className={styles.stickyActions}>
                 {state.currentStep < 4 ? (

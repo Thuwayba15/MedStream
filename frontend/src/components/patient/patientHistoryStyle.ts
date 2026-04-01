@@ -4,10 +4,15 @@ const { colors, radius, typography } = medstreamTheme;
 
 export const usePatientHistoryStyles = createStyles(({ css }) => ({
     page: css`
-        width: min(900px, 100%);
+        width: min(85%, 1080px);
         margin: 0 auto;
         display: grid;
-        gap: 16px;
+        gap: 20px;
+        min-height: 100%;
+
+        @media (max-width: 1100px) {
+            width: 100%;
+        }
     `,
 
     titleBlock: css`
@@ -19,7 +24,7 @@ export const usePatientHistoryStyles = createStyles(({ css }) => ({
     title: css`
         margin: 0 !important;
         color: ${colors.navy} !important;
-        font-family: ${typography.fontDisplay};
+        font-family: ${typography.fontDisplay} !important;
     `,
 
     subtitle: css`
@@ -32,6 +37,7 @@ export const usePatientHistoryStyles = createStyles(({ css }) => ({
         display: grid;
         gap: 16px;
         padding-left: 24px;
+        padding-top: 6px;
 
         &::before {
             content: "";
@@ -67,6 +73,18 @@ export const usePatientHistoryStyles = createStyles(({ css }) => ({
         background: #fffdf9;
     `,
 
+    panelCard: css`
+        border-radius: ${radius.lg}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, ${colors.white} 100%);
+        box-shadow: 0 16px 34px rgba(13, 27, 46, 0.08);
+        padding: 18px 22px 22px;
+
+        @media (max-width: 768px) {
+            padding: 14px 14px 18px;
+        }
+    `,
+
     visitMetaRow: css`
         display: flex;
         align-items: center;
@@ -90,6 +108,6 @@ export const usePatientHistoryStyles = createStyles(({ css }) => ({
         text-align: center;
         color: #8a9ab5;
         font-size: 0.92rem;
-        padding: 6px 0 0;
+        padding: 2px 0 0;
     `,
 }));
