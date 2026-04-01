@@ -108,7 +108,9 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
                     <Typography.Title level={3} className={styles.patientName}>
                         {patient.patientName}
                     </Typography.Title>
-                    <Typography.Text className={styles.patientMeta}>Patient #{patient.patientUserId} {activeVisitId ? `· Active Visit ${activeVisitId}` : ""} · {patient.totalVisits} total visits</Typography.Text>
+                    <Typography.Text className={styles.patientMeta}>
+                        Patient #{patient.patientUserId} {activeVisitId ? `· Active Visit ${activeVisitId}` : ""} · {patient.totalVisits} total visits
+                    </Typography.Text>
                     <div className={styles.chipRow}>
                         <Tag>Last Visit: {formatDate(patient.mostRecentVisitAt)}</Tag>
                         {patient.dateOfBirth ? <Tag>DOB: {formatDate(patient.dateOfBirth)}</Tag> : null}
@@ -117,7 +119,14 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
                 </div>
             </Card>
 
-            <Card className={styles.sectionCard} title={<Typography.Title level={4} className={styles.listCardTitle}>Visit History</Typography.Title>}>
+            <Card
+                className={styles.sectionCard}
+                title={
+                    <Typography.Title level={4} className={styles.listCardTitle}>
+                        Visit History
+                    </Typography.Title>
+                }
+            >
                 {visits.length === 0 ? (
                     <Empty description="No visits available." />
                 ) : (
@@ -127,9 +136,7 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
                                 <span className={styles.timelineDot} />
                                 <Card className={styles.visitCard}>
                                     <div className={styles.visitTopRow}>
-                                        <Typography.Text className={styles.eventMeta}>
-                                            {formatDate(visit.visitDate)}
-                                        </Typography.Text>
+                                        <Typography.Text className={styles.eventMeta}>{formatDate(visit.visitDate)}</Typography.Text>
                                         <Space size={6} wrap>
                                             <Tag>{visit.visitStatus}</Tag>
                                             <Tag>{visit.facilityName}</Tag>
@@ -141,9 +148,7 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
                                             {visit.title || "Consultation Summary"}
                                         </Typography.Title>
                                     </div>
-                                    <Typography.Paragraph className={styles.summaryText}>
-                                        {visit.summary || "No clinician summary was captured for this visit."}
-                                    </Typography.Paragraph>
+                                    <Typography.Paragraph className={styles.summaryText}>{visit.summary || "No clinician summary was captured for this visit."}</Typography.Paragraph>
                                 </Card>
                             </article>
                         ))}

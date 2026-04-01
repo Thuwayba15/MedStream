@@ -22,15 +22,12 @@ export const loadTimelineStarted = createAction<IClinicianHistoryStatePayload, n
     errorMessage: undefined,
 }));
 
-export const loadTimelineSucceeded = createAction<IClinicianHistoryStatePayload, number, IPatientTimeline>(
-    ClinicianHistoryActionEnums.loadTimelineSucceeded,
-    (patientUserId, timeline) => ({
-        patientUserId,
-        timeline,
-        isLoadingTimeline: false,
-        errorMessage: undefined,
-    })
-);
+export const loadTimelineSucceeded = createAction<IClinicianHistoryStatePayload, number, IPatientTimeline>(ClinicianHistoryActionEnums.loadTimelineSucceeded, (patientUserId, timeline) => ({
+    patientUserId,
+    timeline,
+    isLoadingTimeline: false,
+    errorMessage: undefined,
+}));
 
 export const loadTimelineFailed = createAction<IClinicianHistoryStatePayload, number, string>(ClinicianHistoryActionEnums.loadTimelineFailed, (patientUserId, errorMessage) => ({
     patientUserId,

@@ -20,11 +20,7 @@ export const PatientBottomNav = ({ activeKey, hasQueueStatus, onSelectMyQueue, o
         <div className={styles.bottomNavWrap} data-testid="patient-bottom-nav">
             <div className={styles.navRow}>
                 <Link href="/patient">
-                    <Button
-                        className={`${styles.navButton} ${activeKey === "new-visit" ? styles.navButtonActive : ""}`}
-                        data-testid="patient-nav-new-visit"
-                        onClick={() => onSelectNewVisit?.()}
-                    >
+                    <Button className={`${styles.navButton} ${activeKey === "new-visit" ? styles.navButtonActive : ""}`} data-testid="patient-nav-new-visit" onClick={() => onSelectNewVisit?.()}>
                         New Visit
                     </Button>
                 </Link>

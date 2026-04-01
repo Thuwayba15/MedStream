@@ -98,9 +98,7 @@ export const PatientHistoryPage = (): React.JSX.Element => {
                 )
             ) : null}
 
-            <Typography.Paragraph className={styles.footNote}>
-                For detailed clinical records or test results, please speak directly with your healthcare provider.
-            </Typography.Paragraph>
+            <Typography.Paragraph className={styles.footNote}>For detailed clinical records or test results, please speak directly with your healthcare provider.</Typography.Paragraph>
 
             <div className={styles.stickyActions}>
                 <PatientBottomNav activeKey="history" hasQueueStatus={false} />
