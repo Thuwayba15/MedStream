@@ -422,6 +422,8 @@ Behavioral notes:
 - Objective
 - Assessment
 - Plan
+- ClinicianTimelineSummary
+- PatientTimelineSummary
 - Status
 - FinalizedAt
 
@@ -433,6 +435,8 @@ Behavioral notes:
 **Implementation notes**
 - `IntakeSubjective` stores the handoff baseline from `SymptomIntake.SubjectiveSummary`.
 - `Subjective`, `Objective`, `Assessment`, and `Plan` are the evolving clinician-editable SOAP sections.
+- `ClinicianTimelineSummary` stores the finalized clinician-facing longitudinal history summary for the visit.
+- `PatientTimelineSummary` stores the finalized patient-facing visit summary for patient history views.
 - AI draft suggestions are currently generated at the application-service layer and returned to the client for clinician review rather than being stored as a dedicated entity.
 
 ---
