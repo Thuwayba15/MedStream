@@ -3,6 +3,11 @@ export interface ILoginRequest {
     password: string;
 }
 
+export interface IAuthFieldError {
+    field: string;
+    message: string;
+}
+
 export interface IRegisterRequest {
     firstName: string;
     lastName: string;
@@ -28,6 +33,15 @@ export interface IAuthenticateResponse {
 
 export interface IRegisterResponse {
     canLogin: boolean;
+}
+
+export interface IAuthRouteResponse {
+    homePath?: string;
+}
+
+export interface IAuthRouteErrorResponse {
+    message?: string;
+    fieldErrors?: IAuthFieldError[];
 }
 
 export interface IBackendUserListItem {

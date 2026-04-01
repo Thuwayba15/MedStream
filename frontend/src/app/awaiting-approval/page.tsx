@@ -1,14 +1,14 @@
 "use client";
 
 import { LogoutButton } from "@/components/auth/logoutButton";
-import { useAuthStyles } from "@/components/auth/style";
+import { useAuthDashboardStyles } from "@/components/auth/dashboardStyle";
 import { Alert, Button, Card, Space, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuthActions } from "@/providers/auth";
 
 const AwaitingApprovalPage = () => {
-    const { styles } = useAuthStyles();
+    const { styles } = useAuthDashboardStyles();
     const router = useRouter();
     const { getCurrentHomePath } = useAuthActions();
     const [isChecking, setIsChecking] = useState(false);

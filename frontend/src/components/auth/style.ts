@@ -1,6 +1,6 @@
 import { createStyles, medstreamTheme } from "@/theme/theme";
 
-const { colors, layout, radius, typography } = medstreamTheme;
+const { colors, radius, typography } = medstreamTheme;
 
 export const useAuthStyles = createStyles(({ css }) => ({
     page: css`
@@ -116,10 +116,40 @@ export const useAuthStyles = createStyles(({ css }) => ({
         justify-content: center;
         padding: 46px 42px;
         background: radial-gradient(circle at top right, rgba(240, 144, 64, 0.12) 0%, rgba(240, 144, 64, 0) 38%), ${colors.offWhite};
+        flex-direction: column;
+        gap: 18px;
 
         @media (max-width: 980px) {
             padding: 22px;
+            justify-content: flex-start;
         }
+    `,
+
+    mobileBrandBlock: css`
+        display: none;
+        width: 100%;
+        max-width: 460px;
+
+        @media (max-width: 980px) {
+            display: grid;
+            gap: 10px;
+            margin-top: 4px;
+        }
+    `,
+
+    mobileBrandText: css`
+        font-family: ${typography.fontDisplay};
+        font-size: 1.8rem;
+        line-height: 1;
+        color: ${colors.navy};
+    `,
+
+    mobileIntro: css`
+        margin: 0;
+        text-align: center;
+        color: ${colors.slate};
+        font-size: 0.92rem;
+        line-height: 1.65;
     `,
 
     card: css`
@@ -130,13 +160,17 @@ export const useAuthStyles = createStyles(({ css }) => ({
         box-shadow: 0 22px 44px rgba(10, 24, 42, 0.2);
         background: ${colors.white};
         padding: 28px 24px 24px;
+
+        @media (max-width: 640px) {
+            padding: 24px 18px 20px;
+        }
     `,
 
     title: css`
         margin: 0;
         text-align: center;
         color: ${colors.navy};
-        font-family: ${typography.fontDisplay};
+        font-family: ${typography.fontDisplay} !important;
         font-size: clamp(1.8rem, 4vw, 2.2rem);
     `,
 
@@ -150,6 +184,14 @@ export const useAuthStyles = createStyles(({ css }) => ({
 
     alertBlock: css`
         margin-bottom: 14px;
+    `,
+
+    formErrorText: css`
+        display: block;
+        margin: -2px 0 14px;
+        color: ${colors.urgent};
+        font-size: 0.88rem;
+        line-height: 1.5;
     `,
 
     form: css`
@@ -166,7 +208,8 @@ export const useAuthStyles = createStyles(({ css }) => ({
         }
 
         .ant-input,
-        .ant-input-password {
+        .ant-input-password,
+        .ant-select-selector {
             min-height: 46px;
             border-radius: 12px !important;
             background: #f0ece6;
@@ -175,7 +218,8 @@ export const useAuthStyles = createStyles(({ css }) => ({
 
         .ant-input:focus,
         .ant-input-focused,
-        .ant-input-password-focused {
+        .ant-input-password-focused,
+        .ant-select-focused .ant-select-selector {
             border-color: ${colors.amber} !important;
             box-shadow: 0 0 0 3px rgba(224, 123, 42, 0.12) !important;
             background: ${colors.white};
@@ -195,6 +239,52 @@ export const useAuthStyles = createStyles(({ css }) => ({
 
         .ant-radio-wrapper {
             margin-inline-end: 0;
+        }
+
+        .ant-select {
+            width: 100%;
+        }
+
+        .ant-select-selection-item,
+        .ant-select-selection-placeholder {
+            display: flex;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        @media (max-width: 640px) {
+            .ant-radio-group {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+        }
+    `,
+
+    choiceChip: css`
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(13, 27, 46, 0.12);
+        background: ${colors.white};
+        transition:
+            border-color ${medstreamTheme.motion.quick} ease,
+            background ${medstreamTheme.motion.quick} ease,
+            color ${medstreamTheme.motion.quick} ease,
+            transform ${medstreamTheme.motion.quick} ease;
+
+        &:hover {
+            border-color: rgba(224, 123, 42, 0.45);
+            transform: translateY(-1px);
+        }
+
+        &.ant-radio-wrapper-checked {
+            background: ${colors.amberPale};
+            border-color: rgba(224, 123, 42, 0.55);
+            color: ${colors.navy};
+        }
+
+        @media (max-width: 640px) {
+            width: 100%;
+            justify-content: flex-start;
         }
     `,
 
@@ -239,40 +329,5 @@ export const useAuthStyles = createStyles(({ css }) => ({
         text-align: center;
         color: ${colors.slate};
         font-size: 0.88rem;
-    `,
-
-    dashboardPage: css`
-        min-height: 100vh;
-        background: radial-gradient(circle at 84% 10%, rgba(30, 49, 80, 0.11) 0%, rgba(30, 49, 80, 0) 30%), linear-gradient(180deg, #ffffff 0%, ${colors.offWhite} 100%);
-        padding: 28px 16px;
-    `,
-
-    dashboardShell: css`
-        width: 100%;
-        max-width: ${layout.pageMaxWidth}px;
-        margin: 0 auto;
-        display: grid;
-        gap: 20px;
-    `,
-
-    dashboardCard: css`
-        border-radius: ${radius.md}px;
-        border: 1px solid ${colors.borderLight};
-        background: ${colors.white};
-        box-shadow: ${medstreamTheme.shadows.soft};
-        padding: 22px;
-    `,
-
-    dashboardHeading: css`
-        margin: 0 0 12px;
-        color: ${colors.navy};
-        font-family: ${typography.fontDisplay};
-        font-size: clamp(1.8rem, 4vw, 2.2rem);
-    `,
-
-    dashboardText: css`
-        margin: 0;
-        color: ${colors.slate};
-        line-height: 1.7;
     `,
 }));

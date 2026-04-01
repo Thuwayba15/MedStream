@@ -84,6 +84,12 @@ Break work into focused pieces such as:
 - colocated styles
 - colocated types when needed
 
+### File organization
+- Within a feature area, prefer the order `hooks`, then `helpers`, then `actions`.
+- Keep separation of concerns clear: hooks for stateful orchestration, helpers for pure logic and mapping, actions for workflow triggers.
+- For provider-related work, enforce the order `hooks`, then `helpers`, then `actions` in supporting files and nearby feature structure.
+- No file should grow beyond 350 lines; split before it becomes hard to navigate.
+
 ### File naming
 - Use clear, intention-revealing names.
 - Match file names to the main component or exported function.
@@ -157,7 +163,7 @@ For this repository, enforce these architecture rules on every frontend task:
 - Do not add a separate client-side service file for provider request flows unless the task explicitly needs shared logic beyond a single provider.
 - Add short operation comments above provider request methods, for example `// Get Single User` and `// GET /api/users/{id}`.
 - Components and pages must call provider actions; they must not perform business API calls directly.
-- Server route handlers under `src/app/api/**` stay thin and delegate backend calls to server-side services under `src/services/auth/**`.
+- Server route handlers under `src/app/api/**` stay thin and delegate backend calls to shared server-side helpers under `src/lib/server/**` or another clearly-scoped non-provider server utility layer when reuse is justified.
 - Components and route pages should not call `fetch` directly for business flows; they should use provider actions.
 - Remove dead frontend artifacts (unused components, helpers, exports, and constants) as part of refactors.
 - Avoid eager loading for role-specific data: load clinician-only data only when clinician flows are active.
@@ -214,6 +220,7 @@ Where practical, tests should cover:
 - avoid brittle selectors
 - keep tests readable and task-focused
 - update existing tests if behavior changed
+- if a refactor changes UI structure, feedback placement, or selectors, update the affected tests in the same task
 - do not leave stale failing tests behind
 
 If a feature cannot reasonably be covered end-to-end yet, add the best achievable Playwright coverage and note the remaining gap in your response.

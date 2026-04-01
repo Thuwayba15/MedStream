@@ -1,7 +1,7 @@
 import { getAbpErrorMessage } from "@/lib/api/abp";
 import { deriveAuthState } from "@/lib/server/authProfile";
 import { requireAdminAccessToken } from "@/lib/server/adminAuthGuard";
-import { adminAuthService } from "@/services/auth/adminAuthService";
+import { getClinicianApplicants } from "@/lib/server/authApi";
 import { NextResponse } from "next/server";
 
 export const GET = async (): Promise<Response> => {
@@ -11,7 +11,7 @@ export const GET = async (): Promise<Response> => {
             return guardResult.errorResponse ?? NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
         }
 
-        const pagedUsers = await adminAuthService.getUsers(guardResult.accessToken);
+        const pagedUsers = await getClinicianApplicants(guardResult.accessToken);
 
         const users = pagedUsers.items.map((user) => ({
             ...user,

@@ -1,31 +1,14 @@
 "use client";
 
-import { Alert, Button, Card, Form, Input, Typography } from "antd";
+import { Button, Card, Form, Input, Typography } from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuthActions, useAuthState } from "@/providers/auth";
+import { useLoginForm } from "@/hooks/auth/useLoginForm";
 import { useAuthStyles } from "./style";
 
-interface LoginFormValues {
-    userNameOrEmailAddress: string;
-    password: string;
-}
-
 export const LoginForm = () => {
-    const router = useRouter();
     const { styles } = useAuthStyles();
-    const { login, clearError } = useAuthActions();
-    const { isPending, errorMessage } = useAuthState();
-
-    const onFinish = async (values: LoginFormValues): Promise<void> => {
-        clearError();
-
-        try {
-            const payload = await login(values);
-            router.replace(payload.homePath);
-        } catch {}
-    };
+    const { form, getFieldError, isPending, formErrorMessage, onFinish } = useLoginForm();
 
     return (
         <main className={styles.page}>
@@ -52,22 +35,47 @@ export const LoginForm = () => {
                 </section>
 
                 <section className={styles.panelRight}>
+                    <div className={styles.mobileBrandBlock}>
+                        <Link href="/" className={styles.brandLink} aria-label="Go to landing page">
+                            <div className={styles.brand}>
+                                <div className={styles.brandMark}>
+                                    <Image src="/logo_inverted.png" alt="" width={44} height={44} />
+                                </div>
+                                <div className={styles.mobileBrandText}>
+                                    Med<span className={styles.brandTextAccent}>Stream</span>
+                                </div>
+                            </div>
+                        </Link>
+                        <p className={styles.mobileIntro}>Your clinic&apos;s live queue, patient timelines, and AI-assisted documentation all in one place.</p>
+                    </div>
+
                     <Card className={styles.card}>
                         <Typography.Title level={1} className={styles.title}>
                             Login
                         </Typography.Title>
-                        <Typography.Paragraph className={styles.subtitle}>Sign in to your clinic account.</Typography.Paragraph>
 
-                        {errorMessage ? <Alert type="error" title={errorMessage} showIcon className={styles.alertBlock} /> : null}
-
-                        <Form<LoginFormValues> layout="vertical" className={styles.form} onFinish={onFinish}>
-                            <Form.Item label="Username or Email" name="userNameOrEmailAddress" rules={[{ required: true, message: "Enter your username or email." }]}>
-                                <Input placeholder="admin or admin@defaulttenant.com" autoComplete="username" />
+                        <Form form={form} layout="vertical" className={styles.form} onFinish={onFinish}>
+                            <Form.Item
+                                label="Email Address"
+                                name="userNameOrEmailAddress"
+                                rules={[{ required: true, message: "Enter your email address." }]}
+                                help={getFieldError("userNameOrEmailAddress")}
+                                validateStatus={getFieldError("userNameOrEmailAddress") ? "error" : undefined}
+                            >
+                                <Input placeholder="Enter email" autoComplete="username" aria-label="Email Address" />
                             </Form.Item>
 
-                            <Form.Item label="Password" name="password" rules={[{ required: true, message: "Enter your password." }]}>
-                                <Input.Password placeholder="Enter password" autoComplete="current-password" />
+                            <Form.Item
+                                label="Password"
+                                name="password"
+                                rules={[{ required: true, message: "Enter your password." }]}
+                                help={getFieldError("password")}
+                                validateStatus={getFieldError("password") ? "error" : undefined}
+                            >
+                                <Input.Password placeholder="Enter password" autoComplete="current-password" aria-label="Password" />
                             </Form.Item>
+
+                            {formErrorMessage ? <Typography.Text className={styles.formErrorText}>{formErrorMessage}</Typography.Text> : null}
 
                             <Button type="primary" htmlType="submit" loading={isPending} block className={styles.submitButton}>
                                 Sign In

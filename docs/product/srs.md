@@ -131,6 +131,10 @@ Optional: ID number, Date of birth
  2.6 Clinician registration form fields:
 First name, Last name, Email, Phone number, Password, Confirm password
 Required: ID number, Profession type, Regulatory body, Registration number, Requested facility
+ 2.6.1 Registration uniqueness rules:
+ Email address must be unique across users
+ ID number must be unique when supplied
+ Clinician registration number must be unique across clinician accounts
  2.7 Registration controlled values:
 accountType = Patient | Clinician
 professionType = Doctor | Nurse | AlliedHealth | Other

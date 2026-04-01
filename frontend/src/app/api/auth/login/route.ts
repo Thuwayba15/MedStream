@@ -1,7 +1,8 @@
 import { ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME, SIGNALR_TOKEN_COOKIE_NAME } from "@/lib/auth/constants";
-import { getAbpErrorMessage } from "@/lib/api/abp";
+import type { IAuthFieldError } from "@/lib/auth/types";
+import { getAbpErrorDetails } from "@/lib/api/abp";
+import { authenticateUser } from "@/lib/server/authApi";
 import { deriveAuthInfoFromAccessToken } from "@/lib/server/tokenState";
-import { authService } from "@/services/auth/authService";
 import { NextResponse } from "next/server";
 
 interface LoginRequestBody {
@@ -13,10 +14,15 @@ export const POST = async (request: Request): Promise<Response> => {
     try {
         const body = (await request.json()) as LoginRequestBody;
         if (!body.userNameOrEmailAddress || !body.password) {
-            return NextResponse.json({ message: "Username/email and password are required." }, { status: 400 });
+            const fieldErrors: IAuthFieldError[] = [
+                !body.userNameOrEmailAddress ? { field: "userNameOrEmailAddress", message: "Enter your email address." } : null,
+                !body.password ? { field: "password", message: "Enter your password." } : null,
+            ].filter((item): item is IAuthFieldError => item !== null);
+
+            return NextResponse.json({ message: "Username/email and password are required.", fieldErrors }, { status: 400 });
         }
 
-        const authResult = await authService.login({
+        const authResult = await authenticateUser({
             userNameOrEmailAddress: body.userNameOrEmailAddress,
             password: body.password,
         });
@@ -56,6 +62,28 @@ export const POST = async (request: Request): Promise<Response> => {
 
         return response;
     } catch (error) {
-        return NextResponse.json({ message: getAbpErrorMessage(error, "Login failed.") }, { status: 401 });
+        const authError = getAbpErrorDetails(error, "Incorrect email or password.");
+        const message = normalizeLoginErrorMessage(authError.message);
+
+        return NextResponse.json(
+            {
+                message,
+                fieldErrors: [{ field: "password", message }],
+            },
+            { status: 401 }
+        );
     }
+};
+
+const normalizeLoginErrorMessage = (message: string): string => {
+    if (!message) {
+        return "Incorrect email or password.";
+    }
+
+    const normalizedMessage = message.toLowerCase();
+    if (normalizedMessage.includes("invalid username or password") || normalizedMessage.includes("login failed")) {
+        return "Incorrect email or password.";
+    }
+
+    return message;
 };

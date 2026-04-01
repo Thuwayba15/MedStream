@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Alert, Empty, Input, Select, Space, Table, Tabs, Tag } from "antd";
-import { useAuthStyles } from "@/components/auth/style";
+import { useAuthDashboardStyles } from "@/components/auth/dashboardStyle";
 import { useAdminStyles } from "@/components/admin/style";
 import { type ApprovalFilter, type IClinicianApplicant, type IFacility } from "@/providers/admin-governance/context";
 import { useAdminGovernancePage } from "@/hooks/useAdminGovernancePage";
@@ -13,7 +13,7 @@ import { EditFacilityModal } from "@/components/admin/editFacilityModal";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 
 export const UserApprovalPage = () => {
-    const { styles } = useAuthStyles();
+    const { styles } = useAuthDashboardStyles();
     const { styles: adminStyles } = useAdminStyles();
     const viewModel = useAdminGovernancePage();
 

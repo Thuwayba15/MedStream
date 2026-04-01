@@ -77,6 +77,10 @@ public class AccountAppService : MedStreamAppServiceBase, IAccountAppService
                 UserRegistrationConstants.AccountTypeClinician,
                 StringComparison.Ordinal);
             var normalizedEmailAddress = input.EmailAddress.Trim();
+            var trimmedIdNumber = input.IdNumber?.Trim();
+            var trimmedRegistrationNumber = input.RegistrationNumber?.Trim();
+
+            await ValidateUniqueRegistrationFieldsAsync(normalizedEmailAddress, trimmedIdNumber, trimmedRegistrationNumber, isClinicianApplicant);
             var selectedFacility = await ResolveRequestedFacilityAsync(input, isClinicianApplicant);
 
             var createdUser = await _userRegistrationManager.RegisterAsync(
@@ -92,13 +96,13 @@ public class AccountAppService : MedStreamAppServiceBase, IAccountAppService
 
             user.PhoneNumber = input.PhoneNumber.Trim();
             user.AccountType = normalizedAccountType;
-            user.IdNumber = input.IdNumber?.Trim();
+            user.IdNumber = trimmedIdNumber;
             user.DateOfBirth = input.DateOfBirth;
             user.RequestedRegistrationRole = normalizedAccountType;
             user.IsClinicianApprovalPending = isClinicianApplicant;
             user.ProfessionType = isClinicianApplicant ? NormalizeProfessionType(input.ProfessionType) : null;
             user.RegulatoryBody = isClinicianApplicant ? NormalizeRegulatoryBody(input.RegulatoryBody) : null;
-            user.RegistrationNumber = isClinicianApplicant ? input.RegistrationNumber?.Trim() : null;
+            user.RegistrationNumber = isClinicianApplicant ? trimmedRegistrationNumber : null;
             user.RequestedFacility = isClinicianApplicant ? selectedFacility?.Name : null;
             user.ClinicianFacilityId = isClinicianApplicant ? selectedFacility?.Id : null;
             user.ClinicianSubmittedAt = isClinicianApplicant ? DateTime.UtcNow : null;
@@ -279,5 +283,48 @@ public class AccountAppService : MedStreamAppServiceBase, IAccountAppService
         }
 
         return facility;
+    }
+
+    private async Task ValidateUniqueRegistrationFieldsAsync(string emailAddress, string idNumber, string registrationNumber, bool isClinicianApplicant)
+    {
+        var validationErrors = new List<ValidationResult>();
+        var normalizedEmailAddress = emailAddress.Trim().ToUpperInvariant();
+
+        var emailExists = await _userRepository.GetAll()
+            .AnyAsync(user => user.TenantId == DefaultTenantId && user.NormalizedEmailAddress == normalizedEmailAddress);
+        if (emailExists)
+        {
+            validationErrors.Add(new ValidationResult("An account with this email address already exists.", new[] { nameof(RegisterInput.EmailAddress) }));
+        }
+
+        if (!idNumber.IsNullOrWhiteSpace())
+        {
+            var trimmedIdNumber = idNumber.Trim();
+            var idNumberExists = await _userRepository.GetAll()
+                .AnyAsync(user => user.TenantId == DefaultTenantId && user.IdNumber == trimmedIdNumber);
+            if (idNumberExists)
+            {
+                validationErrors.Add(new ValidationResult("An account with this ID number already exists.", new[] { nameof(RegisterInput.IdNumber) }));
+            }
+        }
+
+        if (isClinicianApplicant && !registrationNumber.IsNullOrWhiteSpace())
+        {
+            var normalizedRegistrationNumber = registrationNumber.Trim().ToUpperInvariant();
+            var registrationNumberExists = await _userRepository.GetAll()
+                .AnyAsync(user =>
+                    user.TenantId == DefaultTenantId &&
+                    user.RegistrationNumber != null &&
+                    user.RegistrationNumber.ToUpper() == normalizedRegistrationNumber);
+            if (registrationNumberExists)
+            {
+                validationErrors.Add(new ValidationResult("A clinician with this registration number already exists.", new[] { nameof(RegisterInput.RegistrationNumber) }));
+            }
+        }
+
+        if (validationErrors.Count > 0)
+        {
+            throw new AbpValidationException("Registration validation failed.", validationErrors);
+        }
     }
 }
