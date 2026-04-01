@@ -54,6 +54,12 @@ public class SaveEncounterNoteDraftInputFluentValidator : AbstractValidator<Save
     public SaveEncounterNoteDraftInputFluentValidator()
     {
         RuleFor(x => x.VisitId).GreaterThan(0);
+        RuleFor(x => x.ClinicianTimelineSummary)
+            .MaximumLength(EncounterNote.MaxTimelineSummaryLength)
+            .When(x => x.ClinicianTimelineSummary != null);
+        RuleFor(x => x.PatientTimelineSummary)
+            .MaximumLength(EncounterNote.MaxTimelineSummaryLength)
+            .When(x => x.PatientTimelineSummary != null);
     }
 }
 
@@ -94,5 +100,11 @@ public class FinalizeEncounterNoteInputFluentValidator : AbstractValidator<Final
     public FinalizeEncounterNoteInputFluentValidator()
     {
         RuleFor(x => x.VisitId).GreaterThan(0);
+        RuleFor(x => x.ClinicianTimelineSummary)
+            .NotEmpty()
+            .MaximumLength(EncounterNote.MaxTimelineSummaryLength);
+        RuleFor(x => x.PatientTimelineSummary)
+            .NotEmpty()
+            .MaximumLength(EncounterNote.MaxTimelineSummaryLength);
     }
 }

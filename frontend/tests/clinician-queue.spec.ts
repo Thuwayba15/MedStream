@@ -23,6 +23,19 @@ test.describe("clinician queue dashboard", () => {
         const requestUrls: string[] = [];
         let queueStatus: "waiting" | "called" | "in_consultation" = "waiting";
         let transcriptAttached = false;
+        let encounterNoteState = {
+            id: 77,
+            visitId: 3001,
+            intakeSubjective: "Initial intake notes already captured chest pain and shortness of breath.",
+            subjective: "Patient reports severe crushing chest pain that started two hours ago and now includes nausea.",
+            objective: "Alert, speaking in full sentences, clutching chest intermittently.",
+            assessment: "",
+            plan: "",
+            clinicianTimelineSummary: "",
+            patientTimelineSummary: "",
+            status: "draft",
+            finalizedAt: null as string | null,
+        };
 
         await page.addInitScript(() => {
             class MockMediaRecorder {
@@ -197,15 +210,7 @@ test.describe("clinician queue dashboard", () => {
                         visitDate: new Date().toISOString(),
                     },
                     encounterNote: {
-                        id: 77,
-                        visitId: 3001,
-                        intakeSubjective: "Initial intake notes already captured chest pain and shortness of breath.",
-                        subjective: "Patient reports severe crushing chest pain that started two hours ago and now includes nausea.",
-                        objective: "Alert, speaking in full sentences, clutching chest intermittently.",
-                        assessment: "",
-                        plan: "",
-                        status: "draft",
-                        finalizedAt: null,
+                        ...encounterNoteState,
                     },
                     latestVitals: {
                         id: 61,
@@ -256,6 +261,54 @@ test.describe("clinician queue dashboard", () => {
             });
         });
 
+        await page.route("**/api/clinician/consultation/note", async (route) => {
+            const body = route.request().postDataJSON() as {
+                subjective?: string;
+                objective?: string;
+                assessment?: string;
+                plan?: string;
+                clinicianTimelineSummary?: string;
+                patientTimelineSummary?: string;
+            };
+
+            encounterNoteState = {
+                ...encounterNoteState,
+                subjective: body.subjective ?? encounterNoteState.subjective,
+                objective: body.objective ?? encounterNoteState.objective,
+                assessment: body.assessment ?? encounterNoteState.assessment,
+                plan: body.plan ?? encounterNoteState.plan,
+                clinicianTimelineSummary: body.clinicianTimelineSummary ?? encounterNoteState.clinicianTimelineSummary,
+                patientTimelineSummary: body.patientTimelineSummary ?? encounterNoteState.patientTimelineSummary,
+            };
+
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(encounterNoteState),
+            });
+        });
+
+        await page.route("**/api/clinician/consultation/finalize", async (route) => {
+            const body = route.request().postDataJSON() as {
+                clinicianTimelineSummary: string;
+                patientTimelineSummary: string;
+            };
+
+            encounterNoteState = {
+                ...encounterNoteState,
+                clinicianTimelineSummary: body.clinicianTimelineSummary,
+                patientTimelineSummary: body.patientTimelineSummary,
+                status: "finalized",
+                finalizedAt: new Date().toISOString(),
+            };
+
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(encounterNoteState),
+            });
+        });
+
         await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
 
         await page.goto("/clinician", { waitUntil: "domcontentloaded" });
@@ -292,6 +345,27 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByPlaceholder("Paste or type the consultation transcript here.")).toHaveValue("Patient reports chest pain easing after rest and ongoing nausea.");
         await page.getByRole("tab", { name: "objective" }).click();
         await expect(page.getByText("Blood pressure")).toBeVisible();
+        await page.getByRole("tab", { name: "Timeline Summary" }).click();
+        await expect(page.getByText("Ready to finalize")).toBeVisible();
+        await expect(page.getByTestId("consultation-clinician-timeline-summary")).toHaveValue(
+            "Primary concern is severe chest pain with shortness of breath. Urgent safety features were reported and the case requires immediate clinician review."
+        );
+        await expect(page.getByTestId("consultation-patient-timeline-summary")).toHaveValue("Severe chest pain, shortness of breath.");
+        await page.getByTestId("consultation-clinician-timeline-summary").fill("");
+        await page.getByTestId("consultation-patient-timeline-summary").fill("");
+        await page.getByTestId("consultation-finalize-note").click();
+        await expect(page.getByText(/Add the clinician-facing summary and patient-friendly summary/i)).toBeVisible();
+        await expect(page.getByText("Required before finalizing")).toBeVisible();
+        await page.getByTestId("consultation-clinician-timeline-summary").fill("Presented with severe chest pain and tachycardia. ECG review initiated and urgent observation continued.");
+        await page.getByTestId("consultation-patient-timeline-summary").fill("Seen for chest pain and shortness of breath. You were assessed urgently and advised on warning signs and next steps.");
+        await page.getByTestId("consultation-save-draft").click();
+        await expect(page.getByText("Draft saved.")).toBeVisible();
+        await expect(page.getByTestId("consultation-clinician-timeline-summary")).toHaveValue(
+            "Presented with severe chest pain and tachycardia. ECG review initiated and urgent observation continued."
+        );
+        await page.getByTestId("consultation-finalize-note").click();
+        await expect(page.getByText("SOAP note finalized.")).toBeVisible();
+        await expect(page.getByText("Finalized", { exact: true })).toBeVisible();
 
         const urgentRequests = requestUrls.filter((url) => url.includes("urgencyLevel=Urgent"));
         expect(urgentRequests.length).toBeGreaterThan(0);

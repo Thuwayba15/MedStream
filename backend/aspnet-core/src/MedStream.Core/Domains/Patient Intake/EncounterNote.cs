@@ -10,6 +10,8 @@ namespace MedStream.PatientIntake;
 /// </summary>
 public class EncounterNote : FullAuditedEntity<long>, IMustHaveTenant
 {
+    public const int MaxTimelineSummaryLength = 2000;
+
     /// <summary>
     /// Gets or sets the owning tenant id.
     /// </summary>
@@ -54,6 +56,18 @@ public class EncounterNote : FullAuditedEntity<long>, IMustHaveTenant
     /// </summary>
     [StringLength(8000)]
     public string Plan { get; set; }
+
+    /// <summary>
+    /// Gets or sets the clinician-facing finalized summary used in longitudinal history.
+    /// </summary>
+    [StringLength(MaxTimelineSummaryLength)]
+    public string ClinicianTimelineSummary { get; set; }
+
+    /// <summary>
+    /// Gets or sets the patient-facing finalized summary used in longitudinal history.
+    /// </summary>
+    [StringLength(MaxTimelineSummaryLength)]
+    public string PatientTimelineSummary { get; set; }
 
     /// <summary>
     /// Gets or sets encounter note lifecycle status.

@@ -8,6 +8,7 @@ import type {
     IConsultationTranscript,
     IConsultationVitalSigns,
     IConsultationWorkspace,
+    IFinalizeEncounterNoteRequest,
     IGetConsultationWorkspaceRequest,
     IEncounterNote,
     ISaveEncounterNoteDraftRequest,
@@ -86,14 +87,10 @@ const generateAssessmentPlanDraft = async (visitId: number, accessToken: string)
     return unwrapAbpResponse<IConsultationAiDraft>(response.data);
 };
 
-const finalizeEncounterNote = async (visitId: number, accessToken: string): Promise<IEncounterNote> => {
-    const response = await apiClient.post(
-        API.CONSULTATION_FINALIZE_NOTE_ENDPOINT,
-        { visitId },
-        {
-            headers: getAuthorizationHeader(accessToken),
-        }
-    );
+const finalizeEncounterNote = async (payload: IFinalizeEncounterNoteRequest, accessToken: string): Promise<IEncounterNote> => {
+    const response = await apiClient.post(API.CONSULTATION_FINALIZE_NOTE_ENDPOINT, payload, {
+        headers: getAuthorizationHeader(accessToken),
+    });
 
     return unwrapAbpResponse<IEncounterNote>(response.data);
 };

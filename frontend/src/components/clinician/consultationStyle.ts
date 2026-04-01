@@ -484,6 +484,62 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
             white-space: pre-line;
         }
     `,
+    timelineSummaryGrid: css`
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    `,
+    timelineSummaryCard: css`
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(224, 123, 42, 0.16);
+        background: linear-gradient(180deg, #fffdfa 0%, #f8f4ee 100%);
+    `,
+    timelineSummaryHeader: css`
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    `,
+    timelineSummaryTitle: css`
+        margin: 0 0 4px !important;
+        color: ${colors.navy} !important;
+    `,
+    timelineSummaryArea: css`
+        min-height: 220px !important;
+        border-radius: 20px !important;
+        border-color: rgba(224, 123, 42, 0.24) !important;
+        background: ${colors.white} !important;
+        padding: 14px 16px !important;
+        line-height: 1.65 !important;
+        resize: vertical !important;
+    `,
+    summaryCounter: css`
+        color: #7d8ca4;
+        font-size: 0.85rem;
+        font-weight: 700;
+        white-space: nowrap;
+    `,
+    timelineReadyTag: css`
+        border-radius: ${radius.pill}px;
+        border-color: rgba(35, 160, 112, 0.22) !important;
+        background: rgba(35, 160, 112, 0.12) !important;
+        color: #198a60 !important;
+        font-weight: 700;
+    `,
+    timelinePendingTag: css`
+        border-radius: ${radius.pill}px;
+        border-color: rgba(224, 123, 42, 0.28) !important;
+        background: rgba(224, 123, 42, 0.12) !important;
+        color: ${colors.priority} !important;
+        font-weight: 700;
+    `,
     statusStrip: css`
         display: flex;
         gap: 10px;

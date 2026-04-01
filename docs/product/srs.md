@@ -305,7 +305,9 @@ Plan
 F8.2 Draft & Finalize
 2.1 Notes must support draft state
  2.1.1 Clinician consultation workspace must allow saved draft notes to be reopened later from a clinician-facing consultation list or inbox for the same day
+ 2.1.2 Encounter note drafts must also support editable clinician-facing and patient-facing timeline summaries for the visit
  2.2 Notes must be finalized before completion
+ 2.2.1 Encounter note finalization must require both a clinician-facing timeline summary and a patient-facing timeline summary for the visit
  2.3 Queue or visit completion must be blocked until the encounter note is finalized
 
 F9. Medical Reports
