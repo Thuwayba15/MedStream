@@ -23,6 +23,8 @@ interface INoteDraftState {
     objective: string;
     assessment: string;
     plan: string;
+    clinicianTimelineSummary: string;
+    patientTimelineSummary: string;
 }
 
 interface IVitalsDraftState {
@@ -36,7 +38,14 @@ interface IVitalsDraftState {
     weightKg: string;
 }
 
-const createNoteDraft = (): INoteDraftState => ({ subjective: "", objective: "", assessment: "", plan: "" });
+const createNoteDraft = (): INoteDraftState => ({
+    subjective: "",
+    objective: "",
+    assessment: "",
+    plan: "",
+    clinicianTimelineSummary: "",
+    patientTimelineSummary: "",
+});
 const createVitalsDraft = (): IVitalsDraftState => ({
     bloodPressureSystolic: "",
     bloodPressureDiastolic: "",
@@ -213,6 +222,69 @@ const formatVisitStartedAt = (value?: string): string => {
     return parsed && !Number.isNaN(parsed.getTime()) ? `Started ${parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Consultation in progress";
 };
 
+const normalizeSentence = (value?: string | null): string => {
+    if (!value?.trim()) {
+        return "";
+    }
+
+    const collapsed = value.replace(/\s+/g, " ").trim();
+    if (!collapsed) {
+        return "";
+    }
+
+    return /[.!?]$/.test(collapsed) ? collapsed : `${collapsed}.`;
+};
+
+const toSummarySentence = (value?: string | null): string => {
+    const cleaned = sanitizeClinicalCopy(value);
+    if (!cleaned) {
+        return "";
+    }
+
+    const flattened = cleaned
+        .split(/\r?\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join(" ");
+
+    return normalizeSentence(flattened);
+};
+
+const buildClinicianTimelineSummary = (workspace: IConsultationWorkspace, clinicianSummary?: string | null): string => {
+    const encounterSummary = normalizeSentence(workspace.encounterNote.clinicianTimelineSummary);
+    if (encounterSummary) {
+        return encounterSummary;
+    }
+
+    return (
+        toSummarySentence(clinicianSummary) ||
+        toSummarySentence(workspace.patientContext.subjectiveSummary) ||
+        normalizeSentence(workspace.patientContext.chiefComplaint) ||
+        "Consultation completed. Add a clinician-facing summary before finalizing."
+    );
+};
+
+const buildPatientTimelineSummary = (workspace: IConsultationWorkspace): string => {
+    const encounterSummary = normalizeSentence(workspace.encounterNote.patientTimelineSummary);
+    if (encounterSummary) {
+        return encounterSummary;
+    }
+
+    const chiefComplaint = workspace.patientContext.chiefComplaint.trim();
+    const planSummary = normalizeSentence(workspace.encounterNote.plan);
+    const assessmentSummary = normalizeSentence(workspace.encounterNote.assessment);
+
+    if (chiefComplaint && planSummary) {
+        return `Seen for ${chiefComplaint.toLowerCase()}. ${planSummary}`;
+    }
+
+    if (chiefComplaint && assessmentSummary) {
+        return `Seen for ${chiefComplaint.toLowerCase()}. ${assessmentSummary}`;
+    }
+
+    return normalizeSentence(chiefComplaint) || "Add a plain-language patient summary before finalizing.";
+};
+
 const getUrgencyClassName = (urgencyLevel: string, styles: Record<string, string>): string => {
     if (urgencyLevel === "Urgent") {
         return styles.urgencyUrgent;
@@ -300,6 +372,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     const [isRecording, setIsRecording] = useState(false);
     const [recordingSeconds, setRecordingSeconds] = useState(0);
     const [recordingError, setRecordingError] = useState<string | null>(null);
+    const [timelineValidationMessage, setTimelineValidationMessage] = useState<string | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const mediaStreamRef = useRef<MediaStream | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
@@ -340,6 +413,8 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             objective: workspace.encounterNote.objective || "",
             assessment: workspace.encounterNote.assessment || "",
             plan: workspace.encounterNote.plan || "",
+            clinicianTimelineSummary: buildClinicianTimelineSummary(workspace, review?.clinicianSummary),
+            patientTimelineSummary: buildPatientTimelineSummary(workspace),
         };
     }, [review?.clinicianSummary, workspace]);
 
@@ -352,9 +427,13 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 objective: workspace?.encounterNote.objective ?? "",
                 assessment: workspace?.encounterNote.assessment ?? "",
                 plan: workspace?.encounterNote.plan ?? "",
+                clinicianTimelineSummary: workspace?.encounterNote.clinicianTimelineSummary ?? "",
+                patientTimelineSummary: workspace?.encounterNote.patientTimelineSummary ?? "",
                 reviewSummary: review?.clinicianSummary ?? "",
+                chiefComplaint: workspace?.patientContext.chiefComplaint ?? "",
+                patientContextSummary: workspace?.patientContext.subjectiveSummary ?? "",
             }),
-        [review?.clinicianSummary, workspace?.encounterNote]
+        [review?.clinicianSummary, workspace?.encounterNote, workspace?.patientContext.chiefComplaint, workspace?.patientContext.subjectiveSummary]
     );
 
     const hydratedVitals = useMemo<IVitalsDraftState>(
@@ -389,6 +468,24 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
 
     const noteDraft = noteDraftState.signature === noteSignature ? noteDraftState.values : hydratedNote;
     const vitalsDraft = vitalsDraftState.signature === vitalsSignature ? vitalsDraftState.values : hydratedVitals;
+    const missingTimelineSummaries = useMemo<string[]>(() => {
+        const missing: string[] = [];
+        if (!noteDraft.clinicianTimelineSummary.trim()) {
+            missing.push("clinician-facing summary");
+        }
+
+        if (!noteDraft.patientTimelineSummary.trim()) {
+            missing.push("patient-friendly summary");
+        }
+
+        return missing;
+    }, [noteDraft.clinicianTimelineSummary, noteDraft.patientTimelineSummary]);
+
+    useEffect(() => {
+        if (missingTimelineSummaries.length === 0 && timelineValidationMessage) {
+            setTimelineValidationMessage(null);
+        }
+    }, [missingTimelineSummaries.length, timelineValidationMessage]);
 
     const updateNoteDraft = (updater: INoteDraftState | ((current: INoteDraftState) => INoteDraftState)): void => {
         setNoteDraftState((current) => {
@@ -437,7 +534,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             },
             {
                 title: "Finalize Note",
-                content: isFinalized ? "Note locked" : "Finalize when SOAP is complete",
+                content: isFinalized ? "Note locked" : missingTimelineSummaries.length === 0 ? "Finalize when SOAP is complete" : "Add both timeline summaries before finalizing",
                 done: isFinalized,
             },
         ];
@@ -448,7 +545,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             content: item.content,
             status: item.done ? "finish" : currentIndex === -1 ? "wait" : currentIndex === index ? "process" : "wait",
         }));
-    }, [isFinalized, noteDraft.assessment, noteDraft.objective, noteDraft.plan, workspace?.latestVitals, workspace?.transcripts.length]);
+    }, [isFinalized, missingTimelineSummaries.length, noteDraft.assessment, noteDraft.objective, noteDraft.plan, workspace?.latestVitals, workspace?.transcripts.length]);
 
     const objectiveVitalCards = [
         {
@@ -552,6 +649,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             return;
         }
 
+        setTimelineValidationMessage(null);
         await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft });
     };
 
@@ -560,9 +658,20 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             return;
         }
 
+        if (missingTimelineSummaries.length > 0) {
+            setTimelineValidationMessage(`Add the ${missingTimelineSummaries.join(" and ")} before finalizing this encounter note.`);
+            setActiveTab("timeline");
+            return;
+        }
+
         const saved = await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft });
         if (saved) {
-            await actions.finalizeEncounterNote(workspace.visitId);
+            setTimelineValidationMessage(null);
+            await actions.finalizeEncounterNote({
+                visitId: workspace.visitId,
+                clinicianTimelineSummary: noteDraft.clinicianTimelineSummary.trim(),
+                patientTimelineSummary: noteDraft.patientTimelineSummary.trim(),
+            });
         }
     };
 
@@ -831,6 +940,85 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 </div>
             ),
         },
+        {
+            key: "timeline",
+            label: "Timeline Summary",
+            children: (
+                <div className={styles.editorPanel}>
+                    <div className={styles.editorHeader}>
+                        <div>
+                            <Typography.Title level={3} className={styles.editorTitle}>
+                                Timeline Summaries
+                            </Typography.Title>
+                            <Typography.Text className={styles.editorHint}>
+                                Finalize with one concise internal summary and one patient-friendly summary for the cross-facility timeline.
+                            </Typography.Text>
+                        </div>
+                        <Tag className={missingTimelineSummaries.length === 0 ? styles.timelineReadyTag : styles.timelinePendingTag}>
+                            {missingTimelineSummaries.length === 0 ? "Ready to finalize" : "Required before finalizing"}
+                        </Tag>
+                    </div>
+                    {timelineValidationMessage ? (
+                        <Alert
+                            type="warning"
+                            showIcon
+                            title={timelineValidationMessage}
+                            action={
+                                <Button size="small" onClick={() => setTimelineValidationMessage(null)}>
+                                    Dismiss
+                                </Button>
+                            }
+                        />
+                    ) : null}
+                    <div className={styles.timelineSummaryGrid}>
+                        <div className={styles.timelineSummaryCard}>
+                            <div className={styles.timelineSummaryHeader}>
+                                <div>
+                                    <Typography.Title level={5} className={styles.timelineSummaryTitle}>
+                                        Clinician-facing summary
+                                    </Typography.Title>
+                                    <Typography.Text className={styles.helperText}>
+                                        Internal clinical recap for history review across facilities.
+                                    </Typography.Text>
+                                </div>
+                                <span className={styles.summaryCounter}>{noteDraft.clinicianTimelineSummary.trim().length}/2000</span>
+                            </div>
+                            <TextArea
+                                value={noteDraft.clinicianTimelineSummary}
+                                onChange={(event) => updateNoteDraft((current) => ({ ...current, clinicianTimelineSummary: event.target.value }))}
+                                className={styles.timelineSummaryArea}
+                                disabled={isFinalized}
+                                maxLength={2000}
+                                placeholder="Example: Presented with severe chest pain and tachycardia. ECG review initiated, acute coronary syndrome ruled out, and same-day follow-up arranged."
+                                data-testid="consultation-clinician-timeline-summary"
+                            />
+                        </div>
+                        <div className={styles.timelineSummaryCard}>
+                            <div className={styles.timelineSummaryHeader}>
+                                <div>
+                                    <Typography.Title level={5} className={styles.timelineSummaryTitle}>
+                                        Patient-friendly summary
+                                    </Typography.Title>
+                                    <Typography.Text className={styles.helperText}>
+                                        Plain-language summary that the patient will see in their own history.
+                                    </Typography.Text>
+                                </div>
+                                <span className={styles.summaryCounter}>{noteDraft.patientTimelineSummary.trim().length}/2000</span>
+                            </div>
+                            <TextArea
+                                value={noteDraft.patientTimelineSummary}
+                                onChange={(event) => updateNoteDraft((current) => ({ ...current, patientTimelineSummary: event.target.value }))}
+                                className={styles.timelineSummaryArea}
+                                disabled={isFinalized}
+                                maxLength={2000}
+                                placeholder="Example: Seen for chest pain and shortness of breath. Your heart tests were reassuring today, and you were advised on warning signs and follow-up care."
+                                data-testid="consultation-patient-timeline-summary"
+                            />
+                        </div>
+                    </div>
+                </div>
+            ),
+        },
     ];
 
     const recordingDurationLabel = new Date(recordingSeconds * 1000).toISOString().slice(14, 19);
@@ -841,7 +1029,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 <Alert
                     type="error"
                     showIcon
-                    message={state.errorMessage}
+                    title={state.errorMessage}
                     action={
                         <Button size="small" onClick={actions.clearMessages}>
                             Dismiss
@@ -853,7 +1041,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 <Alert
                     type="success"
                     showIcon
-                    message={state.successMessage}
+                    title={state.successMessage}
                     action={
                         <Button size="small" onClick={actions.clearMessages}>
                             Close
@@ -865,7 +1053,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 <Alert
                     type="warning"
                     showIcon
-                    message={recordingError}
+                    title={recordingError}
                     action={
                         <Button size="small" onClick={() => setRecordingError(null)}>
                             Dismiss
@@ -915,10 +1103,25 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                             </div>
                         </div>
                         <div className={styles.topActions}>
-                            <Button icon={<SaveOutlined />} className={styles.secondaryAction} loading={state.isSavingDraft} disabled={isFinalized} onClick={() => void saveNoteDraft()}>
+                            <Button
+                                icon={<SaveOutlined />}
+                                className={styles.secondaryAction}
+                                loading={state.isSavingDraft}
+                                disabled={isFinalized}
+                                onClick={() => void saveNoteDraft()}
+                                data-testid="consultation-save-draft"
+                            >
                                 Save Draft
                             </Button>
-                            <Button type="primary" icon={<FileDoneOutlined />} className={styles.primaryAction} loading={state.isFinalizing} disabled={isFinalized} onClick={() => void finalizeNote()}>
+                            <Button
+                                type="primary"
+                                icon={<FileDoneOutlined />}
+                                className={styles.primaryAction}
+                                loading={state.isFinalizing}
+                                disabled={isFinalized}
+                                onClick={() => void finalizeNote()}
+                                data-testid="consultation-finalize-note"
+                            >
                                 {isFinalized ? "Note Finalized" : "Finalize Note"}
                             </Button>
                             {canCompleteVisit ? (

@@ -1,11 +1,8 @@
 import { getAbpErrorMessage } from "@/lib/api/abp";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
 import { consultationService } from "@/services/consultation/consultationService";
+import type { IFinalizeEncounterNoteRequest } from "@/services/consultation/types";
 import { NextResponse } from "next/server";
-
-interface IFinalizeBody {
-    visitId: number;
-}
 
 export const POST = async (request: Request): Promise<Response> => {
     try {
@@ -14,12 +11,12 @@ export const POST = async (request: Request): Promise<Response> => {
             return guardResult.errorResponse ?? NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
         }
 
-        const body = (await request.json()) as IFinalizeBody;
+        const body = (await request.json()) as IFinalizeEncounterNoteRequest;
         if (!body.visitId) {
             return NextResponse.json({ message: "Visit id is required." }, { status: 400 });
         }
 
-        const result = await consultationService.finalizeEncounterNote(body.visitId, guardResult.accessToken);
+        const result = await consultationService.finalizeEncounterNote(body, guardResult.accessToken);
         return NextResponse.json(result);
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to finalize encounter note.") }, { status: 400 });
