@@ -23,6 +23,8 @@ export interface IEncounterNote {
     objective: string;
     assessment: string;
     plan: string;
+    clinicianTimelineSummary: string;
+    patientTimelineSummary: string;
     status: TConsultationNoteStatus;
     finalizedAt?: string | null;
 }
@@ -118,6 +120,14 @@ export interface ISaveEncounterNoteDraftRequest {
     objective?: string;
     assessment?: string;
     plan?: string;
+    clinicianTimelineSummary?: string;
+    patientTimelineSummary?: string;
+}
+
+export interface IFinalizeEncounterNoteRequest {
+    visitId: number;
+    clinicianTimelineSummary: string;
+    patientTimelineSummary: string;
 }
 
 export interface IAttachConsultationTranscriptRequest {

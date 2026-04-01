@@ -167,32 +167,6 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         margin-top: 6px;
     `,
 
-    bottomNavWrap: css`
-        padding: 10px 8px 12px;
-        border-top: 1px solid rgba(138, 154, 181, 0.2);
-        border-bottom: 1px solid rgba(138, 154, 181, 0.2);
-        margin-bottom: 14px;
-        width: 100%;
-
-        .ant-segmented {
-            background: transparent;
-        }
-
-        .ant-segmented-item-label {
-            min-height: 42px;
-            display: grid;
-            place-items: center;
-            font-weight: 700;
-            color: #8091af;
-        }
-
-        .ant-segmented-item-selected {
-            background: rgba(240, 144, 64, 0.16) !important;
-            color: ${colors.amber} !important;
-            border-radius: ${radius.sm}px;
-        }
-    `,
-
     actionsRow: css`
         display: flex;
         gap: 12px;

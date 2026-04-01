@@ -25,6 +25,22 @@ const getHumanStatus = (status: TQueueStatus): string => {
     return status.replace("_", " ");
 };
 
+const appendQueryToPath = (path: string, params: Record<string, string | number | undefined>): string => {
+    const [basePath, queryString] = path.split("?");
+    const query = new URLSearchParams(queryString ?? "");
+
+    Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") {
+            return;
+        }
+
+        query.set(key, String(value));
+    });
+
+    const serialized = query.toString();
+    return serialized ? `${basePath}?${serialized}` : basePath;
+};
+
 interface IClinicianTriageReviewPageProps {
     queueTicketId: number;
 }
@@ -107,7 +123,11 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
         }
 
         if (actionConfig.status === "in_consultation") {
-            router.push(review.consultationPath);
+            router.push(
+                appendQueryToPath(review.consultationPath, {
+                    patientUserId: review.patientUserId,
+                })
+            );
         }
     };
 
@@ -275,12 +295,20 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
 
                         <Card className={styles.sectionCard}>
                             <Space orientation="vertical" size={10} className={styles.actionStack}>
-                                <Link href={review.consultationPath}>
+                                <Link
+                                    href={appendQueryToPath(review.consultationPath, {
+                                        patientUserId: review.patientUserId,
+                                    })}
+                                >
                                     <Button icon={<FileTextOutlined />} className={styles.secondaryAction} block>
                                         Consultation
                                     </Button>
                                 </Link>
-                                <Link href={review.patientHistoryPath}>
+                                <Link
+                                    href={appendQueryToPath(review.patientHistoryPath, {
+                                        queueTicketId: review.queueTicketId,
+                                    })}
+                                >
                                     <Button icon={<HistoryOutlined />} className={styles.secondaryAction} block>
                                         Patient Timeline
                                     </Button>

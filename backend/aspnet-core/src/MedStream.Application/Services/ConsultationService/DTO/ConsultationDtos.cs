@@ -45,6 +45,10 @@ public class SaveEncounterNoteDraftInput
     public string? Assessment { get; set; }
 
     public string? Plan { get; set; }
+
+    public string? ClinicianTimelineSummary { get; set; }
+
+    public string? PatientTimelineSummary { get; set; }
 }
 
 public class AttachConsultationTranscriptInput
@@ -68,6 +72,10 @@ public class GenerateConsultationDraftInput
 public class FinalizeEncounterNoteInput
 {
     public long VisitId { get; set; }
+
+    public string ClinicianTimelineSummary { get; set; } = string.Empty;
+
+    public string PatientTimelineSummary { get; set; } = string.Empty;
 }
 
 public class ConsultationWorkspaceDto
@@ -121,6 +129,10 @@ public class EncounterNoteDto
     public string Assessment { get; set; } = string.Empty;
 
     public string Plan { get; set; } = string.Empty;
+
+    public string ClinicianTimelineSummary { get; set; } = string.Empty;
+
+    public string PatientTimelineSummary { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
 

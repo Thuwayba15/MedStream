@@ -1,4 +1,4 @@
-import { Card, Space } from "antd";
+import { ClinicianHistoryPage as ClinicianHistoryWorkspace } from "@/components/clinician/clinicianHistoryPage";
 import { ClinicianWorkspaceShell } from "@/components/clinician/clinicianWorkspaceShell";
 import { RoleAppShell } from "@/components/layout/roleAppShell";
 
@@ -6,23 +6,28 @@ interface IClinicianHistoryPageProps {
     searchParams: Promise<{
         patientUserId?: string;
         visitId?: string;
+        queueTicketId?: string;
     }>;
 }
 
 const ClinicianHistoryPage = async ({ searchParams }: IClinicianHistoryPageProps): Promise<React.JSX.Element> => {
     const params = await searchParams;
+    const patientUserId = params.patientUserId ? Number(params.patientUserId) : undefined;
+    const visitId = params.visitId ? Number(params.visitId) : undefined;
+    const queueTicketId = params.queueTicketId ? Number(params.queueTicketId) : undefined;
 
     return (
         <RoleAppShell roleLabel="Clinician" items={[]}>
-            <ClinicianWorkspaceShell activeKey="history" title="Clinician Workspace" subtitle="Review the patient timeline for visits you have access to.">
-                <Card>
-                    <Space orientation="vertical" size={10}>
-                        <h1>Patient History</h1>
-                        <p>Patient timeline and historical context route. Open from queue review to scope to the selected patient.</p>
-                        <p>Patient User Id: {params.patientUserId ?? "-"}</p>
-                        <p>Visit Id: {params.visitId ?? "-"}</p>
-                    </Space>
-                </Card>
+            <ClinicianWorkspaceShell
+                activeKey="history"
+                consultationVisitId={visitId}
+                consultationQueueTicketId={queueTicketId}
+                historyPatientUserId={patientUserId}
+                historyVisitId={visitId}
+                title="Patient Timeline"
+                subtitle="Review cross-facility triage and consultation history for the active patient."
+            >
+                <ClinicianHistoryWorkspace patientUserId={patientUserId} />
             </ClinicianWorkspaceShell>
         </RoleAppShell>
     );

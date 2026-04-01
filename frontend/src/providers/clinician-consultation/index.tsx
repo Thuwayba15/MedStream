@@ -11,6 +11,7 @@ import type {
     IConsultationVitalSigns,
     IConsultationWorkspace,
     IEncounterNote,
+    IFinalizeEncounterNoteRequest,
     ISaveEncounterNoteDraftRequest,
     ISaveVitalsRequest,
     ITranscribeConsultationAudioRequest,
@@ -19,6 +20,7 @@ import {
     attachTranscriptFailed,
     attachTranscriptStarted,
     attachTranscriptSucceeded,
+    clearActiveConsultation,
     clearMessages,
     completeVisitFailed,
     completeVisitStarted,
@@ -247,11 +249,11 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
     }, []);
 
     const finalizeEncounterNote = useCallback(
-        async (visitId: number): Promise<IEncounterNote | null> => {
+        async (payload: IFinalizeEncounterNoteRequest): Promise<IEncounterNote | null> => {
             dispatch(finalizeStarted());
             try {
-                const note = await postJson<IEncounterNote>(API.CLINICIAN_CONSULTATION_FINALIZE_ROUTE, { visitId }, "Unable to finalize note.");
-                const workspace = await refreshWorkspace(visitId);
+                const note = await postJson<IEncounterNote>(API.CLINICIAN_CONSULTATION_FINALIZE_ROUTE, payload, "Unable to finalize note.");
+                const workspace = await refreshWorkspace(payload.visitId);
                 dispatch(finalizeSucceeded(workspace));
                 return note;
             } catch (error) {
@@ -293,6 +295,7 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
             generateAssessmentPlanDraft,
             finalizeEncounterNote,
             completeVisit,
+            clearActiveConsultation: () => dispatch(clearActiveConsultation()),
             clearMessages: () => dispatch(clearMessages()),
         }),
         [attachTranscript, completeVisit, finalizeEncounterNote, generateAssessmentPlanDraft, generateSubjectiveDraft, loadInbox, loadWorkspace, saveEncounterNoteDraft, saveVitals, transcribeAudio]

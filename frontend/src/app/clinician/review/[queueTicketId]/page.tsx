@@ -7,11 +7,18 @@ interface IClinicianReviewPageProps {
     params: Promise<{
         queueTicketId: string;
     }>;
+    searchParams: Promise<{
+        patientUserId?: string;
+        visitId?: string;
+    }>;
 }
 
-const ClinicianReviewPage = async ({ params }: IClinicianReviewPageProps): Promise<React.JSX.Element> => {
+const ClinicianReviewPage = async ({ params, searchParams }: IClinicianReviewPageProps): Promise<React.JSX.Element> => {
     const { queueTicketId } = await params;
+    const query = await searchParams;
     const parsedQueueTicketId = Number(queueTicketId);
+    const patientUserId = query.patientUserId ? Number(query.patientUserId) : undefined;
+    const visitId = query.visitId ? Number(query.visitId) : undefined;
 
     return (
         <RoleAppShell roleLabel="Clinician" items={[]}>
@@ -19,6 +26,10 @@ const ClinicianReviewPage = async ({ params }: IClinicianReviewPageProps): Promi
                 <ClinicianWorkspaceShell
                     activeKey="review"
                     reviewQueueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : 0}
+                    consultationVisitId={visitId}
+                    consultationQueueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : undefined}
+                    historyPatientUserId={patientUserId}
+                    historyVisitId={visitId}
                     title="Clinician Workspace"
                     subtitle="Review triage reasoning, then move directly into the consultation note."
                 >

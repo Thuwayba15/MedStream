@@ -97,6 +97,44 @@ public class ConsultationPersistence_Tests : MedStreamTestBase
         });
     }
 
+    [Fact]
+    public async Task EncounterNote_Should_Persist_Timeline_Summary_Fields()
+    {
+        await UsingDbContextAsync(async context =>
+        {
+            var visit = new Visit
+            {
+                TenantId = 1,
+                PatientUserId = 45,
+                FacilityId = 1,
+                AssignedClinicianUserId = 100,
+                VisitDate = DateTime.UtcNow,
+                Status = PatientIntakeConstants.VisitStatusInConsultation,
+                PathwayKey = PatientIntakeConstants.GeneralFallbackPathwayKey
+            };
+            await context.Visits.AddAsync(visit);
+            await context.SaveChangesAsync();
+
+            var encounterNote = new EncounterNote
+            {
+                TenantId = 1,
+                VisitId = visit.Id,
+                CreatedByClinicianUserId = 100,
+                IntakeSubjective = "Timeline seed",
+                Subjective = "Timeline seed",
+                ClinicianTimelineSummary = "Clinician-facing summary for history.",
+                PatientTimelineSummary = "Patient-facing summary for history.",
+                Status = PatientIntakeConstants.EncounterNoteStatusDraft
+            };
+            await context.EncounterNotes.AddAsync(encounterNote);
+            await context.SaveChangesAsync();
+
+            var persistedNote = await context.EncounterNotes.SingleAsync(item => item.Id == encounterNote.Id);
+            persistedNote.ClinicianTimelineSummary.ShouldBe("Clinician-facing summary for history.");
+            persistedNote.PatientTimelineSummary.ShouldBe("Patient-facing summary for history.");
+        });
+    }
+
     private static bool MatchesProperties(IReadOnlyIndex index, params string[] propertyNames)
     {
         return index.Properties.Select(property => property.Name).SequenceEqual(propertyNames);

@@ -19,6 +19,7 @@ namespace MedStream.Consultation;
 public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppService
 {
     private const int MaxEncounterSectionLength = 8000;
+    private const int MaxTimelineSummaryLength = EncounterNote.MaxTimelineSummaryLength;
     private readonly IRepository<Visit, long> _visitRepository;
     private readonly IRepository<SymptomIntake, long> _symptomIntakeRepository;
     private readonly IRepository<TriageAssessment, long> _triageAssessmentRepository;
@@ -245,6 +246,16 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
             note.Plan = SanitizeSection(input.Plan);
         }
 
+        if (input.ClinicianTimelineSummary != null)
+        {
+            note.ClinicianTimelineSummary = SanitizeTimelineSummary(input.ClinicianTimelineSummary);
+        }
+
+        if (input.PatientTimelineSummary != null)
+        {
+            note.PatientTimelineSummary = SanitizeTimelineSummary(input.PatientTimelineSummary);
+        }
+
         note.Status = PatientIntakeConstants.EncounterNoteStatusDraft;
         await _encounterNoteRepository.UpdateAsync(note);
         await CurrentUnitOfWork.SaveChangesAsync();
@@ -360,6 +371,19 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
         if (string.IsNullOrWhiteSpace(note.Plan))
         {
             throw new UserFriendlyException("Plan must be completed before finalizing the note.");
+        }
+
+        note.ClinicianTimelineSummary = SanitizeTimelineSummary(input.ClinicianTimelineSummary);
+        note.PatientTimelineSummary = SanitizeTimelineSummary(input.PatientTimelineSummary);
+
+        if (string.IsNullOrWhiteSpace(note.ClinicianTimelineSummary))
+        {
+            throw new UserFriendlyException("Clinician timeline summary must be completed before finalizing the note.");
+        }
+
+        if (string.IsNullOrWhiteSpace(note.PatientTimelineSummary))
+        {
+            throw new UserFriendlyException("Patient timeline summary must be completed before finalizing the note.");
         }
 
         note.Status = PatientIntakeConstants.EncounterNoteStatusFinalized;
@@ -563,6 +587,8 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
             Objective = note.Objective ?? string.Empty,
             Assessment = note.Assessment ?? string.Empty,
             Plan = note.Plan ?? string.Empty,
+            ClinicianTimelineSummary = note.ClinicianTimelineSummary ?? string.Empty,
+            PatientTimelineSummary = note.PatientTimelineSummary ?? string.Empty,
             Status = note.Status ?? string.Empty,
             FinalizedAt = note.FinalizedAt
         };
@@ -628,6 +654,14 @@ public class ConsultationAppService : MedStreamAppServiceBase, IConsultationAppS
         return safeValue.Length <= MaxEncounterSectionLength
             ? safeValue
             : safeValue[..MaxEncounterSectionLength];
+    }
+
+    private static string SanitizeTimelineSummary(string value)
+    {
+        var safeValue = (value ?? string.Empty).Trim();
+        return safeValue.Length <= MaxTimelineSummaryLength
+            ? safeValue
+            : safeValue[..MaxTimelineSummaryLength];
     }
 
     private static string BuildVitalsSummary(VitalSigns? vitals)

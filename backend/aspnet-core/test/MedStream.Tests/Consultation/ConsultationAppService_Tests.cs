@@ -141,9 +141,70 @@ public class ConsultationAppService_Tests : MedStreamTestBase
         {
             await _consultationAppService.FinalizeEncounterNote(new FinalizeEncounterNoteInput
             {
-                VisitId = scenario.VisitId
+                VisitId = scenario.VisitId,
+                ClinicianTimelineSummary = "Internal clinical summary.",
+                PatientTimelineSummary = "Patient-facing summary."
             });
         });
+    }
+
+    [Fact]
+    public async Task SaveEncounterNoteDraft_Should_Persist_Timeline_Summaries()
+    {
+        var scenario = await PrepareConsultationScenarioAsync();
+
+        var result = await _consultationAppService.SaveEncounterNoteDraft(new SaveEncounterNoteDraftInput
+        {
+            VisitId = scenario.VisitId,
+            ClinicianTimelineSummary = "Urgent chest pain reviewed with clinician-focused summary.",
+            PatientTimelineSummary = "You were assessed for chest pain and kept for clinician review."
+        });
+
+        result.ClinicianTimelineSummary.ShouldBe("Urgent chest pain reviewed with clinician-focused summary.");
+        result.PatientTimelineSummary.ShouldBe("You were assessed for chest pain and kept for clinician review.");
+
+        await UsingDbContextAsync(async context =>
+        {
+            var note = await context.EncounterNotes.SingleAsync(item => item.VisitId == scenario.VisitId);
+            note.ClinicianTimelineSummary.ShouldBe("Urgent chest pain reviewed with clinician-focused summary.");
+            note.PatientTimelineSummary.ShouldBe("You were assessed for chest pain and kept for clinician review.");
+        });
+    }
+
+    [Fact]
+    public async Task FinalizeEncounterNote_Should_Require_Timeline_Summaries()
+    {
+        var scenario = await PrepareConsultationScenarioAsync();
+
+        await _consultationAppService.SaveEncounterNoteDraft(new SaveEncounterNoteDraftInput
+        {
+            VisitId = scenario.VisitId,
+            Objective = "Patient alert. Breath sounds clear.",
+            Assessment = "Chest pain improving under observation.",
+            Plan = "Repeat vitals and continue clinician review."
+        });
+
+        var clinicianSummaryException = await Should.ThrowAsync<UserFriendlyException>(async () =>
+        {
+            await _consultationAppService.FinalizeEncounterNote(new FinalizeEncounterNoteInput
+            {
+                VisitId = scenario.VisitId,
+                ClinicianTimelineSummary = string.Empty,
+                PatientTimelineSummary = "You were monitored and reviewed."
+            });
+        });
+        clinicianSummaryException.Message.ShouldContain("Clinician timeline summary");
+
+        var patientSummaryException = await Should.ThrowAsync<UserFriendlyException>(async () =>
+        {
+            await _consultationAppService.FinalizeEncounterNote(new FinalizeEncounterNoteInput
+            {
+                VisitId = scenario.VisitId,
+                ClinicianTimelineSummary = "Internal clinical summary.",
+                PatientTimelineSummary = string.Empty
+            });
+        });
+        patientSummaryException.Message.ShouldContain("Patient timeline summary");
     }
 
     [Fact]
@@ -243,9 +304,13 @@ public class ConsultationAppService_Tests : MedStreamTestBase
 
         var finalized = await _consultationAppService.FinalizeEncounterNote(new FinalizeEncounterNoteInput
         {
-            VisitId = scenario.VisitId
+            VisitId = scenario.VisitId,
+            ClinicianTimelineSummary = "Chest pain reviewed in consultation; ECG follow-up planned.",
+            PatientTimelineSummary = "Your chest pain was reviewed and follow-up checks were planned."
         });
         finalized.Status.ShouldBe(PatientIntakeConstants.EncounterNoteStatusFinalized);
+        finalized.ClinicianTimelineSummary.ShouldBe("Chest pain reviewed in consultation; ECG follow-up planned.");
+        finalized.PatientTimelineSummary.ShouldBe("Your chest pain was reviewed and follow-up checks were planned.");
 
         var completed = await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
         {

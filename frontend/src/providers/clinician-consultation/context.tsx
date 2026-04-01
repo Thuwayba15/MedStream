@@ -10,6 +10,7 @@ import type {
     IConsultationVitalSigns,
     IConsultationWorkspace,
     IEncounterNote,
+    IFinalizeEncounterNoteRequest,
     ISaveEncounterNoteDraftRequest,
     ISaveVitalsRequest,
     ITranscribeConsultationAudioRequest,
@@ -47,8 +48,9 @@ export interface IClinicianConsultationActionContext {
     transcribeAudio: (payload: ITranscribeConsultationAudioRequest) => Promise<IConsultationTranscript | null>;
     generateSubjectiveDraft: (visitId: number) => Promise<IConsultationAiDraft | null>;
     generateAssessmentPlanDraft: (visitId: number) => Promise<IConsultationAiDraft | null>;
-    finalizeEncounterNote: (visitId: number) => Promise<IEncounterNote | null>;
+    finalizeEncounterNote: (payload: IFinalizeEncounterNoteRequest) => Promise<IEncounterNote | null>;
     completeVisit: (queueTicketId: number) => Promise<IUpdateQueueStatusResponse | null>;
+    clearActiveConsultation: () => void;
     clearMessages: () => void;
 }
 
@@ -81,6 +83,7 @@ export const INITIAL_ACTION_STATE: IClinicianConsultationActionContext = {
     generateAssessmentPlanDraft: async () => null,
     finalizeEncounterNote: async () => null,
     completeVisit: async () => null,
+    clearActiveConsultation: () => undefined,
     clearMessages: () => undefined,
 };
 

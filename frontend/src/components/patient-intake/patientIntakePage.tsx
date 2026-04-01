@@ -1,9 +1,10 @@
 "use client";
 
 import { AudioOutlined, ClockCircleOutlined, EnvironmentOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Input, InputNumber, Progress, Radio, Select, Segmented, Space, Tag, Typography } from "antd";
+import { Alert, Button, Card, Input, InputNumber, Progress, Radio, Select, Space, Tag, Typography } from "antd";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { COMMON_SYMPTOMS, PATIENT_INTAKE_STEPS } from "@/constants/patientIntake";
+import { PatientBottomNav } from "@/components/patient/patientBottomNav";
 import { usePatientIntakeActions, usePatientIntakeState } from "@/providers/patient-intake";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
 import type { IIntakeQuestion } from "@/services/patient-intake/types";
@@ -192,27 +193,16 @@ export const PatientIntakePage = () => {
             {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
 
             <div className={styles.stickyActions}>
-                <div className={styles.bottomNavWrap}>
-                    <Segmented
-                        block
-                        options={[
-                            { label: "New Visit", value: "new-visit" },
-                            { label: "My Queue", value: "my-queue", disabled: !hasQueueStatus },
-                            { label: "History", value: "history", disabled: true },
-                        ]}
-                        value={activeBottomNav}
-                        onChange={(value) => {
-                            if (value === "my-queue" && hasQueueStatus) {
-                                actions.goToStep(4);
-                                return;
-                            }
-
-                            if (value === "new-visit" && state.currentStep === 4) {
-                                void actions.resetFlow();
-                            }
-                        }}
-                    />
-                </div>
+                <PatientBottomNav
+                    activeKey={activeBottomNav as "new-visit" | "my-queue"}
+                    hasQueueStatus={hasQueueStatus}
+                    onSelectMyQueue={() => actions.goToStep(4)}
+                    onSelectNewVisit={() => {
+                        if (state.currentStep === 4) {
+                            void actions.resetFlow();
+                        }
+                    }}
+                />
                 {state.currentStep < 4 ? (
                     <div className={styles.actionsRow}>
                         <Button className={styles.secondaryButton} onClick={actions.backStep} disabled={state.currentStep === 0 || state.isProcessing}>
