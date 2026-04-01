@@ -20,6 +20,7 @@ import {
     attachTranscriptFailed,
     attachTranscriptStarted,
     attachTranscriptSucceeded,
+    clearActiveConsultation,
     clearMessages,
     completeVisitFailed,
     completeVisitStarted,
@@ -294,6 +295,7 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
             generateAssessmentPlanDraft,
             finalizeEncounterNote,
             completeVisit,
+            clearActiveConsultation: () => dispatch(clearActiveConsultation()),
             clearMessages: () => dispatch(clearMessages()),
         }),
         [attachTranscript, completeVisit, finalizeEncounterNote, generateAssessmentPlanDraft, generateSubjectiveDraft, loadInbox, loadWorkspace, saveEncounterNoteDraft, saveVitals, transcribeAudio]

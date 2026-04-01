@@ -112,6 +112,10 @@ export const clinicianConsultationReducer = handleActions<IClinicianConsultation
             ...state,
             ...action.payload,
         }),
+        [ClinicianConsultationActionEnums.clearActiveConsultation]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
         [ClinicianConsultationActionEnums.clearMessages]: (state, action) => ({
             ...state,
             ...action.payload,

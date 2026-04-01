@@ -31,6 +31,7 @@ export enum ClinicianConsultationActionEnums {
     completeVisitStarted = "CLINICIAN_CONSULTATION_COMPLETE_VISIT_STARTED",
     completeVisitSucceeded = "CLINICIAN_CONSULTATION_COMPLETE_VISIT_SUCCEEDED",
     completeVisitFailed = "CLINICIAN_CONSULTATION_COMPLETE_VISIT_FAILED",
+    clearActiveConsultation = "CLINICIAN_CONSULTATION_CLEAR_ACTIVE",
     clearMessages = "CLINICIAN_CONSULTATION_CLEAR_MESSAGES",
 }
 
@@ -212,6 +213,14 @@ export const completeVisitSucceeded = createAction<IClinicianConsultationStatePa
 export const completeVisitFailed = createAction<IClinicianConsultationStatePayload, string>(ClinicianConsultationActionEnums.completeVisitFailed, (message) => ({
     isCompletingVisit: false,
     errorMessage: message,
+}));
+
+export const clearActiveConsultation = createAction<IClinicianConsultationStatePayload>(ClinicianConsultationActionEnums.clearActiveConsultation, () => ({
+    workspace: null,
+    review: null,
+    inbox: null,
+    subjectiveDraft: null,
+    assessmentPlanDraft: null,
 }));
 
 export const clearMessages = createAction<IClinicianConsultationStatePayload>(ClinicianConsultationActionEnums.clearMessages, () => ({

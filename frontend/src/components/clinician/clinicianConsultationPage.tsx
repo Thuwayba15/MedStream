@@ -16,6 +16,7 @@ const { TextArea } = Input;
 interface IClinicianConsultationPageProps {
     visitId?: number;
     queueTicketId?: number;
+    patientUserId?: number;
 }
 
 interface INoteDraftState {
@@ -380,15 +381,17 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     const workspace = state.workspace;
     const review = state.review;
     const inbox = state.inbox?.items ?? [];
+    const activeVisitId = visitId ?? workspace?.visitId;
+    const activeQueueTicketId = queueTicketId ?? review?.queueTicketId ?? workspace?.queueTicketId ?? undefined;
 
     useEffect(() => {
-        if (visitId) {
-            void actions.loadWorkspace({ visitId, queueTicketId });
+        if (activeVisitId) {
+            void actions.loadWorkspace({ visitId: activeVisitId, queueTicketId: activeQueueTicketId });
             return;
         }
 
         void actions.loadInbox();
-    }, [actions, queueTicketId, visitId]);
+    }, [actions, activeQueueTicketId, activeVisitId]);
 
     useEffect(() => {
         return () => {
@@ -1053,7 +1056,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 />
             ) : null}
 
-            {!visitId ? (
+            {!activeVisitId ? (
                 state.isLoadingWorkspace && !state.inbox ? (
                     <Card className={styles.panelCard}>
                         <Skeleton active paragraph={{ rows: 8 }} />
@@ -1120,7 +1123,14 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                                     icon={<CheckCircleOutlined />}
                                     className={styles.secondaryAction}
                                     loading={state.isCompletingVisit}
-                                    onClick={() => void actions.completeVisit(review!.queueTicketId).then((result) => result && router.push("/clinician/consultation"))}
+                                    onClick={() =>
+                                        void actions.completeVisit(review!.queueTicketId).then((result) => {
+                                            if (result) {
+                                                actions.clearActiveConsultation();
+                                                router.push("/clinician/consultation");
+                                            }
+                                        })
+                                    }
                                 >
                                     Complete Visit
                                 </Button>

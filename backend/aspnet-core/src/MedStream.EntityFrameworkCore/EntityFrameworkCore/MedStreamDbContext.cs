@@ -2,6 +2,7 @@ using Abp.Zero.EntityFrameworkCore;
 using MedStream.Authorization.Roles;
 using MedStream.Authorization.Users;
 using MedStream.Facilities;
+using MedStream.PatientAccess;
 using MedStream.PatientIntake;
 using MedStream.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,8 @@ public class MedStreamDbContext : AbpZeroDbContext<Tenant, Role, User, MedStream
     public DbSet<EncounterNote> EncounterNotes { get; set; }
     public DbSet<VitalSigns> VitalSignsRecords { get; set; }
     public DbSet<ConsultationTranscript> ConsultationTranscripts { get; set; }
+    public DbSet<PatientAccessGrant> PatientAccessGrants { get; set; }
+    public DbSet<PatientAccessAudit> PatientAccessAudits { get; set; }
 
     public MedStreamDbContext(DbContextOptions<MedStreamDbContext> options)
         : base(options)
@@ -132,6 +135,20 @@ public class MedStreamDbContext : AbpZeroDbContext<Tenant, Role, User, MedStream
                 .WithMany()
                 .HasForeignKey(item => item.EncounterNoteId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PatientAccessGrant>(entity =>
+        {
+            entity.ToTable("PatientAccessGrants");
+            entity.HasIndex(item => new { item.TenantId, item.PatientUserId, item.ClinicianUserId, item.IsActive });
+            entity.HasIndex(item => new { item.TenantId, item.ClinicianUserId, item.ExpiresAt });
+        });
+
+        modelBuilder.Entity<PatientAccessAudit>(entity =>
+        {
+            entity.ToTable("PatientAccessAudits");
+            entity.HasIndex(item => new { item.TenantId, item.PatientUserId, item.AccessedAt });
+            entity.HasIndex(item => new { item.TenantId, item.ClinicianUserId, item.AccessedAt });
         });
     }
 }

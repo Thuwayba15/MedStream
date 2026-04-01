@@ -309,6 +309,60 @@ test.describe("clinician queue dashboard", () => {
             });
         });
 
+        await page.route("**/api/clinician/history**", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    isClinicianView: true,
+                    patient: {
+                        patientUserId: 2001,
+                        patientName: "Thabo Molefe",
+                        dateOfBirth: "1981-05-11T00:00:00.000Z",
+                        idNumber: "8105115800088",
+                        totalVisits: 3,
+                        mostRecentVisitAt: new Date().toISOString(),
+                    },
+                    visits: [
+                        {
+                            visitId: 3001,
+                            visitDate: new Date().toISOString(),
+                            visitStatus: "completed",
+                            facilityId: 4,
+                            facilityName: "Khayelitsha CHC",
+                            title: "General Consultation",
+                            chiefComplaint: "Severe chest pain, shortness of breath",
+                            summary: "Primary concern is severe chest pain with shortness of breath.",
+                            summarySource: "encounter_note_clinician_summary",
+                            urgencyLevel: "Urgent",
+                            queueStatus: "completed",
+                            clinicianName: "Dr. Naledi Mokoena",
+                            finalizedAt: new Date().toISOString(),
+                        },
+                    ],
+                    timeline: [
+                        {
+                            eventId: "encounter-3001",
+                            visitId: 3001,
+                            eventType: "consultation",
+                            title: "General Consultation",
+                            summary: "Primary concern is severe chest pain with shortness of breath.",
+                            occurredAt: new Date().toISOString(),
+                            facilityId: 4,
+                            facilityName: "Khayelitsha CHC",
+                            status: "completed",
+                            recordedByName: "Dr. Naledi Mokoena",
+                            provenance: "encounter_note",
+                            urgencyLevel: "Urgent",
+                        },
+                    ],
+                    conditions: [],
+                    allergies: [],
+                    medications: [],
+                }),
+            });
+        });
+
         await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
 
         await page.goto("/clinician", { waitUntil: "domcontentloaded" });
@@ -324,7 +378,7 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
 
         await page.getByRole("button", { name: "Review" }).first().click();
-        await expect(page).toHaveURL(/\/clinician\/review\/901$/);
+        await expect(page).toHaveURL(/\/clinician\/review\/901\?patientUserId=2001&visitId=3001$/);
         await expect(page.getByRole("heading", { name: "Triage Review" })).toBeVisible();
         await expect(page.getByText("Thabo Molefe", { exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Start Consultation" })).toBeVisible();
@@ -366,6 +420,16 @@ test.describe("clinician queue dashboard", () => {
         await page.getByTestId("consultation-finalize-note").click();
         await expect(page.getByText("SOAP note finalized.")).toBeVisible();
         await expect(page.getByText("Finalized", { exact: true })).toBeVisible();
+
+        await page.getByRole("tab", { name: "Patient Timeline" }).click();
+        await expect(page).toHaveURL(/\/clinician\/history/);
+        await expect(page.getByRole("heading", { name: "Thabo Molefe" })).toBeVisible();
+        await expect(page.getByText("Visit History")).toBeVisible();
+        await expect(page.getByText("Primary concern is severe chest pain with shortness of breath.")).toBeVisible();
+
+        await page.getByRole("tab", { name: "Consultation" }).click();
+        await expect(page).toHaveURL(/\/clinician\/consultation/);
+        await expect(page.getByRole("heading", { name: "Consultation: Thabo Molefe" })).toBeVisible();
 
         const urgentRequests = requestUrls.filter((url) => url.includes("urgencyLevel=Urgent"));
         expect(urgentRequests.length).toBeGreaterThan(0);

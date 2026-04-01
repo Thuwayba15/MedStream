@@ -319,6 +319,7 @@ F10. Patient History
 F10.1 View Timeline
 1.1 Clinician must view patient timeline
  1.2 Must be restricted by access rules
+ 1.3 Clinician workspace tab switching between Consultation and Patient Timeline must preserve the active patient consultation context; this context is cleared only when the consultation is explicitly completed or a different patient consultation is opened
 
 F10.2 Longitudinal Data
 2.1 System must store:
