@@ -242,7 +242,7 @@ const QueueRow = ({ item }: { item: IClinicianQueueItem }): React.JSX.Element =>
             </div>
 
             <div className={styles.actionPanel}>
-                <Link href={`/clinician/review/${item.queueTicketId}`}>
+                <Link href={`/clinician/review/${item.queueTicketId}?patientUserId=${item.patientUserId}&visitId=${item.visitId}`}>
                     <Button className={styles.primaryAction} icon={<EyeOutlined />}>
                         Review
                     </Button>
