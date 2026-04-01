@@ -25,6 +25,7 @@ test.describe("patient intake flow", () => {
 
         await page.goto("/patient");
         await expect(page.getByText("Step 1 of 5")).toBeVisible();
+        await expect(page.getByTestId("patient-nav-my-queue")).toBeDisabled();
         await selectHospital(page);
 
         await page.getByRole("button", { name: "Continue" }).click();
@@ -46,7 +47,8 @@ test.describe("patient intake flow", () => {
         await page.getByRole("button", { name: "Generate Status" }).click();
 
         await expect(page.getByText("Step 5 of 5")).toBeVisible();
-        await expect(page.getByText("Queue Status", { exact: true })).toBeVisible();
+        await expect(page.getByTestId("patient-nav-my-queue")).toBeEnabled();
+        await expect(page.getByText("Queue", { exact: true })).toBeVisible();
         await expect(page.getByText("Priority score:")).toHaveCount(0);
     });
 
@@ -66,7 +68,7 @@ test.describe("patient intake flow", () => {
         await page.getByRole("button", { name: "Continue" }).click();
 
         await expect(page.getByText("Step 5 of 5")).toBeVisible();
-        await expect(page.getByText("Urgent", { exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Urgent" })).toBeVisible();
     });
 
     test("fallback mode posts APC fallback flag and summary ids to questions endpoint", async ({ page, context }) => {

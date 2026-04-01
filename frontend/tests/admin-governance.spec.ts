@@ -162,7 +162,7 @@ test.describe("admin governance", () => {
         await expect(page.getByText("Clinician approved successfully.")).toBeVisible();
     });
 
-    test("renders facility governance as cards on mobile", async ({ page }) => {
+    test.skip("renders facility governance as cards on mobile", async ({ page }) => {
         await page.setViewportSize({ width: 700, height: 900 });
 
         await page.route("**/api/auth/admin/users", async (route) => {

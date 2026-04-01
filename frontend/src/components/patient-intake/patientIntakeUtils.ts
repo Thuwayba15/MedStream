@@ -147,6 +147,16 @@ export const getIntakeJourneyItems = (currentStep: number): IIntakeJourneyItem[]
     ];
 };
 
+export const getPatientQuestionLabel = (question: IIntakeQuestion): string => {
+    const label = question.questionText.trim();
+
+    if (question.inputType === "Number" && /how long have you had/i.test(label) && !/\bday/i.test(label)) {
+        return `${label} (in days)`;
+    }
+
+    return label;
+};
+
 export const resolveSpeechRecognitionApi = (): SpeechRecognitionConstructor | null => {
     if (typeof window === "undefined") {
         return null;

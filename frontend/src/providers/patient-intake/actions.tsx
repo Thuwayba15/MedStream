@@ -16,6 +16,7 @@ export enum PatientIntakeActionEnums {
     followUpQuestionsLoaded = "PATIENT_INTAKE_FOLLOW_UP_QUESTIONS_LOADED",
     triageSucceeded = "PATIENT_INTAKE_TRIAGE_SUCCEEDED",
     queuedVisitRestored = "PATIENT_INTAKE_QUEUED_VISIT_RESTORED",
+    startNewVisitDraft = "PATIENT_INTAKE_START_NEW_VISIT_DRAFT",
     actionFailed = "PATIENT_INTAKE_ACTION_FAILED",
     clearError = "PATIENT_INTAKE_CLEAR_ERROR",
 }
@@ -165,6 +166,34 @@ export const queuedVisitRestored = createAction<
     pathwayKey: snapshot.pathwayKey,
     triage: snapshot.triage,
     queue: snapshot.queue,
+    errorMessage: undefined,
+}));
+
+export const startNewVisitDraft = createAction<IPatientIntakeStatePayload, Array<{ id: number; name: string }>>(PatientIntakeActionEnums.startNewVisitDraft, (facilities) => ({
+    currentStep: 0,
+    visitId: null,
+    facilityName: "",
+    availableFacilities: facilities,
+    selectedFacilityId: null,
+    startedAt: null,
+    pathwayKey: "",
+    freeText: "",
+    selectedSymptoms: [],
+    extractedPrimarySymptoms: [],
+    extractionSource: null,
+    likelyPathwayIds: [],
+    intakeMode: "approved_json",
+    fallbackSummaryIds: [],
+    fallbackSectionIds: [],
+    urgentMessage: null,
+    urgentQuestionSet: [],
+    urgentTriggered: false,
+    questionSet: [],
+    answers: {},
+    triage: null,
+    queue: null,
+    isInitializing: false,
+    isProcessing: false,
     errorMessage: undefined,
 }));
 

@@ -30,6 +30,16 @@ const isPatientSummaryVisit = (visit: IPatientTimelineVisit): boolean => {
     return hasPatientSummarySource && Boolean(visit.summary?.trim());
 };
 
+const getVisitStatusDisplay = (visit: IPatientTimelineVisit): { label: string; color: string } => {
+    const visitStatus = (visit.visitStatus || "").trim().toLowerCase();
+
+    if (visitStatus === "intakeinprogress" || visitStatus === "inprogress") {
+        return { label: "In Progress", color: "gold" };
+    }
+
+    return { label: "Completed", color: "blue" };
+};
+
 export const PatientHistoryPage = (): React.JSX.Element => {
     const { styles } = usePatientHistoryStyles();
     const state = usePatientHistoryState();
@@ -55,9 +65,9 @@ export const PatientHistoryPage = (): React.JSX.Element => {
     return (
         <section className={styles.page}>
             {messageContextHolder}
-            <PatientBottomNav activeKey="history" hasQueueStatus={false} />
+            <Card className={styles.shellCard}>
+                <PatientBottomNav activeKey="history" hasQueueStatus={false} />
 
-            <Card className={styles.panelCard}>
                 <header className={styles.titleBlock}>
                     <Typography.Title level={2} className={styles.title}>
                         Visit History
@@ -65,49 +75,55 @@ export const PatientHistoryPage = (): React.JSX.Element => {
                     <Typography.Text className={styles.subtitle}>Your past interactions across MedStream facilities.</Typography.Text>
                 </header>
 
-                {state.isLoadingTimeline && !state.timeline ? (
-                    <Card>
-                        <Skeleton active paragraph={{ rows: 8 }} />
-                    </Card>
-                ) : null}
-
-                {!state.isLoadingTimeline ? (
-                    state.errorMessage ? (
-                        <Card>
-                            <Empty description="We couldn't load your visit history right now.">
-                                <Button onClick={() => void actions.loadTimeline()}>Try Again</Button>
-                            </Empty>
-                        </Card>
-                    ) : (
-                        visits.length === 0 ? (
+                <div className={styles.historyBody}>
+                    <div className={styles.timelinePanel}>
+                        {state.isLoadingTimeline && !state.timeline ? (
                             <Card>
-                                <Empty description="No finalized visit summaries yet. Completed visits with patient summaries will appear here." />
+                                <Skeleton active paragraph={{ rows: 8 }} />
                             </Card>
-                        ) : (
-                            <section className={styles.timelineList}>
-                                {visits.map((visit) => (
-                                    <article key={visit.visitId} className={styles.timelineItem}>
-                                        <span className={styles.timelineDot} />
-                                        <Card className={styles.visitCard}>
-                                            <div className={styles.visitMetaRow}>
-                                                <Tag>{formatDate(visit.visitDate)}</Tag>
-                                                <Tag color={visit.visitStatus.toLowerCase() === "completed" ? "blue" : "gold"}>{visit.visitStatus}</Tag>
-                                            </div>
-                                            <Typography.Title level={4} className={styles.visitTitle}>
-                                                {visit.title || "Consultation"}
-                                            </Typography.Title>
-                                            <Typography.Text type="secondary">{visit.facilityName}</Typography.Text>
-                                            <Typography.Paragraph className={styles.visitSummary}>{visit.summary}</Typography.Paragraph>
-                                        </Card>
-                                    </article>
-                                ))}
-                            </section>
-                        )
-                    )
-                ) : null}
-            </Card>
+                        ) : null}
 
-            <Typography.Paragraph className={styles.footNote}>For detailed clinical records or test results, please speak directly with your healthcare provider.</Typography.Paragraph>
+                        {!state.isLoadingTimeline ? (
+                            state.errorMessage ? (
+                                <Card>
+                                    <Empty description="We couldn't load your visit history right now.">
+                                        <Button onClick={() => void actions.loadTimeline()}>Try Again</Button>
+                                    </Empty>
+                                </Card>
+                            ) : visits.length === 0 ? (
+                                <Card>
+                                    <Empty description="No finalized visit summaries yet. Completed visits with patient summaries will appear here." />
+                                </Card>
+                            ) : (
+                                <section className={styles.timelineList}>
+                                    {visits.map((visit) => {
+                                        const status = getVisitStatusDisplay(visit);
+
+                                        return (
+                                            <article key={visit.visitId} className={styles.timelineItem}>
+                                                <span className={styles.timelineDot} />
+                                                <Card className={styles.visitCard}>
+                                                    <div className={styles.visitMetaRow}>
+                                                        <Tag>{formatDate(visit.visitDate)}</Tag>
+                                                        <Tag color={status.color}>{status.label}</Tag>
+                                                    </div>
+                                                    <Typography.Title level={4} className={styles.visitTitle}>
+                                                        {visit.title || "Consultation"}
+                                                    </Typography.Title>
+                                                    <Typography.Text type="secondary">{visit.facilityName}</Typography.Text>
+                                                    <Typography.Paragraph className={styles.visitSummary}>{visit.summary}</Typography.Paragraph>
+                                                </Card>
+                                            </article>
+                                        );
+                                    })}
+                                </section>
+                            )
+                        ) : null}
+                    </div>
+
+                    <Typography.Paragraph className={styles.footNote}>For detailed clinical records or test results, please speak directly with your healthcare provider.</Typography.Paragraph>
+                </div>
+            </Card>
         </section>
     );
 };

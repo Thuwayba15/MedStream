@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Progress, message, Typography } from "antd";
+import { Button, Card, Progress, Spin, message, Typography } from "antd";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { PATIENT_INTAKE_STEPS } from "@/constants/patientIntake";
 import { PatientBottomNav } from "@/components/patient/patientBottomNav";
@@ -89,10 +89,17 @@ export const PatientIntakePage = (): React.JSX.Element => {
             <PatientBottomNav
                 activeKey={activeTab}
                 hasQueueStatus={hasQueueStatus}
-                onSelectMyQueue={() => actions.goToStep(4)}
+                onSelectMyQueue={() => {
+                    if (hasQueueStatus) {
+                        actions.goToStep(4);
+                        return;
+                    }
+
+                    void actions.initializeFlow();
+                }}
                 onSelectNewVisit={() => {
                     if (state.currentStep === 4) {
-                        void actions.resetFlow();
+                        actions.startNewVisitDraft();
                     }
                 }}
             />
@@ -111,11 +118,52 @@ export const PatientIntakePage = (): React.JSX.Element => {
 
             <div className={styles.intakeBodyGrid}>
                 <div className={styles.intakeMainColumn}>
-                    {state.currentStep === 0 ? <CheckInStep facilityName={state.facilityName} selectedFacilityId={state.selectedFacilityId} facilities={state.availableFacilities} styles={styles} onSelectFacility={actions.setSelectedFacilityId} /> : null}
-                    {state.currentStep === 1 ? <UrgentCheckStep questions={state.urgentQuestionSet} answers={state.answers} onSetAnswer={actions.setAnswer} urgentMessage={state.urgentMessage} urgentTriggered={state.urgentTriggered} styles={styles} /> : null}
-                    {state.currentStep === 2 ? <SymptomsStep freeText={state.freeText} selectedSymptoms={state.selectedSymptoms} styles={styles} isListening={isListening} speechSupported={speechSupported} onChangeFreeText={actions.setFreeText} onToggleSymptom={actions.toggleSymptom} onStartSpeech={startSpeechCapture} onStopSpeech={stopSpeechCapture} /> : null}
-                    {state.currentStep === 3 ? <FollowUpStep extractedPrimarySymptoms={state.extractedPrimarySymptoms} questions={visibleQuestions} answers={state.answers} onSetAnswer={actions.setAnswer} styles={styles} /> : null}
+                    {state.currentStep === 0 ? (
+                        <CheckInStep
+                            facilityName={state.facilityName}
+                            selectedFacilityId={state.selectedFacilityId}
+                            facilities={state.availableFacilities}
+                            styles={styles}
+                            onSelectFacility={actions.setSelectedFacilityId}
+                        />
+                    ) : null}
+                    {state.currentStep === 1 ? (
+                        <UrgentCheckStep
+                            questions={state.urgentQuestionSet}
+                            answers={state.answers}
+                            onSetAnswer={actions.setAnswer}
+                            urgentMessage={state.urgentMessage}
+                            urgentTriggered={state.urgentTriggered}
+                            styles={styles}
+                        />
+                    ) : null}
+                    {state.currentStep === 2 ? (
+                        <SymptomsStep
+                            freeText={state.freeText}
+                            selectedSymptoms={state.selectedSymptoms}
+                            styles={styles}
+                            isListening={isListening}
+                            speechSupported={speechSupported}
+                            onChangeFreeText={actions.setFreeText}
+                            onToggleSymptom={actions.toggleSymptom}
+                            onStartSpeech={startSpeechCapture}
+                            onStopSpeech={stopSpeechCapture}
+                        />
+                    ) : null}
+                    {state.currentStep === 3 ? (
+                        <FollowUpStep extractedPrimarySymptoms={state.extractedPrimarySymptoms} questions={visibleQuestions} answers={state.answers} onSetAnswer={actions.setAnswer} styles={styles} />
+                    ) : null}
                     {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
+
+                    {state.currentStep === 2 && state.isProcessing ? (
+                        <div className={styles.processingOverlay} role="status" aria-live="polite">
+                            <Spin size="large" />
+                            <Typography.Title level={4} className={styles.processingTitle}>
+                                Preparing your follow-up questions
+                            </Typography.Title>
+                            <Typography.Text className={styles.processingText}>We are reviewing your symptom details now. This can take a few moments.</Typography.Text>
+                        </div>
+                    ) : null}
                 </div>
 
                 <div className={styles.intakeSideColumn}>
@@ -130,7 +178,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
                             Back
                         </Button>
                         <Button type="primary" className={styles.primaryButton} loading={state.isProcessing} onClick={() => void actions.continueStep()} disabled={isContinueDisabled}>
-                            {state.currentStep === 3 ? "Generate Status" : "Continue"}
+                            {state.currentStep === 2 && state.isProcessing ? "Preparing questions..." : state.currentStep === 3 ? "Generate Status" : "Continue"}
                         </Button>
                     </div>
                 ) : (

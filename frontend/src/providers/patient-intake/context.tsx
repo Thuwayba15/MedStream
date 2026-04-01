@@ -41,6 +41,7 @@ export interface IPatientIntakeActionContext {
     backStep: () => void;
     goToStep: (step: number) => void;
     clearError: () => void;
+    startNewVisitDraft: () => void;
     resetFlow: () => Promise<void>;
 }
 
@@ -82,6 +83,7 @@ export const INITIAL_ACTIONS: IPatientIntakeActionContext = {
     backStep: () => undefined,
     goToStep: () => undefined,
     clearError: () => undefined,
+    startNewVisitDraft: () => undefined,
     resetFlow: async () => Promise.resolve(),
 };
 

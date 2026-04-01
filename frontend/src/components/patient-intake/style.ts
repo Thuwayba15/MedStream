@@ -8,7 +8,7 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         border: 1px solid rgba(13, 27, 46, 0.08);
         box-shadow: ${shadows.soft};
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, ${colors.white} 100%);
-        padding: 18px 30px 18px;
+        padding: 18px 22px 22px !important;
         display: grid;
         gap: 22px;
         width: min(85%, 1320px);
@@ -55,6 +55,7 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         color: ${colors.slate};
         font-size: 1rem;
         text-align: center;
+        padding-bottom: 10px;
     `,
 
     stepTitle: css`
@@ -372,6 +373,31 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         }
     `,
 
+    processingOverlay: css`
+        border-radius: ${radius.lg}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: rgba(248, 246, 242, 0.92);
+        backdrop-filter: blur(6px);
+        display: grid;
+        place-items: center;
+        text-align: center;
+        gap: 10px;
+        min-height: 240px;
+        padding: 24px;
+    `,
+
+    processingTitle: css`
+        margin: 0 !important;
+        color: ${colors.navy} !important;
+        font-family: ${typography.fontDisplay} !important;
+    `,
+
+    processingText: css`
+        color: ${colors.slate} !important;
+        max-width: 420px;
+        line-height: 1.6;
+    `,
+
     chipsWrap: css`
         display: flex;
         flex-wrap: wrap;
@@ -407,7 +433,7 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         display: grid;
         gap: 14px;
         width: 100%;
-        max-width: 740px;
+        max-width: 840px;
         margin: 0 auto;
         padding: 8px 0;
 
@@ -416,23 +442,145 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         }
     `,
 
+    questionField: css`
+        width: 100%;
+        padding: 18px 20px;
+        border-radius: ${radius.md}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: ${colors.white};
+        box-shadow: 0 8px 18px rgba(13, 27, 46, 0.04);
+    `,
+
+    questionLabel: css`
+        color: ${colors.navy} !important;
+        font-size: 0.98rem;
+    `,
+
+    questionSelect: css`
+        width: 100%;
+
+        .ant-select-selector {
+            min-height: 48px !important;
+            border-radius: ${radius.sm}px !important;
+            padding-inline: 14px !important;
+        }
+    `,
+
+    questionNumberInput: css`
+        width: min(100%, 260px);
+
+        .ant-input-number,
+        &.ant-input-number {
+            width: 100%;
+        }
+    `,
+
+    questionTextArea: css`
+        border-radius: ${radius.sm}px !important;
+    `,
+
+    statusSection: css`
+        width: 100%;
+        min-height: 440px;
+        display: grid;
+        place-items: center;
+    `,
+
+    statusGrid: css`
+        width: 100%;
+        max-width: 980px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        align-items: stretch;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    `,
+
     statusCard: css`
         width: 100%;
-        max-width: 620px;
-        margin: 0 auto;
+        min-height: 280px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 28px 24px !important;
+        border-radius: ${radius.lg}px !important;
+        border: 1px solid rgba(13, 27, 46, 0.08) !important;
+        box-shadow: 0 18px 36px rgba(13, 27, 46, 0.08);
+        background: linear-gradient(180deg, rgba(253, 240, 228, 0.86) 0%, ${colors.white} 100%);
     `,
 
     queueCard: css`
-        border-radius: ${radius.md}px;
+        border-radius: ${radius.lg}px;
         border: 1px solid rgba(13, 27, 46, 0.12);
-        background: linear-gradient(180deg, #f8fbff 0%, #f0f6ff 100%);
-        padding: 16px;
+        background: linear-gradient(180deg, #f6f9ff 0%, #eef4ff 100%);
+        padding: 28px 24px;
         display: grid;
-        gap: 8px;
+        gap: 10px;
         text-align: center;
         width: 100%;
-        max-width: 620px;
-        margin: 0 auto;
+        min-height: 280px;
+        place-items: center;
+        box-shadow: 0 18px 36px rgba(13, 27, 46, 0.08);
+    `,
+
+    statusCardIcon: css`
+        width: 58px;
+        height: 58px;
+        border-radius: ${radius.pill}px;
+        display: grid;
+        place-items: center;
+        background: rgba(224, 123, 42, 0.14);
+        color: ${colors.amber};
+        font-size: 1.4rem;
+    `,
+
+    queueCardIcon: css`
+        width: 58px;
+        height: 58px;
+        border-radius: ${radius.pill}px;
+        display: grid;
+        place-items: center;
+        background: rgba(42, 123, 224, 0.12);
+        color: #2a7be0;
+        font-size: 1.4rem;
+    `,
+
+    statusCardEyebrow: css`
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: ${colors.slate} !important;
+    `,
+
+    statusCardTitle: css`
+        margin: 0 !important;
+        color: ${colors.navy} !important;
+        font-family: ${typography.fontDisplay} !important;
+        font-size: clamp(1.7rem, 2.4vw, 2.2rem) !important;
+    `,
+
+    statusTag: css`
+        margin: 0 !important;
+        font-weight: 700;
+        padding-inline: 10px;
+        padding-block: 4px;
+        border-radius: ${radius.pill}px;
+    `,
+
+    statusCardBody: css`
+        color: ${colors.slate} !important;
+        font-size: 0.98rem;
+        line-height: 1.65;
+        max-width: 420px;
+    `,
+
+    queueTimestamp: css`
+        color: ${colors.slate} !important;
+        font-size: 0.82rem;
     `,
 
     stickyActions: css`

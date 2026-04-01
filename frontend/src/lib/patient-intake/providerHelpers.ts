@@ -1,16 +1,10 @@
 import axios from "axios";
 import { API } from "@/constants/api";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
-import type {
-    ICheckInResponse,
-    IExtractSymptomsResponse,
-    IIntakeQuestion,
-    ISymptomCaptureRequest,
-    ITriageResponse,
-    IUrgentCheckResponse,
-} from "@/services/patient-intake/types";
+import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ISymptomCaptureRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
 
 const PATIENT_QUEUE_STORAGE_KEY = "medstream.patient.queue";
+const PATIENT_QUEUE_STORAGE_EVENT = "medstream:patient-queue-changed";
 
 export interface IPersistedQueuedVisit {
     visitId: number;
@@ -69,6 +63,7 @@ export const clearPersistedQueuedVisit = (): void => {
     }
 
     window.localStorage.removeItem(PATIENT_QUEUE_STORAGE_KEY);
+    window.dispatchEvent(new Event(PATIENT_QUEUE_STORAGE_EVENT));
 };
 
 export const persistQueuedVisit = (queuedVisit: IPersistedQueuedVisit): void => {
@@ -77,6 +72,29 @@ export const persistQueuedVisit = (queuedVisit: IPersistedQueuedVisit): void => 
     }
 
     window.localStorage.setItem(PATIENT_QUEUE_STORAGE_KEY, JSON.stringify(queuedVisit));
+    window.dispatchEvent(new Event(PATIENT_QUEUE_STORAGE_EVENT));
+};
+
+export const subscribeToPersistedQueuedVisit = (onStoreChange: () => void): (() => void) => {
+    if (typeof window === "undefined") {
+        return () => undefined;
+    }
+
+    const handleStorageChange = (event: Event) => {
+        if (event instanceof StorageEvent && event.key && event.key !== PATIENT_QUEUE_STORAGE_KEY) {
+            return;
+        }
+
+        onStoreChange();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener(PATIENT_QUEUE_STORAGE_EVENT, handleStorageChange);
+
+    return () => {
+        window.removeEventListener("storage", handleStorageChange);
+        window.removeEventListener(PATIENT_QUEUE_STORAGE_EVENT, handleStorageChange);
+    };
 };
 
 const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
@@ -195,10 +213,7 @@ export const getCurrentQueueStatus = async (visitId: number): Promise<ITriageRes
     }
 };
 
-export const getMissingUrgentQuestion = (
-    questionSet: IIntakeQuestion[],
-    answers: Record<string, string | number | boolean | string[]>
-): IIntakeQuestion | undefined => {
+export const getMissingUrgentQuestion = (questionSet: IIntakeQuestion[], answers: Record<string, string | number | boolean | string[]>): IIntakeQuestion | undefined => {
     return questionSet.find((question) => question.isRequired && (answers[question.questionKey] === undefined || answers[question.questionKey] === null || answers[question.questionKey] === ""));
 };
 

@@ -20,11 +20,7 @@ export const POST = async (request: Request): Promise<Response> => {
             return NextResponse.json({ message: "Visit id is required." }, { status: 400 });
         }
 
-        const response = await apiClient.post(
-            API.CONSULTATION_GENERATE_SUBJECTIVE_ENDPOINT,
-            { visitId: body.visitId },
-            { headers: { Authorization: `Bearer ${guardResult.accessToken}` } }
-        );
+        const response = await apiClient.post(API.CONSULTATION_GENERATE_SUBJECTIVE_ENDPOINT, { visitId: body.visitId }, { headers: { Authorization: `Bearer ${guardResult.accessToken}` } });
         return NextResponse.json(unwrapAbpResponse(response.data));
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to generate subjective draft.") }, { status: 400 });

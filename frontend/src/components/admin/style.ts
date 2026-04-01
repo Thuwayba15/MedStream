@@ -366,6 +366,51 @@ export const useAdminStyles = createStyles(({ css }) => ({
         font-weight: 700;
     `,
 
+    mobileTabList: css`
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 2px 10px;
+        border-bottom: 1px solid rgba(13, 27, 46, 0.12);
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    `,
+
+    mobileTabButton: css`
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 12px;
+        border: none;
+        border-bottom: 2.5px solid transparent;
+        background: transparent;
+        color: ${colors.slate};
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+
+        &:hover {
+            color: ${colors.navy};
+        }
+    `,
+
+    mobileTabButtonActive: css`
+        color: ${colors.amber};
+        border-bottom-color: ${colors.amber};
+        font-weight: 700;
+    `,
+
+    mobileTabMeta: css`
+        display: grid;
+        gap: 10px;
+        padding: 10px 2px 0;
+    `,
+
     toolbar: css`
         display: flex;
         align-items: center;

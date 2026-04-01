@@ -30,6 +30,7 @@ import {
     setFreeText,
     setSelectedFacilityId,
     setStep,
+    startNewVisitDraft,
     symptomProcessingSucceeded,
     toggleSymptom,
     triageSucceeded,
@@ -139,7 +140,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to process symptom input.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn, extractSymptoms, getActiveFacilities, loadQuestions, state.answers, state.freeText, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId, submitSymptoms]);
+    }, [state.answers, state.freeText, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
 
     // Run Urgent Safety Check
     // POST /api/patient-intake/urgent-check + POST /api/patient-intake/triage
@@ -301,6 +302,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             },
             clearError: () => dispatch(clearError()),
             goToStep: (step: number) => dispatch(setStep(step)),
+            startNewVisitDraft: () => dispatch(startNewVisitDraft(state.availableFacilities)),
             resetFlow: async () => {
                 clearPersistedQueuedVisit();
                 dispatch(setStep(0));

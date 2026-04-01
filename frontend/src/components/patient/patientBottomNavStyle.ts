@@ -29,33 +29,51 @@ export const usePatientBottomNavStyles = createStyles(({ css }) => ({
     `,
 
     navButton: css`
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         min-height: 44px;
+        cursor: pointer;
         padding-inline: 14px !important;
         font-weight: 600;
         color: ${colors.slate} !important;
         border: none !important;
-        border-bottom: 2.5px solid transparent !important;
+        border-bottom: none !important;
         border-radius: 0 !important;
         background: transparent !important;
         box-shadow: none !important;
         flex: 0 0 auto;
+        text-decoration: none !important;
+        position: relative;
+        top: 0;
 
         &:hover,
         &:focus {
             color: ${colors.navy} !important;
             background: transparent !important;
         }
+    `,
 
-        &.ant-btn[disabled] {
-            color: rgba(138, 154, 181, 0.55) !important;
-            background: transparent !important;
-            border-color: transparent !important;
-        }
+    navButtonDisabled: css`
+        color: rgba(138, 154, 181, 0.55) !important;
+        background: transparent !important;
+        border-color: transparent !important;
+        opacity: 1;
     `,
 
     navButtonActive: css`
         color: ${colors.navy} !important;
-        border-bottom-color: ${colors.amber} !important;
         font-weight: 700;
+
+        &::after {
+            content: "";
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: -1px;
+            height: 2.5px;
+            border-radius: ${radius.pill}px;
+            background: ${colors.amber};
+        }
     `,
 }));
