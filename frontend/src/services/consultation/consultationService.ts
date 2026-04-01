@@ -88,13 +88,9 @@ const generateAssessmentPlanDraft = async (visitId: number, accessToken: string)
 };
 
 const finalizeEncounterNote = async (payload: IFinalizeEncounterNoteRequest, accessToken: string): Promise<IEncounterNote> => {
-    const response = await apiClient.post(
-        API.CONSULTATION_FINALIZE_NOTE_ENDPOINT,
-        payload,
-        {
-            headers: getAuthorizationHeader(accessToken),
-        }
-    );
+    const response = await apiClient.post(API.CONSULTATION_FINALIZE_NOTE_ENDPOINT, payload, {
+        headers: getAuthorizationHeader(accessToken),
+    });
 
     return unwrapAbpResponse<IEncounterNote>(response.data);
 };

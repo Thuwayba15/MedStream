@@ -433,7 +433,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 chiefComplaint: workspace?.patientContext.chiefComplaint ?? "",
                 patientContextSummary: workspace?.patientContext.subjectiveSummary ?? "",
             }),
-        [review?.clinicianSummary, workspace?.encounterNote, workspace?.patientContext.chiefComplaint, workspace?.patientContext.subjectiveSummary]
+        [review?.clinicianSummary, workspace?.encounterNote, workspace?.patientContext]
     );
 
     const hydratedVitals = useMemo<IVitalsDraftState>(
@@ -480,12 +480,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
 
         return missing;
     }, [noteDraft.clinicianTimelineSummary, noteDraft.patientTimelineSummary]);
-
-    useEffect(() => {
-        if (missingTimelineSummaries.length === 0 && timelineValidationMessage) {
-            setTimelineValidationMessage(null);
-        }
-    }, [missingTimelineSummaries.length, timelineValidationMessage]);
+    const visibleTimelineValidationMessage = missingTimelineSummaries.length > 0 ? timelineValidationMessage : null;
 
     const updateNoteDraft = (updater: INoteDraftState | ((current: INoteDraftState) => INoteDraftState)): void => {
         setNoteDraftState((current) => {
@@ -958,11 +953,11 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                             {missingTimelineSummaries.length === 0 ? "Ready to finalize" : "Required before finalizing"}
                         </Tag>
                     </div>
-                    {timelineValidationMessage ? (
+                    {visibleTimelineValidationMessage ? (
                         <Alert
                             type="warning"
                             showIcon
-                            title={timelineValidationMessage}
+                            title={visibleTimelineValidationMessage}
                             action={
                                 <Button size="small" onClick={() => setTimelineValidationMessage(null)}>
                                     Dismiss
@@ -977,9 +972,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                                     <Typography.Title level={5} className={styles.timelineSummaryTitle}>
                                         Clinician-facing summary
                                     </Typography.Title>
-                                    <Typography.Text className={styles.helperText}>
-                                        Internal clinical recap for history review across facilities.
-                                    </Typography.Text>
+                                    <Typography.Text className={styles.helperText}>Internal clinical recap for history review across facilities.</Typography.Text>
                                 </div>
                                 <span className={styles.summaryCounter}>{noteDraft.clinicianTimelineSummary.trim().length}/2000</span>
                             </div>
@@ -999,9 +992,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                                     <Typography.Title level={5} className={styles.timelineSummaryTitle}>
                                         Patient-friendly summary
                                     </Typography.Title>
-                                    <Typography.Text className={styles.helperText}>
-                                        Plain-language summary that the patient will see in their own history.
-                                    </Typography.Text>
+                                    <Typography.Text className={styles.helperText}>Plain-language summary that the patient will see in their own history.</Typography.Text>
                                 </div>
                                 <span className={styles.summaryCounter}>{noteDraft.patientTimelineSummary.trim().length}/2000</span>
                             </div>
