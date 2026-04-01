@@ -7,39 +7,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useClinicianQueueReviewActions, useClinicianQueueReviewState } from "@/providers/clinician-queue-review";
 import type { TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
+import {
+    appendQueryToPath,
+    buildPatientSummary,
+    getAssessmentIconClassName,
+    getAssessmentUrgencyClassName,
+    getHumanQueueStatus,
+    getReasoningDotClassName,
+    getReviewUrgencyClassName,
+} from "./reviewHelpers";
 import { useClinicianReviewStyles } from "./reviewStyle";
-
-const getUrgencyClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string, string>): string => {
-    if (urgencyLevel === "Urgent") {
-        return styles.urgencyUrgent;
-    }
-
-    if (urgencyLevel === "Priority") {
-        return styles.urgencyPriority;
-    }
-
-    return styles.urgencyRoutine;
-};
-
-const getHumanStatus = (status: TQueueStatus): string => {
-    return status.replace("_", " ");
-};
-
-const appendQueryToPath = (path: string, params: Record<string, string | number | undefined>): string => {
-    const [basePath, queryString] = path.split("?");
-    const query = new URLSearchParams(queryString ?? "");
-
-    Object.entries(params).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === "") {
-            return;
-        }
-
-        query.set(key, String(value));
-    });
-
-    const serialized = query.toString();
-    return serialized ? `${basePath}?${serialized}` : basePath;
-};
 
 interface IClinicianTriageReviewPageProps {
     queueTicketId: number;
@@ -154,7 +131,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
         }
     };
 
-    const patientSummary = review ? (review.selectedSymptoms.length > 0 ? `Reported symptoms: ${review.selectedSymptoms.join(", ")}` : "No additional symptom tags were captured.") : "";
+    const patientSummary = review ? buildPatientSummary(review.selectedSymptoms) : "";
 
     return (
         <section className={styles.page}>
@@ -227,8 +204,8 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                                     </Typography.Title>
                                 </div>
                                 <div className={styles.metaRow}>
-                                    <Tag className={styles.statusTag}>{getHumanStatus(review.queueStatus)}</Tag>
-                                    <Tag className={getUrgencyClassName(review.urgencyLevel, styles)}>{review.urgencyLevel}</Tag>
+                                    <Tag className={styles.statusTag}>{getHumanQueueStatus(review.queueStatus)}</Tag>
+                                    <Tag className={getReviewUrgencyClassName(review.urgencyLevel, styles)}>{review.urgencyLevel}</Tag>
                                     <span>
                                         <ClockCircleOutlined /> Queue #{review.queueNumber}
                                     </span>
@@ -364,40 +341,4 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
             </Modal>
         </section>
     );
-};
-
-const getAssessmentUrgencyClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string, string>): string => {
-    if (urgencyLevel === "Urgent") {
-        return styles.assessmentUrgent;
-    }
-
-    if (urgencyLevel === "Priority") {
-        return styles.assessmentPriority;
-    }
-
-    return styles.assessmentRoutine;
-};
-
-const getAssessmentIconClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string, string>): string => {
-    if (urgencyLevel === "Urgent") {
-        return styles.assessmentIconUrgent;
-    }
-
-    if (urgencyLevel === "Priority") {
-        return styles.assessmentIconPriority;
-    }
-
-    return styles.assessmentIconRoutine;
-};
-
-const getReasoningDotClassName = (urgencyLevel: TUrgencyLevel, styles: Record<string, string>): string => {
-    if (urgencyLevel === "Urgent") {
-        return styles.reasoningDotUrgent;
-    }
-
-    if (urgencyLevel === "Priority") {
-        return styles.reasoningDotPriority;
-    }
-
-    return styles.reasoningDotRoutine;
 };
