@@ -115,6 +115,38 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
     }
 
     [Fact]
+    public async Task GetClinicianQueue_Should_Calculate_Average_Queue_Time_Across_Active_Queue()
+    {
+        var clinicianEmail = await RegisterAndApproveClinicianWithFacilityAsync();
+        var triageResult = await CreateQueuedVisitForPatientAsync($"queue-average-{Guid.NewGuid():N}@medstream.test", isUrgent: false);
+
+        await UsingDbContextAsync(async context =>
+        {
+            var queueTicket = await context.QueueTickets.SingleAsync(item => item.Id == triageResult.Queue.QueueTicketId);
+            queueTicket.EnteredQueueAt = DateTime.UtcNow.AddMinutes(-54);
+            await context.SaveChangesAsync();
+        });
+
+        LoginAsTenant(AbpTenantBase.DefaultTenantName, clinicianEmail);
+        await _queueOperationsAppService.UpdateQueueTicketStatus(new UpdateQueueTicketStatusInput
+        {
+            QueueTicketId = triageResult.Queue.QueueTicketId,
+            NewStatus = PatientIntakeConstants.QueueStatusInConsultation
+        });
+
+        var result = await _queueOperationsAppService.GetClinicianQueue(new GetClinicianQueueInput
+        {
+            MaxResultCount = 20
+        });
+
+        result.TotalCount.ShouldBe(1);
+        result.Items[0].WaitingMinutes.ShouldBeGreaterThanOrEqualTo(54);
+        result.Summary.WaitingCount.ShouldBe(0);
+        result.Summary.InConsultationCount.ShouldBe(1);
+        result.Summary.AverageWaitingMinutes.ShouldBeGreaterThanOrEqualTo(54);
+    }
+
+    [Fact]
     public async Task GetQueueTicketForReview_Should_Return_Intake_And_Triage_Context()
     {
         var clinicianEmail = await RegisterAndApproveClinicianWithFacilityAsync();
@@ -307,7 +339,10 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
         });
 
         LoginAsTenant(AbpTenantBase.DefaultTenantName, patientEmail);
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await _patientIntakeAppService.CheckIn(new PatientCheckInInput
+        {
+            SelectedFacilityId = await GetActiveFacilityIdAsync()
+        });
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = checkIn.VisitId,
@@ -385,5 +420,14 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
 
             await context.SaveChangesAsync();
         });
+    }
+
+    private async Task<int> GetActiveFacilityIdAsync()
+    {
+        return await UsingDbContextAsync(async context =>
+            await context.Facilities
+                .Where(item => item.TenantId == MultiTenancyConsts.DefaultTenantId && item.IsActive)
+                .Select(item => item.Id)
+                .FirstAsync());
     }
 }

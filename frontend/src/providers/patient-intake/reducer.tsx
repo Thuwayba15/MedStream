@@ -48,6 +48,10 @@ export const patientIntakeReducer = handleActions<IPatientIntakeStateContext, IP
             ...state,
             ...action.payload,
         }),
+        [PatientIntakeActionEnums.followUpPlanAdvanced]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
         [PatientIntakeActionEnums.triageSucceeded]: (state, action) => ({
             ...state,
             ...action.payload,

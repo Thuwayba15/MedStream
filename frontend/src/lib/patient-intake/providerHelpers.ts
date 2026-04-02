@@ -1,7 +1,17 @@
 import axios from "axios";
 import { API } from "@/constants/api";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
-import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ISymptomCaptureRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
+import type {
+    ICheckInRequest,
+    ICheckInResponse,
+    IExtractSymptomsResponse,
+    IGetQuestionsRequest,
+    IIntakeQuestion,
+    ISymptomCaptureRequest,
+    ITriageAssessRequest,
+    ITriageResponse,
+    IUrgentCheckResponse,
+} from "@/services/patient-intake/types";
 
 const PATIENT_QUEUE_STORAGE_KEY = "medstream.patient.queue";
 const PATIENT_QUEUE_STORAGE_EVENT = "medstream:patient-queue-changed";
@@ -33,11 +43,8 @@ export const logIntakeDebug = (message: string, payload?: unknown): void => {
     }
 
     if (payload === undefined) {
-        console.info(`[PatientIntake] ${message}`);
         return;
     }
-
-    console.info(`[PatientIntake] ${message}`, payload);
 };
 
 export const readPersistedQueuedVisit = (): IPersistedQueuedVisit | null => {
@@ -105,9 +112,11 @@ const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
     return error instanceof Error ? error : new Error(fallbackMessage);
 };
 
-export const checkIn = async (): Promise<ICheckInResponse> => {
+export const checkIn = async (payload: ICheckInRequest): Promise<ICheckInResponse> => {
     try {
-        const response = await axios.post<ICheckInResponse>(API.PATIENT_INTAKE_CHECKIN_ROUTE);
+        const response = await axios.post<ICheckInResponse>(API.PATIENT_INTAKE_CHECKIN_ROUTE, payload, {
+            headers: { "Content-Type": "application/json" },
+        });
         return response.data;
     } catch (error) {
         throw parseRouteError(error, "Unable to start patient check-in.");
@@ -164,17 +173,7 @@ export const runUrgentCheck = async (payload: {
     }
 };
 
-export const loadQuestions = async (payload: {
-    visitId: number;
-    pathwayKey: string;
-    primarySymptom: string | null;
-    freeText: string;
-    selectedSymptoms: string[];
-    extractedPrimarySymptoms: string[];
-    fallbackSummaryIds: string[];
-    useApcFallback: boolean;
-    answers: Record<string, string | number | boolean | string[]>;
-}): Promise<IIntakeQuestion[]> => {
+export const loadQuestions = async (payload: IGetQuestionsRequest): Promise<IIntakeQuestion[]> => {
     try {
         const response = await axios.post<{ questionSet: IIntakeQuestion[] }>(API.PATIENT_INTAKE_QUESTIONS_ROUTE, payload, {
             headers: { "Content-Type": "application/json" },
@@ -185,13 +184,7 @@ export const loadQuestions = async (payload: {
     }
 };
 
-export const assessTriage = async (payload: {
-    visitId: number;
-    freeText: string;
-    selectedSymptoms: string[];
-    extractedPrimarySymptoms: string[];
-    answers: Record<string, string | number | boolean | string[]>;
-}): Promise<ITriageResponse> => {
+export const assessTriage = async (payload: ITriageAssessRequest): Promise<ITriageResponse> => {
     try {
         const response = await axios.post<ITriageResponse>(API.PATIENT_INTAKE_TRIAGE_ROUTE, payload, {
             headers: { "Content-Type": "application/json" },

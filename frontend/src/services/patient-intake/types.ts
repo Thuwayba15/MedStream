@@ -4,9 +4,14 @@ export type TUrgencyLevel = "Routine" | "Priority" | "Urgent";
 
 export interface ICheckInResponse {
     visitId: number;
+    facilityId: number;
     facilityName: string;
     startedAt: string;
     pathwayKey: string;
+}
+
+export interface ICheckInRequest {
+    selectedFacilityId: number;
 }
 
 export interface ISymptomCaptureRequest {
@@ -26,12 +31,29 @@ export interface IExtractSymptomsResponse {
     selectedPathwayKey: string;
     intakeMode: "approved_json" | "apc_fallback";
     mappedInputValues: Record<string, string | number | boolean | string[]>;
+    followUpPlans?: IFollowUpPlan[];
     candidates?: IPathwayClassificationCandidate[];
     confidenceBand?: "Low" | "Medium" | "High";
     shouldAskDisambiguation?: boolean;
     disambiguationPrompt?: string | null;
     fallbackSectionIds?: string[];
     fallbackSummaryIds?: string[];
+}
+
+export interface IFollowUpPlan {
+    planKey: string;
+    title: string;
+    pathwayKey: string;
+    primarySymptom: string;
+    intakeMode: "approved_json" | "apc_fallback";
+    fallbackSummaryIds: string[];
+}
+
+export interface IAssessTriageFollowUpPlan {
+    pathwayKey: string;
+    primarySymptom: string;
+    intakeMode: "approved_json" | "apc_fallback";
+    fallbackSummaryIds: string[];
 }
 
 export interface IPathwayClassificationCandidateSignal {
@@ -62,6 +84,15 @@ export interface IIntakeQuestion {
     isRequired: boolean;
     answerOptions: IIntakeQuestionOption[];
     showWhenExpression: string | null;
+}
+
+export interface IAssessTriageFollowUpQuestion {
+    planKey: string;
+    pathwayKey: string;
+    intakeMode: "approved_json" | "apc_fallback";
+    questionKey: string;
+    questionText: string;
+    inputType: TIntakeQuestionInputType;
 }
 
 export interface IQuestionsResponse {
@@ -107,6 +138,8 @@ export interface ITriageAssessRequest {
     selectedSymptoms: string[];
     extractedPrimarySymptoms: string[];
     answers: Record<string, string | number | boolean | string[]>;
+    followUpPlans: IAssessTriageFollowUpPlan[];
+    followUpQuestions: IAssessTriageFollowUpQuestion[];
 }
 
 export interface ITriageResponse {

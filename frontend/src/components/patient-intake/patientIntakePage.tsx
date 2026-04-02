@@ -36,6 +36,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
     const visibleQuestions = useMemo(() => getVisibleQuestions(state.questionSet, state.answers, state.extractedPrimarySymptoms), [state.questionSet, state.answers, state.extractedPrimarySymptoms]);
     const progressPercent = Math.round(((state.currentStep + 1) / PATIENT_INTAKE_STEPS.length) * 100);
     const currentStepDetails = PATIENT_INTAKE_STEPS[state.currentStep];
+    const currentFollowUpPlan = state.followUpPlans[state.currentFollowUpPlanIndex] ?? null;
     const hasQueueStatus = Boolean(state.visitId && state.queue);
     const activeTab = state.currentStep === 4 && hasQueueStatus ? "my-queue" : "new-visit";
     const isContinueDisabled = (state.currentStep === 2 && !state.freeText.trim() && state.selectedSymptoms.length === 0) || state.isProcessing;
@@ -116,7 +117,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
                 <Typography.Text className={styles.subtitleText}>{stepDescription(state.currentStep)}</Typography.Text>
             </div>
 
-            <div className={styles.intakeBodyGrid}>
+            <div className={`${styles.intakeBodyGrid} ${state.currentStep === 2 ? styles.intakeBodyGridFocused : ""}`}>
                 <div className={styles.intakeMainColumn}>
                     {state.currentStep === 0 ? (
                         <CheckInStep
@@ -151,7 +152,16 @@ export const PatientIntakePage = (): React.JSX.Element => {
                         />
                     ) : null}
                     {state.currentStep === 3 ? (
-                        <FollowUpStep extractedPrimarySymptoms={state.extractedPrimarySymptoms} questions={visibleQuestions} answers={state.answers} onSetAnswer={actions.setAnswer} styles={styles} />
+                        <FollowUpStep
+                            title={currentFollowUpPlan?.title ?? "Follow-up questions"}
+                            currentPlanIndex={state.currentFollowUpPlanIndex}
+                            totalPlans={Math.max(state.followUpPlans.length, 1)}
+                            extractedPrimarySymptoms={state.extractedPrimarySymptoms}
+                            questions={visibleQuestions}
+                            answers={state.answers}
+                            onSetAnswer={actions.setAnswer}
+                            styles={styles}
+                        />
                     ) : null}
                     {state.currentStep === 4 ? <StatusStep triage={state.triage} queue={state.queue} styles={styles} /> : null}
 
@@ -166,7 +176,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
                     ) : null}
                 </div>
 
-                <div className={styles.intakeSideColumn}>
+                <div className={`${styles.intakeSideColumn} ${state.currentStep === 2 ? styles.intakeSideColumnTucked : ""}`}>
                     <IntakeJourneyPanel currentStep={state.currentStep} styles={styles} />
                 </div>
             </div>
@@ -178,7 +188,13 @@ export const PatientIntakePage = (): React.JSX.Element => {
                             Back
                         </Button>
                         <Button type="primary" className={styles.primaryButton} loading={state.isProcessing} onClick={() => void actions.continueStep()} disabled={isContinueDisabled}>
-                            {state.currentStep === 2 && state.isProcessing ? "Preparing questions..." : state.currentStep === 3 ? "Generate Status" : "Continue"}
+                            {state.currentStep === 2 && state.isProcessing
+                                ? "Preparing questions..."
+                                : state.currentStep === 3
+                                  ? state.currentFollowUpPlanIndex < state.followUpPlans.length - 1
+                                      ? "Continue"
+                                      : "Generate Status"
+                                  : "Continue"}
                         </Button>
                     </div>
                 ) : (

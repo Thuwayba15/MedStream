@@ -48,7 +48,6 @@ export const POST = async (request: Request): Promise<Response> => {
         const questionSet = result.questionSet ?? [];
         return NextResponse.json({ questionSet });
     } catch (error) {
-        console.error("[PatientIntake][Questions] Route failed.", error);
         const debugMessage = getAbpErrorMessage(error, "Unable to load follow-up questions.");
         return NextResponse.json(
             {

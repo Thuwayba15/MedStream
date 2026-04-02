@@ -42,7 +42,7 @@ export interface ILoadConsultationWorkspaceInput {
 export interface IClinicianConsultationActionContext {
     loadInbox: () => Promise<void>;
     loadWorkspace: (input: ILoadConsultationWorkspaceInput) => Promise<void>;
-    saveEncounterNoteDraft: (payload: ISaveEncounterNoteDraftRequest) => Promise<IEncounterNote | null>;
+    saveEncounterNoteDraft: (payload: ISaveEncounterNoteDraftRequest, options?: { suppressSuccessMessage?: boolean }) => Promise<IEncounterNote | null>;
     saveVitals: (payload: ISaveVitalsRequest) => Promise<IConsultationVitalSigns | null>;
     attachTranscript: (payload: IAttachConsultationTranscriptRequest) => Promise<IConsultationTranscript | null>;
     transcribeAudio: (payload: ITranscribeConsultationAudioRequest) => Promise<IConsultationTranscript | null>;

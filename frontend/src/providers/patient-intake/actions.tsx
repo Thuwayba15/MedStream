@@ -1,5 +1,5 @@
 import { createAction } from "redux-actions";
-import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
+import type { IAssessTriageFollowUpQuestion, ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
 import type { IPatientIntakeStateContext } from "./context";
 
 export enum PatientIntakeActionEnums {
@@ -14,6 +14,7 @@ export enum PatientIntakeActionEnums {
     symptomProcessingSucceeded = "PATIENT_INTAKE_SYMPTOM_PROCESSING_SUCCEEDED",
     urgentCheckSucceeded = "PATIENT_INTAKE_URGENT_CHECK_SUCCEEDED",
     followUpQuestionsLoaded = "PATIENT_INTAKE_FOLLOW_UP_QUESTIONS_LOADED",
+    followUpPlanAdvanced = "PATIENT_INTAKE_FOLLOW_UP_PLAN_ADVANCED",
     triageSucceeded = "PATIENT_INTAKE_TRIAGE_SUCCEEDED",
     queuedVisitRestored = "PATIENT_INTAKE_QUEUED_VISIT_RESTORED",
     startNewVisitDraft = "PATIENT_INTAKE_START_NEW_VISIT_DRAFT",
@@ -42,6 +43,9 @@ export const initializeStarted = createAction<IPatientIntakeStatePayload>(Patien
     urgentMessage: null,
     urgentQuestionSet: [],
     urgentTriggered: false,
+    followUpPlans: [],
+    currentFollowUpPlanIndex: 0,
+    askedFollowUpQuestions: [],
     questionSet: [],
     answers: {},
     triage: null,
@@ -57,9 +61,12 @@ export const initializeSucceeded = createAction<IPatientIntakeStatePayload, IChe
         visitId: payload.visitId,
         facilityName: payload.facilityName,
         availableFacilities: facilities,
-        selectedFacilityId: facilities.find((facility) => facility.name === payload.facilityName)?.id ?? null,
+        selectedFacilityId: payload.facilityId,
         startedAt: payload.startedAt,
         pathwayKey: payload.pathwayKey,
+        followUpPlans: [],
+        currentFollowUpPlanIndex: 0,
+        askedFollowUpQuestions: [],
         errorMessage: undefined,
     })
 );
@@ -111,6 +118,9 @@ export const symptomProcessingSucceeded = createAction<IPatientIntakeStatePayloa
         fallbackSummaryIds: extractResult.fallbackSummaryIds ?? [],
         fallbackSectionIds: extractResult.fallbackSectionIds ?? [],
         urgentQuestionSet,
+        followUpPlans: extractResult.followUpPlans ?? [],
+        currentFollowUpPlanIndex: 0,
+        askedFollowUpQuestions: [],
         questionSet: [],
         answers: extractResult.mappedInputValues ?? {},
         currentStep: 2,
@@ -128,12 +138,28 @@ export const urgentCheckSucceeded = createAction<IPatientIntakeStatePayload, IUr
     errorMessage: undefined,
 }));
 
-export const followUpQuestionsLoaded = createAction<IPatientIntakeStatePayload, IIntakeQuestion[]>(PatientIntakeActionEnums.followUpQuestionsLoaded, (questionSet: IIntakeQuestion[]) => ({
-    isProcessing: false,
-    questionSet,
-    currentStep: 3,
-    errorMessage: undefined,
-}));
+export const followUpQuestionsLoaded = createAction<IPatientIntakeStatePayload, IIntakeQuestion[], IAssessTriageFollowUpQuestion[]>(
+    PatientIntakeActionEnums.followUpQuestionsLoaded,
+    (questionSet: IIntakeQuestion[], askedFollowUpQuestions: IAssessTriageFollowUpQuestion[]) => ({
+        isProcessing: false,
+        questionSet,
+        askedFollowUpQuestions,
+        currentStep: 3,
+        errorMessage: undefined,
+    })
+);
+
+export const followUpPlanAdvanced = createAction<IPatientIntakeStatePayload, number, IIntakeQuestion[], IAssessTriageFollowUpQuestion[]>(
+    PatientIntakeActionEnums.followUpPlanAdvanced,
+    (currentFollowUpPlanIndex: number, questionSet: IIntakeQuestion[], askedFollowUpQuestions: IAssessTriageFollowUpQuestion[]) => ({
+        isProcessing: false,
+        currentFollowUpPlanIndex,
+        questionSet,
+        askedFollowUpQuestions,
+        currentStep: 3,
+        errorMessage: undefined,
+    })
+);
 
 export const triageSucceeded = createAction<IPatientIntakeStatePayload, ITriageResponse>(PatientIntakeActionEnums.triageSucceeded, (result: ITriageResponse) => ({
     isProcessing: false,
@@ -164,6 +190,9 @@ export const queuedVisitRestored = createAction<
     selectedFacilityId: snapshot.selectedFacilityId,
     startedAt: snapshot.startedAt,
     pathwayKey: snapshot.pathwayKey,
+    followUpPlans: [],
+    currentFollowUpPlanIndex: 0,
+    askedFollowUpQuestions: [],
     triage: snapshot.triage,
     queue: snapshot.queue,
     errorMessage: undefined,
@@ -188,6 +217,9 @@ export const startNewVisitDraft = createAction<IPatientIntakeStatePayload, Array
     urgentMessage: null,
     urgentQuestionSet: [],
     urgentTriggered: false,
+    followUpPlans: [],
+    currentFollowUpPlanIndex: 0,
+    askedFollowUpQuestions: [],
     questionSet: [],
     answers: {},
     triage: null,

@@ -203,6 +203,15 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft });
     };
 
+    const persistCurrentNoteDraft = async (suppressSuccessMessage = false): Promise<boolean> => {
+        if (!workspace) {
+            return false;
+        }
+
+        const saved = await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft }, { suppressSuccessMessage });
+        return Boolean(saved);
+    };
+
     const finalizeNote = async (): Promise<void> => {
         if (!workspace) return;
         if (missingTimelineSummaries.length > 0) {
@@ -274,7 +283,16 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                 updateNoteDraft((current) => ({ ...current, subjective: sanitizeClinicalCopy(state.subjectiveDraft?.subjective ?? current.subjective) }));
             },
             onSaveVitals: () => void saveVitals(),
-            onGenerateAssessmentPlan: () => workspace && void actions.generateAssessmentPlanDraft(workspace.visitId),
+            onGenerateAssessmentPlan: () =>
+                workspace &&
+                void (async () => {
+                    const saved = await persistCurrentNoteDraft(true);
+                    if (!saved) {
+                        return;
+                    }
+
+                    await actions.generateAssessmentPlanDraft(workspace.visitId);
+                })(),
             onApplyGeneratedAssessmentPlan: () => {
                 if (!state.assessmentPlanDraft) return;
                 updateNoteDraft((current) => ({

@@ -11,7 +11,7 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
     topBar: css`
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         gap: 12px;
         flex-wrap: wrap;
     `,
@@ -31,6 +31,7 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         margin: 0 !important;
         color: ${colors.navy} !important;
         font-family: ${typography.fontDisplay};
+        word-break: break-word;
     `,
 
     queueBadge: css`
@@ -105,6 +106,7 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
     bodyText: css`
         color: #4f5f78;
         margin: 0 !important;
+        word-break: break-word;
     `,
 
     symptomWrap: css`
@@ -195,6 +197,10 @@ export const useClinicianReviewStyles = createStyles(({ css }) => ({
         width: 100%;
         display: grid;
         gap: 10px;
+
+        a {
+            width: 100%;
+        }
     `,
 
     primaryAction: css`

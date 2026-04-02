@@ -13,7 +13,7 @@ public interface IPatientIntakeAppService : IApplicationService
     /// <summary>
     /// Starts a patient check-in session and creates a visit context.
     /// </summary>
-    Task<PatientCheckInOutput> CheckIn();
+    Task<PatientCheckInOutput> CheckIn(PatientCheckInInput input);
 
     /// <summary>
     /// Captures free-text symptoms and selected symptom chips.

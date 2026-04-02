@@ -142,10 +142,10 @@ test.describe("admin governance", () => {
         await page.goto("/admin", { waitUntil: "domcontentloaded" });
 
         await expect(page.getByRole("heading", { level: 1, name: "Admin Governance" })).toBeVisible();
+        await expect(page.getByText("Nomsa Dlamini")).toBeVisible();
         await expect(page.getByLabel("Governance stats")).toContainText("Pending");
         await expect(page.getByLabel("Governance stats")).toContainText("1");
         await expect(page.getByText("1 pending requests")).toBeVisible();
-        await expect(page.getByText("Nomsa Dlamini")).toBeVisible();
         await expect(page.getByText("pending").first()).toBeVisible();
 
         await page.getByRole("button", { name: "Approve" }).first().click();
