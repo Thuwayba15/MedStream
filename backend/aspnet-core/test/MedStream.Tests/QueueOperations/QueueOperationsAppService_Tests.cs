@@ -307,7 +307,10 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
         });
 
         LoginAsTenant(AbpTenantBase.DefaultTenantName, patientEmail);
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await _patientIntakeAppService.CheckIn(new PatientCheckInInput
+        {
+            SelectedFacilityId = await GetActiveFacilityIdAsync()
+        });
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = checkIn.VisitId,
@@ -385,5 +388,14 @@ public class QueueOperationsAppService_Tests : MedStreamTestBase
 
             await context.SaveChangesAsync();
         });
+    }
+
+    private async Task<int> GetActiveFacilityIdAsync()
+    {
+        return await UsingDbContextAsync(async context =>
+            await context.Facilities
+                .Where(item => item.TenantId == MultiTenancyConsts.DefaultTenantId && item.IsActive)
+                .Select(item => item.Id)
+                .FirstAsync());
     }
 }

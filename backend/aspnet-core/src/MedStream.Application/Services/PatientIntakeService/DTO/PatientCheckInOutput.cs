@@ -13,6 +13,11 @@ public class PatientCheckInOutput
     public long VisitId { get; set; }
 
     /// <summary>
+    /// Gets or sets the selected facility id.
+    /// </summary>
+    public int FacilityId { get; set; }
+
+    /// <summary>
     /// Gets or sets display facility name.
     /// </summary>
     public string FacilityName { get; set; }

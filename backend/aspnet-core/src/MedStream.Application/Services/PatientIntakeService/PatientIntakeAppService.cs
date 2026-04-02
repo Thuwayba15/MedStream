@@ -68,17 +68,30 @@ public partial class PatientIntakeAppService : MedStreamAppServiceBase, IPatient
     }
 
     /// <inheritdoc />
-    public async Task<PatientCheckInOutput> CheckIn()
+    public async Task<PatientCheckInOutput> CheckIn(PatientCheckInInput input)
     {
+        if (input == null || input.SelectedFacilityId <= 0)
+        {
+            throw new UserFriendlyException("Select your hospital before continuing.");
+        }
+
         var user = await EnsureCurrentPatientUserAsync();
         var tenantId = AbpSession.TenantId ?? 1;
 
-        var facility = await _facilityRepository.FirstOrDefaultAsync(item => item.TenantId == tenantId && item.IsActive);
+        var facility = await _facilityRepository.FirstOrDefaultAsync(item =>
+            item.Id == input.SelectedFacilityId &&
+            item.TenantId == tenantId &&
+            item.IsActive);
+        if (facility == null)
+        {
+            throw new UserFriendlyException("The selected hospital is no longer available.");
+        }
+
         var visit = new Visit
         {
             TenantId = tenantId,
             PatientUserId = user.Id,
-            FacilityId = facility?.Id,
+            FacilityId = facility.Id,
             VisitDate = DateTime.UtcNow,
             Status = PatientIntakeConstants.VisitStatusIntakeInProgress,
             PathwayKey = PatientIntakeConstants.UnassignedPathwayKey
@@ -90,7 +103,8 @@ public partial class PatientIntakeAppService : MedStreamAppServiceBase, IPatient
         return new PatientCheckInOutput
         {
             VisitId = visit.Id,
-            FacilityName = facility?.Name ?? "Assigned Facility",
+            FacilityId = facility.Id,
+            FacilityName = facility.Name,
             StartedAt = visit.VisitDate,
             PathwayKey = visit.PathwayKey
         };
