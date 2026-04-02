@@ -1,11 +1,10 @@
 "use client";
 
-import { CheckOutlined, ClockCircleOutlined, EyeOutlined, SearchOutlined, TeamOutlined, WarningOutlined } from "@ant-design/icons";
+import { CheckOutlined, EyeOutlined, SearchOutlined, TeamOutlined, WarningOutlined } from "@ant-design/icons";
 import { Button, Card, Empty, Input, Pagination, Segmented, Skeleton, Space, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useClinicianToastMessages } from "@/hooks/clinician/useClinicianToastMessages";
-import { useMinuteClock } from "@/hooks/clinician/useMinuteClock";
 import { useClinicianQueueActions, useClinicianQueueState } from "@/providers/clinician-queue";
 import type { IClinicianQueueItem, TUrgencyLevel } from "@/services/queue-operations/types";
 import { useClinicianQueueStyles } from "./style";
@@ -67,20 +66,10 @@ const buildClinicalPreview = (item: IClinicianQueueItem): string => {
     return "Routine visit currently waiting for clinician availability and consultation start.";
 };
 
-const getLiveWaitingMinutes = (enteredQueueAt: string, fallbackMinutes: number, now: number): number => {
-    const enteredAt = new Date(enteredQueueAt).getTime();
-    if (Number.isNaN(enteredAt)) {
-        return fallbackMinutes;
-    }
-
-    return Math.max(fallbackMinutes, Math.max(0, Math.floor((now - enteredAt) / 60000)));
-};
-
 export const ClinicianQueueDashboard = (): React.JSX.Element => {
     const { styles } = useClinicianQueueStyles();
     const state = useClinicianQueueState();
     const actions = useClinicianQueueActions();
-    const now = useMinuteClock();
     const toastContext = useClinicianToastMessages([
         {
             type: "error",
@@ -99,11 +88,10 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                 tone: "neutral",
             },
             {
-                title: "Average Wait",
-                value: state.summary.averageWaitingMinutes,
-                suffix: "m",
-                hint: "Across waiting patients",
-                icon: <ClockCircleOutlined />,
+                title: "In Consultation",
+                value: state.summary.inConsultationCount,
+                hint: "Visits being seen now",
+                icon: <EyeOutlined />,
                 tone: "warning",
             },
             {
@@ -131,7 +119,7 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
             <div className={styles.summaryGrid}>
                 {summaryCards.map((card) => (
                     <Card key={card.title} className={`${styles.summaryCard} ${styles[`summary${card.tone.charAt(0).toUpperCase()}${card.tone.slice(1)}` as keyof typeof styles]}`}>
-                        <div className={styles.summaryIconWrap}>{card.icon}</div>
+                        <div className={`${styles.summaryIconWrap} ${styles[`summaryIcon${card.tone.charAt(0).toUpperCase()}${card.tone.slice(1)}` as keyof typeof styles]}`}>{card.icon}</div>
                         <div className={styles.summaryInfo}>
                             <Typography.Text className={styles.summaryLabel}>{card.title}</Typography.Text>
                             <Typography.Title level={3} className={styles.summaryValue}>
@@ -209,7 +197,7 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                     <>
                         <div className={styles.queueList}>
                             {state.items.map((item) => (
-                                <QueueRow key={item.queueTicketId} item={item} now={now} />
+                                <QueueRow key={item.queueTicketId} item={item} />
                             ))}
                         </div>
                         <div className={styles.paginationRow}>
@@ -229,9 +217,8 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
     );
 };
 
-const QueueRow = ({ item, now }: { item: IClinicianQueueItem; now: number }): React.JSX.Element => {
+const QueueRow = ({ item }: { item: IClinicianQueueItem }): React.JSX.Element => {
     const { styles } = useClinicianQueueStyles();
-    const waitingMinutes = getLiveWaitingMinutes(item.enteredQueueAt, item.waitingMinutes, now);
 
     return (
         <article className={`${styles.queueItem} ${getQueueAccentClassName(item.urgencyLevel, styles)}`}>
@@ -250,10 +237,6 @@ const QueueRow = ({ item, now }: { item: IClinicianQueueItem; now: number }): Re
                 </div>
                 <Typography.Paragraph className={styles.clinicalPreview}>{buildClinicalPreview(item)}</Typography.Paragraph>
                 <div className={styles.detailRow}>
-                    <Space size={8}>
-                        <ClockCircleOutlined />
-                        <span>Waiting {waitingMinutes} min</span>
-                    </Space>
                     <Space size={8}>
                         <WarningOutlined />
                         <span>Queue stage: {item.currentStage}</span>

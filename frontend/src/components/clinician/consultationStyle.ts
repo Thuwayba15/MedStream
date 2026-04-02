@@ -53,7 +53,7 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
             width: 100%;
 
             > * {
-                flex: 1 1 calc(50% - 8px);
+                flex: 1 1 100%;
             }
         }
     `,
@@ -306,42 +306,81 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
             gap: 12px;
         }
     `,
+    workflowScroller: css`
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 6px;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+    `,
+
     workflowSteps: css`
-        .ant-steps-item {
-            min-height: 54px;
-        }
+        display: inline-flex;
+        align-items: flex-start;
+        gap: 18px;
+        min-width: max-content;
+        padding-right: 4px;
+    `,
 
-        .ant-steps-item-content {
-            min-height: auto !important;
-        }
+    workflowStepItem: css`
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        flex: 0 0 auto;
+        min-width: max-content;
+        position: relative;
+    `,
 
-        .ant-steps-item-title {
-            color: ${colors.navy} !important;
-            font-weight: 700;
-        }
+    workflowStepMarker: css`
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        font-size: 0.9rem;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    `,
 
-        .ant-steps-item-description,
-        .ant-steps-item-content {
-            color: #73839d !important;
-        }
+    workflowStepActive: css`
+        background: ${colors.amber};
+        color: ${colors.white};
+    `,
 
-        .ant-steps-item-process .ant-steps-item-icon {
-            background: ${colors.amber} !important;
-            border-color: ${colors.amber} !important;
-        }
+    workflowStepDone: css`
+        background: rgba(35, 160, 112, 0.12);
+        color: #198a60;
+        border: 1px solid rgba(35, 160, 112, 0.24);
+    `,
 
-        .ant-steps-item-process .ant-steps-icon,
-        .ant-steps-item-wait .ant-steps-icon {
-            color: ${colors.white} !important;
-        }
+    workflowStepPending: css`
+        background: rgba(13, 27, 46, 0.06);
+        color: #91a0b8;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+    `,
 
-        .ant-steps-item-finish .ant-steps-item-icon {
-            background: rgba(35, 160, 112, 0.12) !important;
-            border-color: rgba(35, 160, 112, 0.2) !important;
-        }
+    workflowStepConnector: css`
+        position: absolute;
+        top: 14px;
+        left: calc(100% - 4px);
+        width: 24px;
+        height: 2px;
+        background: rgba(13, 27, 46, 0.12);
+    `,
 
-        .ant-steps-item-finish .ant-steps-icon {
-            color: #198a60 !important;
+    workflowStepTitle: css`
+        color: ${colors.navy} !important;
+        font-weight: 700;
+        white-space: nowrap;
+        font-size: 0.9rem;
+        line-height: 1.2;
+        text-align: center;
+
+        @media (max-width: 768px) {
+            font-size: 0.82rem;
         }
     `,
     aiBanner: css`
@@ -396,6 +435,7 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         border: 1px solid rgba(224, 123, 42, 0.14);
         box-shadow: ${shadows.soft};
         background: radial-gradient(circle at top right, rgba(224, 123, 42, 0.08), transparent 30%), ${colors.white};
+        overflow: hidden;
 
         .ant-tabs-nav {
             margin: 0 0 22px !important;
@@ -416,6 +456,21 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
             background: ${colors.amber} !important;
             height: 3px !important;
             border-radius: 999px;
+        }
+
+        @media (max-width: 768px) {
+            .ant-tabs-nav {
+                margin: 0 0 16px !important;
+            }
+
+            .ant-tabs-nav-list {
+                flex-wrap: wrap;
+            }
+
+            .ant-tabs-tab {
+                padding-top: 4px;
+                padding-bottom: 10px;
+            }
         }
     `,
     editorPanel: css`

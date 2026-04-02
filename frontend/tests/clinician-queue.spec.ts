@@ -397,9 +397,11 @@ test.describe("clinician queue dashboard", () => {
         await page.waitForResponse((response) => response.url().includes("/api/clinician/queue") && response.status() === 200);
 
         await expect(page.getByText("Patients Waiting")).toBeVisible();
+        await expect(page.getByText("In Consultation")).toBeVisible();
         await expect(page.getByText("Showing 2 patients")).toBeVisible();
         await expect(page.getByText("Thabo Molefe")).toBeVisible();
         await expect(page.getByRole("button", { name: "Review" }).first()).toBeVisible();
+        await expect(page.getByText("Queue stage: Waiting").first()).toBeVisible();
 
         await page.getByTestId("queue-urgency-filter").getByText("Urgent", { exact: true }).click();
         await expect(page.getByText("Nomsa Dlamini")).toHaveCount(0);
@@ -510,5 +512,150 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByText("Symptoms reported: Cough, Fever")).toBeVisible();
         await expect(page.getByText("Have you had a fever?", { exact: false })).toBeVisible();
         await expect(page.getByRole("button", { name: "Resume Draft" })).toBeVisible();
+    });
+
+    test("keeps the clinician queue, workflow, and timeline usable on mobile", async ({ context, page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+
+        await page.route("**/api/clinician/queue**", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    totalCount: 1,
+                    items: [
+                        {
+                            queueTicketId: 901,
+                            visitId: 3001,
+                            patientUserId: 2001,
+                            patientName: "Thabo Molefe",
+                            queueNumber: 1042,
+                            queueStatus: "waiting",
+                            currentStage: "Waiting",
+                            urgencyLevel: "Urgent",
+                            priorityScore: 95,
+                            enteredQueueAt: "2026-04-02T08:00:00.000Z",
+                            waitingMinutes: 12,
+                            isActive: true,
+                        },
+                    ],
+                    summary: {
+                        waitingCount: 1,
+                        averageWaitingMinutes: 12,
+                        urgentCount: 1,
+                        seenTodayCount: 2,
+                        calledCount: 0,
+                        inConsultationCount: 0,
+                    },
+                }),
+            });
+        });
+
+        await page.route("**/api/clinician/consultation?**", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    visitId: 3001,
+                    queueTicketId: 901,
+                    visitStatus: "InConsultation",
+                    patientContext: {
+                        patientUserId: 2001,
+                        patientName: "Thabo Molefe",
+                        chiefComplaint: "Severe chest pain, shortness of breath",
+                        subjectiveSummary: "Patient reports severe crushing chest pain that started two hours ago and has worsened with movement.",
+                        urgencyLevel: "Urgent",
+                        queueStatus: "in_consultation",
+                        visitDate: "2026-04-02T08:00:00.000Z",
+                    },
+                    encounterNote: {
+                        id: 77,
+                        visitId: 3001,
+                        intakeSubjective: "Initial intake notes already captured chest pain and shortness of breath.",
+                        subjective: "Patient reports severe crushing chest pain that started two hours ago and now includes nausea.",
+                        objective: "Alert, speaking in full sentences, clutching chest intermittently.",
+                        assessment: "Concerning for acute coronary syndrome pending clinician confirmation.",
+                        plan: "Continue urgent cardiac monitoring, obtain ECG, and reassess pain response.",
+                        clinicianTimelineSummary: "Presented with severe chest pain and tachycardia. ECG review initiated and urgent observation continued.",
+                        patientTimelineSummary: "Seen for chest pain and shortness of breath. You were assessed urgently and advised on warning signs and next steps.",
+                        status: "draft",
+                        finalizedAt: null,
+                    },
+                    latestVitals: {
+                        id: 61,
+                        visitId: 3001,
+                        phase: "consultation",
+                        bloodPressureSystolic: 150,
+                        bloodPressureDiastolic: 95,
+                        heartRate: 110,
+                        respiratoryRate: 24,
+                        temperatureCelsius: 37.2,
+                        oxygenSaturation: 94,
+                        bloodGlucose: null,
+                        weightKg: null,
+                        isLatest: true,
+                        recordedAt: "2026-04-02T08:15:00.000Z",
+                    },
+                    transcripts: [],
+                }),
+            });
+        });
+
+        await page.route("**/api/clinician/history**", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    isClinicianView: true,
+                    patient: {
+                        patientUserId: 2001,
+                        patientName: "Thabo Molefe",
+                        dateOfBirth: "1981-05-11T00:00:00.000Z",
+                        idNumber: "8105115800088",
+                        totalVisits: 3,
+                        mostRecentVisitAt: "2026-04-02T08:00:00.000Z",
+                    },
+                    visits: [
+                        {
+                            visitId: 3001,
+                            visitDate: "2026-04-02T08:00:00.000Z",
+                            visitStatus: "completed",
+                            facilityId: 4,
+                            facilityName: "Khayelitsha CHC",
+                            title: "Consultation",
+                            chiefComplaint: "Severe chest pain, shortness of breath",
+                            summary: "Presented with severe chest pain and tachycardia. ECG review initiated and urgent observation continued.",
+                            summarySource: "finalized_summary",
+                            urgencyLevel: "Urgent",
+                            queueStatus: "completed",
+                            clinicianName: "Dr. Naledi Mokoena",
+                            finalizedAt: "2026-04-02T09:10:00.000Z",
+                        },
+                    ],
+                    timeline: [],
+                    conditions: [],
+                    allergies: [],
+                    medications: [],
+                }),
+            });
+        });
+
+        await context.addCookies([{ name: "medstream_access_token", value: createClinicianToken(), url: "http://localhost:3000" }]);
+
+        await page.goto("/clinician", { waitUntil: "domcontentloaded" });
+        await expect(page.getByText("Patients Waiting")).toBeVisible();
+        await expect(page.getByText("Thabo Molefe")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Review" })).toBeVisible();
+
+        await page.goto("/clinician/consultation?visitId=3001&queueTicketId=901", { waitUntil: "domcontentloaded" });
+        await expect(page.getByRole("heading", { name: "Consultation: Thabo Molefe" })).toBeVisible();
+        await expect(page.getByText("Capture Context")).toBeVisible();
+        await expect(page.getByText("Record Objective")).toBeVisible();
+        await expect(page.getByRole("tab", { name: "Timeline Summary" })).toBeVisible();
+
+        await page.goto("/clinician/history?patientUserId=2001&visitId=3001", { waitUntil: "domcontentloaded" });
+        await expect(page.getByRole("heading", { name: "Thabo Molefe" })).toBeVisible();
+        await expect(page.getByText("Presented with severe chest pain and tachycardia. ECG review initiated and urgent observation continued.")).toBeVisible();
+        await expect(page.getByText("Seen for chest pain and shortness of breath. You were assessed urgently and advised on warning signs and next steps.")).toHaveCount(0);
     });
 });

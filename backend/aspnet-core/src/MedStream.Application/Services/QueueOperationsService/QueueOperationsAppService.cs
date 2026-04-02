@@ -184,6 +184,9 @@ public partial class QueueOperationsAppService : MedStreamAppServiceBase, IQueue
         var waitingRows = summaryRows
             .Where(item => item.IsActive && string.Equals(item.QueueStatus, PatientIntakeConstants.QueueStatusWaiting, StringComparison.OrdinalIgnoreCase))
             .ToList();
+        var activeQueueRows = summaryRows
+            .Where(item => item.IsActive)
+            .ToList();
 
         return new ClinicianQueueDashboardDto
         {
@@ -192,9 +195,9 @@ public partial class QueueOperationsAppService : MedStreamAppServiceBase, IQueue
             Summary = new ClinicianQueueSummaryDto
             {
                 WaitingCount = waitingRows.Count,
-                AverageWaitingMinutes = waitingRows.Count == 0
+                AverageWaitingMinutes = activeQueueRows.Count == 0
                     ? 0
-                    : (int)Math.Round(waitingRows.Average(item => Math.Max(0, (nowUtc - item.EnteredQueueAt).TotalMinutes))),
+                    : (int)Math.Round(activeQueueRows.Average(item => Math.Max(0, (nowUtc - item.EnteredQueueAt).TotalMinutes))),
                 UrgentCount = summaryRows.Count(item => item.IsActive && string.Equals(item.UrgencyLevel, "Urgent", StringComparison.OrdinalIgnoreCase)),
                 SeenTodayCount = summaryRows.Count(item => item.CompletedAt.HasValue && item.CompletedAt.Value >= startOfTodayUtc),
                 CalledCount = summaryRows.Count(item => item.IsActive && string.Equals(item.QueueStatus, PatientIntakeConstants.QueueStatusCalled, StringComparison.OrdinalIgnoreCase)),
