@@ -208,10 +208,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             return false;
         }
 
-        const saved = await actions.saveEncounterNoteDraft(
-            { visitId: workspace.visitId, ...noteDraft },
-            { suppressSuccessMessage }
-        );
+        const saved = await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft }, { suppressSuccessMessage });
         return Boolean(saved);
     };
 

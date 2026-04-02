@@ -159,12 +159,7 @@ export const ConsultationWorkspaceContent = ({
                         <div className={styles.workflowScroller} data-testid="consultation-workflow-scroller">
                             <div className={styles.workflowSteps}>
                                 {workflowSteps.map((step, index) => {
-                                    const stepClassName =
-                                        step.status === "finish"
-                                            ? styles.workflowStepDone
-                                            : step.status === "process"
-                                              ? styles.workflowStepActive
-                                              : styles.workflowStepPending;
+                                    const stepClassName = step.status === "finish" ? styles.workflowStepDone : step.status === "process" ? styles.workflowStepActive : styles.workflowStepPending;
 
                                     return (
                                         <div key={step.title} className={styles.workflowStepItem}>

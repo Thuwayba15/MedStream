@@ -432,9 +432,9 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByText("Transcript attached", { exact: true })).toBeVisible();
         await page.getByRole("tab", { name: "objective" }).click();
         await expect(page.getByText("Blood pressure")).toBeVisible();
-        await page.getByPlaceholder("Document examination findings, focused observations, and any additional objective notes.").fill(
-            "Chest wall tenderness absent. Patient diaphoretic and anxious on examination."
-        );
+        await page
+            .getByPlaceholder("Document examination findings, focused observations, and any additional objective notes.")
+            .fill("Chest wall tenderness absent. Patient diaphoretic and anxious on examination.");
         await page.getByRole("tab", { name: "assessment" }).click();
         await page.getByRole("button", { name: "Generate A/P Draft" }).click();
         await expect(page.getByText("Assessment and plan draft generated for review.")).toBeVisible();
