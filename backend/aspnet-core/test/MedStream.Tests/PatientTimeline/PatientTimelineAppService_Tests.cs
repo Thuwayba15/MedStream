@@ -21,6 +21,8 @@ namespace MedStream.Tests.PatientTimeline;
 
 public class PatientTimelineAppService_Tests : MedStreamTestBase
 {
+    private static int _clinicianIdentitySequence = 2000000;
+
     private readonly IAccountAppService _accountAppService;
     private readonly IUserAppService _userAppService;
     private readonly IFacilityAppService _facilityAppService;
@@ -232,6 +234,7 @@ public class PatientTimelineAppService_Tests : MedStreamTestBase
     private async Task<string> RegisterAndApproveClinicianWithFacilityAsync(string prefix, int facilityId)
     {
         var clinicianEmail = $"{prefix}-{Guid.NewGuid():N}@medstream.test";
+        var clinicianIdNumber = CreateUniqueClinicianIdNumber();
         await _accountAppService.Register(new RegisterInput
         {
             FirstName = "Timeline",
@@ -241,7 +244,7 @@ public class PatientTimelineAppService_Tests : MedStreamTestBase
             Password = "Password1",
             ConfirmPassword = "Password1",
             AccountType = "Clinician",
-            IdNumber = "9001015009087",
+            IdNumber = clinicianIdNumber,
             ProfessionType = "Doctor",
             RegulatoryBody = "HPCSA",
             RegistrationNumber = $"HPCSA-{Guid.NewGuid():N}".Substring(0, 18),
@@ -262,6 +265,11 @@ public class PatientTimelineAppService_Tests : MedStreamTestBase
         });
 
         return clinicianEmail;
+    }
+
+    private static string CreateUniqueClinicianIdNumber()
+    {
+        return $"900101{System.Threading.Interlocked.Increment(ref _clinicianIdentitySequence):D7}";
     }
 
     private async Task<string> RegisterPatientAsync(string prefix)

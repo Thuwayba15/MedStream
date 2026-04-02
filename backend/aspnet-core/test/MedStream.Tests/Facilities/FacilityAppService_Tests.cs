@@ -16,6 +16,8 @@ namespace MedStream.Tests.Facilities;
 
 public class FacilityAppService_Tests : MedStreamTestBase
 {
+    private static int _clinicianIdentitySequence = 4000000;
+
     private readonly IFacilityAppService _facilityAppService;
     private readonly IAccountAppService _accountAppService;
 
@@ -70,6 +72,8 @@ public class FacilityAppService_Tests : MedStreamTestBase
         });
 
         var clinicianEmail = $"assign-clinician-{Guid.NewGuid():N}@medstream.test";
+        var clinicianIdNumber = CreateUniqueClinicianIdNumber();
+        var registrationNumber = $"HPCSA-{Guid.NewGuid():N}".Substring(0, 18);
         await _accountAppService.Register(new RegisterInput
         {
             FirstName = "Assign",
@@ -79,10 +83,10 @@ public class FacilityAppService_Tests : MedStreamTestBase
             Password = "Password1",
             ConfirmPassword = "Password1",
             AccountType = "Clinician",
-            IdNumber = "9001015009087",
+            IdNumber = clinicianIdNumber,
             ProfessionType = "Doctor",
             RegulatoryBody = "HPCSA",
-            RegistrationNumber = "HPCSA-0101",
+            RegistrationNumber = registrationNumber,
             RequestedFacilityId = facility.Id,
         });
 
@@ -135,5 +139,10 @@ public class FacilityAppService_Tests : MedStreamTestBase
                 Province = "InvalidProvince",
                 IsActive = true,
             }));
+    }
+
+    private static string CreateUniqueClinicianIdNumber()
+    {
+        return $"900101{System.Threading.Interlocked.Increment(ref _clinicianIdentitySequence):D7}";
     }
 }
