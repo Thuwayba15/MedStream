@@ -44,21 +44,17 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
             left: 0;
             right: 0;
             height: 4px;
-            opacity: 0;
-            transition: opacity 180ms ease;
+            opacity: 1;
         }
 
         &:hover {
             transform: translateY(-2px);
         }
-
-        &:hover::after {
-            opacity: 1;
-        }
     `,
 
     summaryNeutral: css`
         border-color: rgba(13, 27, 46, 0.1);
+        background: linear-gradient(180deg, rgba(13, 27, 46, 0.03) 0%, ${colors.white} 72%);
 
         &::after {
             background: ${colors.navy};
@@ -67,6 +63,7 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
 
     summaryWarning: css`
         border-color: rgba(224, 123, 42, 0.25);
+        background: linear-gradient(180deg, rgba(224, 123, 42, 0.08) 0%, ${colors.white} 72%);
 
         &::after {
             background: ${colors.priority};
@@ -75,6 +72,7 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
 
     summaryDanger: css`
         border-color: rgba(201, 64, 64, 0.25);
+        background: linear-gradient(180deg, rgba(201, 64, 64, 0.08) 0%, ${colors.white} 72%);
 
         &::after {
             background: ${colors.urgent};
@@ -83,6 +81,7 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
 
     summarySuccess: css`
         border-color: rgba(35, 160, 112, 0.25);
+        background: linear-gradient(180deg, rgba(35, 160, 112, 0.08) 0%, ${colors.white} 72%);
 
         &::after {
             background: #198a60;
@@ -99,6 +98,26 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         font-size: 1.1rem;
         background: rgba(13, 27, 46, 0.06);
         color: ${colors.navy};
+    `,
+
+    summaryIconNeutral: css`
+        background: rgba(13, 27, 46, 0.08);
+        color: ${colors.navy};
+    `,
+
+    summaryIconWarning: css`
+        background: rgba(224, 123, 42, 0.14);
+        color: ${colors.priority};
+    `,
+
+    summaryIconDanger: css`
+        background: rgba(201, 64, 64, 0.14);
+        color: ${colors.urgent};
+    `,
+
+    summaryIconSuccess: css`
+        background: rgba(35, 160, 112, 0.14);
+        color: #198a60;
     `,
 
     summaryInfo: css`
@@ -159,6 +178,21 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
+
+        @media (max-width: 768px) {
+            width: 100%;
+            align-items: stretch;
+
+            .ant-segmented {
+                width: 100%;
+            }
+
+            .ant-segmented-group {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+                width: 100%;
+            }
+        }
     `,
 
     searchInput: css`
@@ -211,13 +245,24 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
 
     queueItem: css`
         display: grid;
-        grid-template-columns: 92px minmax(280px, 1fr) 170px;
+        grid-template-columns: 92px minmax(0, 1fr) 152px;
         border: 1px solid rgba(13, 27, 46, 0.1);
         border-radius: ${radius.md}px;
         overflow: hidden;
         background: ${colors.white};
+        position: relative;
+        --queue-accent: ${colors.routine};
 
-        @media (max-width: 980px) {
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 6px;
+            background: var(--queue-accent);
+            z-index: 1;
+        }
+
+        @media (max-width: 1240px) {
             grid-template-columns: 86px 1fr;
         }
 
@@ -227,15 +272,15 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
     `,
 
     rowUrgent: css`
-        box-shadow: inset 4px 0 0 ${colors.urgent};
+        --queue-accent: ${colors.urgent};
     `,
 
     rowPriority: css`
-        box-shadow: inset 4px 0 0 ${colors.priority};
+        --queue-accent: ${colors.priority};
     `,
 
     rowRoutine: css`
-        box-shadow: inset 4px 0 0 ${colors.routine};
+        --queue-accent: ${colors.routine};
     `,
 
     queueNumberBlock: css`
@@ -246,6 +291,7 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         gap: 4px;
         min-height: 126px;
         text-align: center;
+        padding-left: 6px;
 
         @media (max-width: 640px) {
             min-height: 64px;
@@ -274,9 +320,10 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
     `,
 
     patientBlock: css`
-        padding: 14px 16px;
+        padding: 14px 16px 14px 18px;
         display: grid;
         gap: 8px;
+        min-width: 0;
     `,
 
     rowTitleWrap: css`
@@ -289,7 +336,8 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
     patientName: css`
         margin: 0 8px 0 0 !important;
         color: ${colors.navy} !important;
-        font-size: 1.65rem;
+        font-size: clamp(1.25rem, 2.8vw, 1.65rem);
+        word-break: break-word;
     `,
 
     clinicalPreview: css`
@@ -314,8 +362,13 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         justify-items: center;
         align-content: center;
         gap: 10px;
+        min-width: 0;
 
-        @media (max-width: 980px) {
+        a {
+            width: 100%;
+        }
+
+        @media (max-width: 1240px) {
             grid-column: 1 / -1;
             border-left: none;
             border-top: 1px solid rgba(13, 27, 46, 0.08);

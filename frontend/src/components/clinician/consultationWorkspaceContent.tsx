@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircleOutlined, FileDoneOutlined, SaveOutlined } from "@ant-design/icons";
-import { Button, Card, Steps, Tabs, Tag, Typography } from "antd";
+import { Button, Card, Tabs, Tag, Typography } from "antd";
 import type { IConsultationWorkspace } from "@/services/consultation/types";
 import type { TUrgencyLevel } from "@/services/queue-operations/types";
 import { formatVisitStartedAt, getStatusLabel, getUrgencyClassName, isConcerning, sanitizeClinicalCopy } from "./consultationHelpers";
@@ -156,7 +156,21 @@ export const ConsultationWorkspaceContent = ({
                         <Typography.Title level={5} className={styles.sectionHeading}>
                             Visit Workflow
                         </Typography.Title>
-                        <Steps size="small" responsive items={workflowSteps} className={styles.workflowSteps} />
+                        <div className={styles.workflowScroller} data-testid="consultation-workflow-scroller">
+                            <div className={styles.workflowSteps}>
+                                {workflowSteps.map((step, index) => {
+                                    const stepClassName = step.status === "finish" ? styles.workflowStepDone : step.status === "process" ? styles.workflowStepActive : styles.workflowStepPending;
+
+                                    return (
+                                        <div key={step.title} className={styles.workflowStepItem}>
+                                            <div className={`${styles.workflowStepMarker} ${stepClassName}`}>{index + 1}</div>
+                                            {index < workflowSteps.length - 1 ? <div className={styles.workflowStepConnector} /> : null}
+                                            <Typography.Text className={styles.workflowStepTitle}>{step.title}</Typography.Text>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </Card>
                     <Card className={styles.workspaceCard}>
                         <div className={styles.statusStrip}>

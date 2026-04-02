@@ -149,14 +149,14 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
     }, []);
 
     const saveEncounterNoteDraft = useCallback(
-        async (payload: ISaveEncounterNoteDraftRequest): Promise<IEncounterNote | null> => {
+        async (payload: ISaveEncounterNoteDraftRequest, options?: { suppressSuccessMessage?: boolean }): Promise<IEncounterNote | null> => {
             dispatch(saveDraftStarted());
             try {
                 // Save Encounter Note Draft
                 // POST /api/clinician/consultation/note
                 const note = await postJson<IEncounterNote>(API.CLINICIAN_CONSULTATION_NOTE_ROUTE, payload, "Unable to save SOAP draft.");
                 const workspace = await refreshWorkspace(payload.visitId);
-                dispatch(saveDraftSucceeded(workspace, "Draft saved."));
+                dispatch(saveDraftSucceeded(workspace, options?.suppressSuccessMessage ? "" : "Draft saved."));
                 return note;
             } catch (error) {
                 const message = error instanceof Error ? error.message : "Unable to save SOAP draft.";
