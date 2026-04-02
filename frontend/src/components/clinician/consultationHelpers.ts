@@ -211,7 +211,9 @@ export const sanitizeClinicalCopy = (value?: string | null): string => {
 
 export const formatVisitStartedAt = (value?: string): string => {
     const parsed = value ? new Date(value) : null;
-    return parsed && !Number.isNaN(parsed.getTime()) ? `Started ${parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Consultation in progress";
+    return parsed && !Number.isNaN(parsed.getTime())
+        ? `Started ${parsed.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Johannesburg" })}`
+        : "Consultation in progress";
 };
 
 const normalizeSentence = (value?: string | null): string => {

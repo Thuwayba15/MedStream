@@ -24,8 +24,6 @@ const ClinicianHistoryPage = async ({ searchParams }: IClinicianHistoryPageProps
                 consultationQueueTicketId={queueTicketId}
                 historyPatientUserId={patientUserId}
                 historyVisitId={visitId}
-                title="Patient Timeline"
-                subtitle="Review cross-facility triage and consultation history for the active patient."
             >
                 <ClinicianHistoryWorkspace patientUserId={patientUserId} />
             </ClinicianWorkspaceShell>

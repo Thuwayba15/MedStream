@@ -25,8 +25,6 @@ const ClinicianConsultationPage = async ({ searchParams }: IClinicianConsultatio
                 consultationQueueTicketId={queueTicketId}
                 historyPatientUserId={patientUserId}
                 historyVisitId={visitId}
-                title="Consultation Workspace"
-                subtitle="Open an active visit or return to today's drafted and completed consultations."
             >
                 <ClinicianConsultationWorkspace visitId={visitId} queueTicketId={queueTicketId} patientUserId={patientUserId} />
             </ClinicianWorkspaceShell>

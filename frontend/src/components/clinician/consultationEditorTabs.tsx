@@ -1,7 +1,7 @@
 "use client";
 
-import { HeartOutlined, RobotOutlined } from "@ant-design/icons";
-import { Alert, Button, Input, Tag, Typography } from "antd";
+import { AudioOutlined, HeartOutlined, RobotOutlined, StopOutlined } from "@ant-design/icons";
+import { Button, Input, Space, Tag, Tooltip, Typography } from "antd";
 import type { TabsProps } from "antd";
 import type { INoteDraftState, IVitalsDraftState } from "./consultationHelpers";
 import { sanitizeClinicalCopy } from "./consultationHelpers";
@@ -14,18 +14,18 @@ interface IConsultationEditorTabsProps {
     noteDraft: INoteDraftState;
     vitalsDraft: IVitalsDraftState;
     missingTimelineSummaries: string[];
-    visibleTimelineValidationMessage: string | null;
     subjectiveDraft?: { subjective?: string | null; summary?: string | null } | null;
     assessmentPlanDraft?: { assessment?: string | null; plan?: string | null; summary?: string | null } | null;
     isGeneratingSubjective: boolean;
+    isRecording: boolean;
     isSavingVitals: boolean;
     isGeneratingAssessmentPlan: boolean;
     onGenerateSubjective: () => void;
+    onToggleRecording: () => void;
     onApplyGeneratedSubjective: () => void;
     onSaveVitals: () => void;
     onGenerateAssessmentPlan: () => void;
     onApplyGeneratedAssessmentPlan: () => void;
-    onDismissTimelineValidation: () => void;
     onUpdateNoteDraft: (updater: INoteDraftState | ((current: INoteDraftState) => INoteDraftState)) => void;
     onUpdateVitalsDraft: (updater: IVitalsDraftState | ((current: IVitalsDraftState) => IVitalsDraftState)) => void;
 }
@@ -91,18 +91,18 @@ export const buildConsultationEditorTabs = ({
     noteDraft,
     vitalsDraft,
     missingTimelineSummaries,
-    visibleTimelineValidationMessage,
     subjectiveDraft,
     assessmentPlanDraft,
     isGeneratingSubjective,
+    isRecording,
     isSavingVitals,
     isGeneratingAssessmentPlan,
     onGenerateSubjective,
+    onToggleRecording,
     onApplyGeneratedSubjective,
     onSaveVitals,
     onGenerateAssessmentPlan,
     onApplyGeneratedAssessmentPlan,
-    onDismissTimelineValidation,
     onUpdateNoteDraft,
     onUpdateVitalsDraft,
 }: IConsultationEditorTabsProps): TabsProps["items"] => {
@@ -119,9 +119,22 @@ export const buildConsultationEditorTabs = ({
                             <Typography.Title level={3} className={styles.editorTitle}>Subjective</Typography.Title>
                             <Typography.Text className={styles.editorHint}>Starts from intake, then gets refined with consultation context.</Typography.Text>
                         </div>
-                        <Button icon={<RobotOutlined />} className={styles.signalAction} loading={isGeneratingSubjective} disabled={isFinalized} onClick={onGenerateSubjective}>
-                            Refresh With AI
-                        </Button>
+                        <Space size={8}>
+                            <Button icon={<RobotOutlined />} className={styles.signalAction} loading={isGeneratingSubjective} disabled={isFinalized} onClick={onGenerateSubjective}>
+                                Refresh With AI
+                            </Button>
+                            <Tooltip title={isRecording ? "Stop consultation recording" : "Record consultation notes"}>
+                                <Button
+                                    aria-label={isRecording ? "Stop consultation recording" : "Start consultation recording"}
+                                    data-testid={isRecording ? "consultation-stop-recording" : "consultation-start-recording"}
+                                    icon={isRecording ? <StopOutlined /> : <AudioOutlined />}
+                                    className={styles.micAction}
+                                    danger={isRecording}
+                                    disabled={isFinalized}
+                                    onClick={onToggleRecording}
+                                />
+                            </Tooltip>
+                        </Space>
                     </div>
                     {subjectiveDraft?.subjective ? (
                         <div className={styles.draftPreview}>
@@ -220,14 +233,6 @@ export const buildConsultationEditorTabs = ({
                             {missingTimelineSummaries.length === 0 ? "Ready to finalize" : "Required before finalizing"}
                         </Tag>
                     </div>
-                    {visibleTimelineValidationMessage ? (
-                        <Alert
-                            type="warning"
-                            showIcon
-                            title={visibleTimelineValidationMessage}
-                            action={<Button size="small" onClick={onDismissTimelineValidation}>Dismiss</Button>}
-                        />
-                    ) : null}
                     <div className={styles.timelineSummaryGrid}>
                         <div className={styles.timelineSummaryCard}>
                             <div className={styles.timelineSummaryHeader}>

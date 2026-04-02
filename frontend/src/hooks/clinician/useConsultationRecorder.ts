@@ -11,6 +11,7 @@ interface IUseConsultationRecorderParams {
 
 interface IUseConsultationRecorderResult {
     isRecording: boolean;
+    isTranscribing: boolean;
     recordingSeconds: number;
     recordingError: string | null;
     clearRecordingError: () => void;
@@ -24,6 +25,7 @@ export const useConsultationRecorder = ({
     transcribeAudio,
 }: IUseConsultationRecorderParams): IUseConsultationRecorderResult => {
     const [isRecording, setIsRecording] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
     const [recordingSeconds, setRecordingSeconds] = useState(0);
     const [recordingError, setRecordingError] = useState<string | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -89,11 +91,13 @@ export const useConsultationRecorder = ({
                     return;
                 }
 
+                setIsTranscribing(true);
                 const transcript = await transcribeAudio({
                     visitId,
                     audioBlob,
                     mimeType: audioBlob.type,
                 });
+                setIsTranscribing(false);
 
                 if (transcript?.rawTranscriptText) {
                     onTranscriptReady(transcript.rawTranscriptText);
@@ -115,6 +119,7 @@ export const useConsultationRecorder = ({
 
     return {
         isRecording,
+        isTranscribing,
         recordingSeconds,
         recordingError,
         clearRecordingError: () => setRecordingError(null),

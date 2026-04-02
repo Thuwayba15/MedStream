@@ -9,7 +9,7 @@ const ClinicianHomePage = () => {
     return (
         <RoleAppShell roleLabel="Clinician" items={[]}>
             <ClinicianQueueProvider>
-                <ClinicianWorkspaceShell activeKey="queue" title="Clinician Workspace" subtitle="Manage the live queue, pick up consultations, and return to patients you have already seen today.">
+                <ClinicianWorkspaceShell activeKey="queue">
                     <ClinicianQueueDashboard />
                 </ClinicianWorkspaceShell>
             </ClinicianQueueProvider>

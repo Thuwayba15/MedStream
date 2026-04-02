@@ -30,8 +30,6 @@ const ClinicianReviewPage = async ({ params, searchParams }: IClinicianReviewPag
                     consultationQueueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : undefined}
                     historyPatientUserId={patientUserId}
                     historyVisitId={visitId}
-                    title="Clinician Workspace"
-                    subtitle="Review triage reasoning, then move directly into the consultation note."
                 >
                     <ClinicianTriageReviewPage queueTicketId={Number.isInteger(parsedQueueTicketId) ? parsedQueueTicketId : 0} />
                 </ClinicianWorkspaceShell>

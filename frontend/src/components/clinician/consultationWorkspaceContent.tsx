@@ -1,11 +1,9 @@
 "use client";
 
-import { AudioOutlined, CheckCircleOutlined, FileDoneOutlined, LoadingOutlined, SaveOutlined, StopOutlined } from "@ant-design/icons";
-import { Button, Card, Input, Space, Steps, Tabs, Tag, Typography } from "antd";
-import Link from "next/link";
+import { CheckCircleOutlined, FileDoneOutlined, SaveOutlined } from "@ant-design/icons";
+import { Button, Card, Steps, Tabs, Tag, Typography } from "antd";
 import type { IConsultationWorkspace } from "@/services/consultation/types";
 import type { TUrgencyLevel } from "@/services/queue-operations/types";
-import type { INoteDraftState } from "./consultationHelpers";
 import { formatVisitStartedAt, getStatusLabel, getUrgencyClassName, isConcerning, sanitizeClinicalCopy } from "./consultationHelpers";
 
 interface IConsultationWorkspaceContentProps {
@@ -16,29 +14,18 @@ interface IConsultationWorkspaceContentProps {
     urgencyLevel: TUrgencyLevel;
     isFinalized: boolean;
     canCompleteVisit: boolean;
-    recordingDurationLabel: string;
-    transcriptText: string;
-    isRecording: boolean;
     noteTabs: NonNullable<React.ComponentProps<typeof Tabs>["items"]>;
     workflowSteps: Array<{ title: string; content: string; status: "wait" | "process" | "finish" }>;
     reviewSummary?: string | null;
-    reviewQueueTicketId?: number;
-    transcriptCount: number;
     isSavingDraft: boolean;
     isFinalizing: boolean;
     isCompletingVisit: boolean;
-    isAttachingTranscript: boolean;
     activeTab: string;
-    noteDraft: INoteDraftState;
     onSetActiveTab: (key: string) => void;
     onSaveDraft: () => void;
     onFinalizeNote: () => void;
     onCompleteVisit: () => void;
     onGoToObjective: () => void;
-    onStartRecording: () => void;
-    onStopRecording: () => void;
-    onChangeTranscriptText: (value: string) => void;
-    onAttachTranscript: () => void;
 }
 
 export const ConsultationWorkspaceContent = ({
@@ -49,28 +36,18 @@ export const ConsultationWorkspaceContent = ({
     urgencyLevel,
     isFinalized,
     canCompleteVisit,
-    recordingDurationLabel,
-    transcriptText,
-    isRecording,
     noteTabs,
     workflowSteps,
     reviewSummary,
-    reviewQueueTicketId,
-    transcriptCount,
     isSavingDraft,
     isFinalizing,
     isCompletingVisit,
-    isAttachingTranscript,
     activeTab,
     onSetActiveTab,
     onSaveDraft,
     onFinalizeNote,
     onCompleteVisit,
     onGoToObjective,
-    onStartRecording,
-    onStopRecording,
-    onChangeTranscriptText,
-    onAttachTranscript,
 }: IConsultationWorkspaceContentProps): React.JSX.Element => {
     return (
         <>
@@ -101,16 +78,12 @@ export const ConsultationWorkspaceContent = ({
             <div className={styles.shellGrid}>
                 <aside className={styles.sideRail}>
                     <Card className={styles.panelCard}>
-                        <Typography.Title level={5} className={styles.sectionHeading}>Patient Context</Typography.Title>
-                        <div className={styles.patientSummaryBox}>
-                            <Typography.Paragraph className={styles.patientSummaryLead}>{workspace.patientContext.patientName}</Typography.Paragraph>
-                            <Typography.Paragraph className={styles.patientSummaryText}>
-                                {sanitizeClinicalCopy(workspace.patientContext.subjectiveSummary) || "Intake handoff is not available yet for this visit."}
-                            </Typography.Paragraph>
-                        </div>
-                        <div className={styles.tagRow}>
-                            <Tag className={styles.queueTag}>{getStatusLabel(queueStatus)}</Tag>
-                            <Tag className={getUrgencyClassName(urgencyLevel, styles)}>Triage: {urgencyLevel}</Tag>
+                        <div className={styles.patientContextHeader}>
+                            <Typography.Title level={5} className={styles.sectionHeading}>Patient Context</Typography.Title>
+                            <div className={styles.tagRow}>
+                                <Tag className={styles.queueTag}>{getStatusLabel(queueStatus)}</Tag>
+                                <Tag className={getUrgencyClassName(urgencyLevel, styles)}>Triage: {urgencyLevel}</Tag>
+                            </div>
                         </div>
                         <div className={styles.summaryGlow}>
                             <Typography.Text strong>AI handoff summary</Typography.Text>
@@ -133,34 +106,6 @@ export const ConsultationWorkspaceContent = ({
                             <VitalMetricRow label="RR" value={workspace.latestVitals?.respiratoryRate ? `${workspace.latestVitals.respiratoryRate}/min` : "Not recorded"} alert={isConcerning("RR", workspace.latestVitals)} styles={styles} />
                         </div>
                     </Card>
-
-                    <Card className={styles.panelCard}>
-                        <Typography.Title level={5} className={styles.sectionHeading}>Consultation Capture</Typography.Title>
-                        <div className={styles.capturePanel}>
-                            <div className={styles.captureHeader}>
-                                <div>
-                                    <Typography.Text strong>Live transcription</Typography.Text>
-                                    <Typography.Paragraph className={styles.helperText}>Start recording during the consultation, then stop to transcribe and attach the captured notes.</Typography.Paragraph>
-                                </div>
-                                {isRecording ? <Tag className={styles.recordingTag}>Recording {recordingDurationLabel}</Tag> : null}
-                            </div>
-                            <Space wrap>
-                                <Button icon={<AudioOutlined />} className={styles.signalAction} disabled={isFinalized || isRecording || isAttachingTranscript} loading={isAttachingTranscript && !isRecording} onClick={onStartRecording} data-testid="consultation-start-recording">
-                                    Start Live Transcript
-                                </Button>
-                                <Button icon={<StopOutlined />} className={styles.secondaryAction} disabled={isFinalized || !isRecording} onClick={onStopRecording} data-testid="consultation-stop-recording">
-                                    Stop Recording
-                                </Button>
-                            </Space>
-                        </div>
-                        <Input.TextArea value={transcriptText} onChange={(event) => onChangeTranscriptText(event.target.value)} className={styles.transcriptArea} disabled={isFinalized} placeholder="Paste or type the consultation transcript here." />
-                        <Space wrap style={{ marginTop: 12 }}>
-                            <Button icon={isAttachingTranscript ? <LoadingOutlined /> : <AudioOutlined />} className={styles.signalAction} loading={isAttachingTranscript} disabled={isFinalized} onClick={onAttachTranscript}>
-                                Attach Transcript
-                            </Button>
-                            <span className={styles.transcriptMeta}>{transcriptCount > 0 ? `${transcriptCount} transcript entries attached` : "No transcript attached yet"}</span>
-                        </Space>
-                    </Card>
                 </aside>
 
                 <div className={styles.mainColumn}>
@@ -174,14 +119,8 @@ export const ConsultationWorkspaceContent = ({
                             <Typography.Text className={styles.helperText}>{workspace.patientContext.chiefComplaint || workspace.visitStatus}</Typography.Text>
                         </div>
                         <Tabs activeKey={activeTab} onChange={onSetActiveTab} items={noteTabs} />
-                        <Typography.Text className={styles.helperText}>{isFinalized ? "Finalized notes are locked for this visit." : "Draft saves persist and can be reopened from the consultation workspace."}</Typography.Text>
+                        {isFinalized ? <Typography.Text className={styles.helperText}>Finalized notes are locked for this visit.</Typography.Text> : null}
                     </Card>
-
-                    {reviewQueueTicketId ? (
-                        <Link href="/clinician">
-                            <Button className={styles.secondaryAction}>Back to Queue</Button>
-                        </Link>
-                    ) : null}
                 </div>
             </div>
         </>

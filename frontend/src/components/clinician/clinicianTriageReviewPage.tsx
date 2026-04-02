@@ -1,10 +1,11 @@
 "use client";
 
 import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, FileTextOutlined, HistoryOutlined, StopOutlined, WarningOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Empty, Modal, Select, Skeleton, Space, Tag, Typography } from "antd";
+import { Button, Card, Empty, Modal, Select, Skeleton, Space, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useClinicianToastMessages } from "@/hooks/clinician/useClinicianToastMessages";
 import { useClinicianQueueReviewActions, useClinicianQueueReviewState } from "@/providers/clinician-queue-review";
 import type { TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
 import {
@@ -31,6 +32,18 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
     const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
     const [overrideUrgencyLevel, setOverrideUrgencyLevel] = useState<TUrgencyLevel>("Priority");
     const [overrideNote, setOverrideNote] = useState("");
+    const toastContext = useClinicianToastMessages([
+        {
+            type: "error",
+            content: state.errorMessage,
+            onClose: actions.clearMessages,
+        },
+        {
+            type: "success",
+            content: state.successMessage,
+            onClose: actions.clearMessages,
+        },
+    ]);
 
     useEffect(() => {
         if (queueTicketId > 0) {
@@ -135,6 +148,7 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
 
     return (
         <section className={styles.page}>
+            {toastContext}
             <header className={styles.topBar}>
                 <div className={styles.topBarLeft}>
                     <Link href="/clinician">
@@ -158,32 +172,6 @@ export const ClinicianTriageReviewPage = ({ queueTicketId }: IClinicianTriageRev
                     ) : null}
                 </Space>
             </header>
-
-            {state.errorMessage ? (
-                <Alert
-                    type="error"
-                    showIcon
-                    message={state.errorMessage}
-                    action={
-                        <Button size="small" onClick={actions.clearMessages}>
-                            Dismiss
-                        </Button>
-                    }
-                />
-            ) : null}
-
-            {state.successMessage ? (
-                <Alert
-                    type="success"
-                    showIcon
-                    message={state.successMessage}
-                    action={
-                        <Button size="small" onClick={actions.clearMessages}>
-                            Close
-                        </Button>
-                    }
-                />
-            ) : null}
 
             {state.isLoadingReview && !review ? (
                 <Card className={styles.sectionCard}>

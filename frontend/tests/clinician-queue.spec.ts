@@ -395,8 +395,11 @@ test.describe("clinician queue dashboard", () => {
         await page.getByTestId("consultation-start-recording").click();
         await expect(page.getByTestId("consultation-stop-recording")).toBeEnabled();
         await page.getByTestId("consultation-stop-recording").click();
-        await expect(page.getByText("1 transcript entries attached")).toBeVisible();
-        await expect(page.getByPlaceholder("Paste or type the consultation transcript here.")).toHaveValue("Patient reports chest pain easing after rest and ongoing nausea.");
+        await expect(page.getByRole("heading", { name: "Review recorded transcript" })).toBeVisible();
+        await page.getByTestId("consultation-transcript-preview").fill("Patient reports chest pain easing after rest and ongoing nausea.");
+        await page.getByRole("button", { name: "Confirm transcript" }).click();
+        await expect(page.getByRole("heading", { name: "Review recorded transcript" })).toHaveCount(0);
+        await expect(page.getByText("Transcript attached", { exact: true })).toBeVisible();
         await page.getByRole("tab", { name: "objective" }).click();
         await expect(page.getByText("Blood pressure")).toBeVisible();
         await page.getByRole("tab", { name: "Timeline Summary" }).click();

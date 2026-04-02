@@ -1,12 +1,12 @@
 "use client";
 
-import { Card, Empty, Skeleton } from "antd";
+import { Button, Card, Empty, Input, Skeleton, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ConsultationFeedbackBanners } from "@/components/clinician/consultationFeedbackBanners";
 import { buildConsultationEditorTabs } from "@/components/clinician/consultationEditorTabs";
 import { ConsultationInboxState } from "@/components/clinician/consultationInboxState";
 import { ConsultationWorkspaceContent } from "@/components/clinician/consultationWorkspaceContent";
+import { useClinicianToastMessages } from "@/hooks/clinician/useClinicianToastMessages";
 import { useConsultationRecorder } from "@/hooks/clinician/useConsultationRecorder";
 import { useClinicianConsultationActions, useClinicianConsultationState } from "@/providers/clinician-consultation";
 import { useClinicianConsultationStyles } from "./consultationStyle";
@@ -30,8 +30,8 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     const [activeTab, setActiveTab] = useState("subjective");
     const [noteDraftState, setNoteDraftState] = useState<{ signature: string; values: INoteDraftState }>({ signature: "", values: createNoteDraft() });
     const [vitalsDraftState, setVitalsDraftState] = useState<{ signature: string; values: IVitalsDraftState }>({ signature: "", values: createVitalsDraft() });
-    const [transcriptText, setTranscriptText] = useState("");
-    const [timelineValidationMessage, setTimelineValidationMessage] = useState<string | null>(null);
+    const [pendingTranscriptPreview, setPendingTranscriptPreview] = useState("");
+    const [timelineToastMessage, setTimelineToastMessage] = useState<string | null>(null);
 
     const workspace = state.workspace;
     const review = state.review;
@@ -121,12 +121,33 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         if (!noteDraft.patientTimelineSummary.trim()) missing.push("patient-friendly summary");
         return missing;
     }, [noteDraft.clinicianTimelineSummary, noteDraft.patientTimelineSummary]);
-    const visibleTimelineValidationMessage = missingTimelineSummaries.length > 0 ? timelineValidationMessage : null;
-    const { isRecording, recordingSeconds, recordingError, clearRecordingError, startRecording, stopRecording } = useConsultationRecorder({
+    const { isRecording, isTranscribing, recordingError, clearRecordingError, startRecording, stopRecording } = useConsultationRecorder({
         visitId: workspace?.visitId,
-        onTranscriptReady: setTranscriptText,
+        onTranscriptReady: setPendingTranscriptPreview,
         transcribeAudio: actions.transcribeAudio,
     });
+    const toastContext = useClinicianToastMessages([
+        {
+            type: "error",
+            content: state.errorMessage,
+            onClose: actions.clearMessages,
+        },
+        {
+            type: "success",
+            content: state.successMessage,
+            onClose: actions.clearMessages,
+        },
+        {
+            type: "warning",
+            content: recordingError,
+            onClose: clearRecordingError,
+        },
+        {
+            type: "warning",
+            content: timelineToastMessage,
+            onClose: () => setTimelineToastMessage(null),
+        },
+    ]);
 
     const updateNoteDraft = (updater: INoteDraftState | ((current: INoteDraftState) => INoteDraftState)): void => {
         setNoteDraftState((current) => {
@@ -153,34 +174,40 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             { title: "Capture Context", content: workspace?.transcripts.length ? "Transcript attached" : "Attach transcript or typed notes", done: Boolean(workspace?.transcripts.length) },
             { title: "Record Objective", content: workspace?.latestVitals || noteDraft.objective.trim() ? "Vitals or findings saved" : "Save vitals and exam findings", done: Boolean(workspace?.latestVitals || noteDraft.objective.trim()) },
             { title: "Draft A/P", content: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "Review and refine" : "Generate A/P draft", done: Boolean(noteDraft.assessment.trim() && noteDraft.plan.trim()) },
-            { title: "Finalize Note", content: isFinalized ? "Note locked" : missingTimelineSummaries.length === 0 ? "Finalize when SOAP is complete" : "Add both timeline summaries before finalizing", done: isFinalized },
+            { title: "Timeline Summary", content: missingTimelineSummaries.length === 0 ? "Summaries ready for final review" : "Add clinician and patient summaries", done: missingTimelineSummaries.length === 0 },
+            { title: "Finalize Note", content: isFinalized ? "Note locked" : "Finalize when the consultation note is complete", done: isFinalized },
         ];
 
         const currentIndex = steps.findIndex((item) => !item.done);
         return steps.map((item, index): { title: string; content: string; status: "wait" | "process" | "finish" } => ({
             title: item.title,
             content: item.content,
-            status: item.done ? "finish" : currentIndex === -1 ? "wait" : currentIndex === index ? "process" : "wait",
+            status:
+                currentIndex === -1
+                    ? "finish"
+                    : index < currentIndex && item.done
+                      ? "finish"
+                      : index === currentIndex
+                        ? "process"
+                        : "wait",
         }));
     }, [isFinalized, missingTimelineSummaries.length, noteDraft.assessment, noteDraft.objective, noteDraft.plan, workspace?.latestVitals, workspace?.transcripts.length]);
 
     const saveNoteDraft = async (): Promise<void> => {
         if (!workspace) return;
-        setTimelineValidationMessage(null);
         await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft });
     };
 
     const finalizeNote = async (): Promise<void> => {
         if (!workspace) return;
         if (missingTimelineSummaries.length > 0) {
-            setTimelineValidationMessage(`Add the ${missingTimelineSummaries.join(" and ")} before finalizing this encounter note.`);
+            setTimelineToastMessage(`Add the ${missingTimelineSummaries.join(" and ")} before finalizing this encounter note.`);
             setActiveTab("timeline");
             return;
         }
 
         const saved = await actions.saveEncounterNoteDraft({ visitId: workspace.visitId, ...noteDraft });
         if (saved) {
-            setTimelineValidationMessage(null);
             await actions.finalizeEncounterNote({
                 visitId: workspace.visitId,
                 clinicianTimelineSummary: noteDraft.clinicianTimelineSummary.trim(),
@@ -205,10 +232,21 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         });
     };
 
-    const attachTranscript = async (): Promise<void> => {
-        if (!workspace || !transcriptText.trim()) return;
-        const attached = await actions.attachTranscript({ visitId: workspace.visitId, inputMode: "typed", rawTranscriptText: transcriptText.trim() });
-        if (attached) setTranscriptText("");
+    const confirmRecordedTranscript = async (): Promise<void> => {
+        if (!workspace || !pendingTranscriptPreview.trim()) {
+            return;
+        }
+
+        const confirmedTranscript = pendingTranscriptPreview.trim();
+        const attached = await actions.attachTranscript({
+            visitId: workspace.visitId,
+            inputMode: "typed",
+            rawTranscriptText: confirmedTranscript,
+        });
+
+        if (attached) {
+            setPendingTranscriptPreview("");
+        }
     };
 
     const noteTabs = buildConsultationEditorTabs({
@@ -217,13 +255,14 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         noteDraft,
         vitalsDraft,
         missingTimelineSummaries,
-        visibleTimelineValidationMessage,
         subjectiveDraft: state.subjectiveDraft,
         assessmentPlanDraft: state.assessmentPlanDraft,
         isGeneratingSubjective: state.isGeneratingSubjective,
+        isRecording,
         isSavingVitals: state.isSavingVitals,
         isGeneratingAssessmentPlan: state.isGeneratingAssessmentPlan,
         onGenerateSubjective: () => workspace && void actions.generateSubjectiveDraft(workspace.visitId),
+        onToggleRecording: () => void (isRecording ? stopRecording() : startRecording()),
         onApplyGeneratedSubjective: () => {
             if (!state.subjectiveDraft?.subjective) return;
             updateNoteDraft((current) => ({ ...current, subjective: sanitizeClinicalCopy(state.subjectiveDraft?.subjective ?? current.subjective) }));
@@ -239,22 +278,13 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
             }));
             setActiveTab("assessment");
         },
-        onDismissTimelineValidation: () => setTimelineValidationMessage(null),
         onUpdateNoteDraft: updateNoteDraft,
         onUpdateVitalsDraft: updateVitalsDraft,
     }) ?? [];
 
-    const recordingDurationLabel = new Date(recordingSeconds * 1000).toISOString().slice(14, 19);
-
     return (
         <section className={styles.page}>
-            <ConsultationFeedbackBanners
-                errorMessage={state.errorMessage}
-                successMessage={state.successMessage}
-                recordingError={recordingError}
-                onClearMessages={actions.clearMessages}
-                onClearRecordingError={clearRecordingError}
-            />
+            {toastContext}
 
             {!activeVisitId ? (
                 <ConsultationInboxState styles={styles} inbox={inbox} isLoading={state.isLoadingWorkspace && !state.inbox} />
@@ -275,20 +305,13 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                     urgencyLevel={urgencyLevel}
                     isFinalized={isFinalized}
                     canCompleteVisit={canCompleteVisit}
-                    recordingDurationLabel={recordingDurationLabel}
-                    transcriptText={transcriptText}
-                    isRecording={isRecording}
                     noteTabs={noteTabs}
                     workflowSteps={workflowSteps}
                     reviewSummary={review?.clinicianSummary}
-                    reviewQueueTicketId={review?.queueTicketId}
-                    transcriptCount={workspace.transcripts.length}
                     isSavingDraft={state.isSavingDraft}
                     isFinalizing={state.isFinalizing}
                     isCompletingVisit={state.isCompletingVisit}
-                    isAttachingTranscript={state.isAttachingTranscript}
                     activeTab={activeTab}
-                    noteDraft={noteDraft}
                     onSetActiveTab={setActiveTab}
                     onSaveDraft={() => void saveNoteDraft()}
                     onFinalizeNote={() => void finalizeNote()}
@@ -299,12 +322,47 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                         }
                     })}
                     onGoToObjective={() => setActiveTab("objective")}
-                    onStartRecording={() => void startRecording()}
-                    onStopRecording={stopRecording}
-                    onChangeTranscriptText={setTranscriptText}
-                    onAttachTranscript={() => void attachTranscript()}
                 />
             )}
+
+            {isTranscribing || pendingTranscriptPreview ? (
+                <div className={styles.transcriptOverlay}>
+                    <section className={styles.transcriptPreviewCard}>
+                        <Typography.Title level={4} className={styles.transcriptPreviewTitle}>
+                            {isTranscribing ? "Transcribing consultation" : "Review recorded transcript"}
+                        </Typography.Title>
+                        {isTranscribing ? (
+                            <>
+                                <Typography.Paragraph className={styles.helperText}>
+                                    We&apos;re turning the recording into editable text. This can take a few moments.
+                                </Typography.Paragraph>
+                                <Skeleton active paragraph={{ rows: 6 }} />
+                            </>
+                        ) : (
+                            <>
+                                <Typography.Paragraph className={styles.helperText}>
+                                    Check and edit the captured text before using it for draft generation and transcript attachment.
+                                </Typography.Paragraph>
+                                <Input.TextArea
+                                    value={pendingTranscriptPreview}
+                                    onChange={(event) => setPendingTranscriptPreview(event.target.value)}
+                                    className={styles.transcriptPreviewArea}
+                                    autoSize={{ minRows: 8, maxRows: 14 }}
+                                    data-testid="consultation-transcript-preview"
+                                />
+                                <div className={styles.transcriptPreviewActions}>
+                                    <Button className={styles.secondaryAction} onClick={() => setPendingTranscriptPreview("")}>
+                                        Dismiss
+                                    </Button>
+                                    <Button type="primary" className={styles.primaryAction} loading={state.isAttachingTranscript} onClick={() => void confirmRecordedTranscript()}>
+                                        Confirm transcript
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+                    </section>
+                </div>
+            ) : null}
         </section>
     );
 };
