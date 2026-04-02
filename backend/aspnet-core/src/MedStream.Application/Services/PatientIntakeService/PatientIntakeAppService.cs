@@ -179,7 +179,16 @@ public partial class PatientIntakeAppService : MedStreamAppServiceBase, IPatient
             FallbackSectionIds = extraction.FallbackSectionIds,
             FallbackSummaryIds = extraction.FallbackSummaryIds,
             Candidates = extraction.Candidates.Select(MapClassificationCandidate).ToList(),
-            MappedInputValues = extraction.MappedInputValues
+            MappedInputValues = extraction.MappedInputValues,
+            FollowUpPlans = extraction.FollowUpPlans.Select(item => new FollowUpPlanDto
+            {
+                PlanKey = item.PlanKey,
+                Title = item.Title,
+                PathwayKey = item.PathwayKey,
+                PrimarySymptom = item.PrimarySymptom,
+                IntakeMode = item.IntakeMode,
+                FallbackSummaryIds = item.FallbackSummaryIds
+            }).ToList()
         };
     }
 

@@ -129,9 +129,15 @@ export const SymptomsStep = ({ freeText, selectedSymptoms, styles, isListening, 
     );
 };
 
-export const FollowUpStep = ({ extractedPrimarySymptoms, questions, answers, onSetAnswer, styles }: IFollowUpStepProps): React.JSX.Element => {
+export const FollowUpStep = ({ title, currentPlanIndex, totalPlans, extractedPrimarySymptoms, questions, answers, onSetAnswer, styles }: IFollowUpStepProps): React.JSX.Element => {
     return (
         <Space orientation="vertical" size={14} className={styles.centeredBlock}>
+            <Space orientation="vertical" size={4} className={styles.centeredBlock}>
+                <Typography.Title level={4}>{title}</Typography.Title>
+                <Typography.Text type="secondary">
+                    Follow-up page {currentPlanIndex + 1} of {totalPlans}
+                </Typography.Text>
+            </Space>
             <Space wrap className={styles.centeredWrap}>
                 <Typography.Text strong>Captured main symptoms:</Typography.Text>
                 {extractedPrimarySymptoms.length > 0 ? (

@@ -22,6 +22,7 @@ import {
     actionFailed,
     clearError,
     followUpQuestionsLoaded,
+    followUpPlanAdvanced,
     initializeStarted,
     initializeSucceeded,
     processingStarted,
@@ -36,11 +37,38 @@ import {
     triageSucceeded,
     urgentCheckSucceeded,
 } from "./actions";
+import type { IIntakeQuestion } from "@/services/patient-intake/types";
 import { INITIAL_STATE, IPatientIntakeActionContext, IPatientIntakeStateContext, PatientIntakeActionContext, PatientIntakeStateContext } from "./context";
 import { patientIntakeReducer } from "./reducer";
 
 export const PatientIntakeProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(patientIntakeReducer, INITIAL_STATE);
+
+    const loadFollowUpQuestionsForPlan = useCallback(
+        async (
+            visitId: number,
+            followUpPlan: {
+                pathwayKey: string;
+                primarySymptom: string;
+                intakeMode: "approved_json" | "apc_fallback";
+                fallbackSummaryIds: string[];
+            },
+            answers: Record<string, string | number | boolean | string[]>
+        ): Promise<IIntakeQuestion[]> => {
+            return loadQuestions({
+                visitId,
+                pathwayKey: followUpPlan.pathwayKey,
+                primarySymptom: followUpPlan.primarySymptom || null,
+                freeText: state.freeText,
+                selectedSymptoms: state.selectedSymptoms,
+                extractedPrimarySymptoms: state.extractedPrimarySymptoms,
+                fallbackSummaryIds: followUpPlan.fallbackSummaryIds ?? [],
+                useApcFallback: followUpPlan.intakeMode === "apc_fallback",
+                answers,
+            });
+        },
+        [state.extractedPrimarySymptoms, state.freeText, state.selectedSymptoms]
+    );
 
     // Initialize Patient Intake
     // GET /api/auth/facilities/active
@@ -125,20 +153,24 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             });
 
             dispatch(symptomProcessingSucceeded(extractResult, state.urgentQuestionSet));
-            const selectedPathwayKey = extractResult.selectedPathwayKey || pathwayKey;
-            const questionSet = await loadQuestions({
-                visitId,
-                pathwayKey: selectedPathwayKey,
-                primarySymptom: extractResult.extractedPrimarySymptoms[0] ?? null,
-                freeText: state.freeText,
-                selectedSymptoms: state.selectedSymptoms,
-                extractedPrimarySymptoms: extractResult.extractedPrimarySymptoms,
-                fallbackSummaryIds: extractResult.fallbackSummaryIds ?? [],
-                useApcFallback: (extractResult.intakeMode ?? "approved_json") === "apc_fallback",
-                answers: { ...state.answers, ...(extractResult.mappedInputValues ?? {}) },
-            });
+            const initialAnswers = { ...state.answers, ...(extractResult.mappedInputValues ?? {}) };
+            const followUpPlans =
+                extractResult.followUpPlans && extractResult.followUpPlans.length > 0
+                    ? extractResult.followUpPlans
+                    : [
+                          {
+                              planKey: extractResult.selectedPathwayKey || pathwayKey,
+                              title: "Follow-up questions",
+                              pathwayKey: extractResult.selectedPathwayKey || pathwayKey,
+                              primarySymptom: extractResult.extractedPrimarySymptoms[0] ?? "",
+                              intakeMode: extractResult.intakeMode ?? "approved_json",
+                              fallbackSummaryIds: extractResult.fallbackSummaryIds ?? [],
+                          },
+                      ];
+            const questionSet = await loadFollowUpQuestionsForPlan(visitId, followUpPlans[0], initialAnswers);
             logIntakeDebug("follow-up question set loaded", {
-                useApcFallback: (extractResult.intakeMode ?? "approved_json") === "apc_fallback",
+                useApcFallback: followUpPlans[0].intakeMode === "apc_fallback",
+                planKey: followUpPlans[0].planKey,
                 questionCount: questionSet.length,
             });
             dispatch(followUpQuestionsLoaded(questionSet));
@@ -219,6 +251,19 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
 
         dispatch(processingStarted());
         try {
+            const nextPlanIndex = state.currentFollowUpPlanIndex + 1;
+            if (nextPlanIndex < state.followUpPlans.length) {
+                const nextPlan = state.followUpPlans[nextPlanIndex];
+                const questionSet = await loadFollowUpQuestionsForPlan(state.visitId, nextPlan, state.answers);
+                logIntakeDebug("follow-up question set loaded", {
+                    useApcFallback: nextPlan.intakeMode === "apc_fallback",
+                    planKey: nextPlan.planKey,
+                    questionCount: questionSet.length,
+                });
+                dispatch(followUpPlanAdvanced(nextPlanIndex, questionSet));
+                return;
+            }
+
             const triageResult = await assessTriage({
                 visitId: state.visitId,
                 freeText: state.freeText,
@@ -233,7 +278,17 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to complete triage assessment.";
             dispatch(actionFailed(message));
         }
-    }, [state.answers, state.extractedPrimarySymptoms, state.freeText, state.questionSet, state.selectedSymptoms, state.visitId]);
+    }, [
+        loadFollowUpQuestionsForPlan,
+        state.answers,
+        state.currentFollowUpPlanIndex,
+        state.extractedPrimarySymptoms,
+        state.followUpPlans,
+        state.freeText,
+        state.questionSet,
+        state.selectedSymptoms,
+        state.visitId,
+    ]);
 
     // Start Check-In Safety Screen
     // POST /api/patient-intake/check-in + POST /api/patient-intake/urgent-check

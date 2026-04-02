@@ -70,6 +70,8 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
         extraction.SelectedPathwayKey.ShouldNotBeNullOrWhiteSpace();
         extraction.SelectedPathwayKey.ShouldNotBe(PatientIntakeConstants.UnassignedPathwayKey);
         extraction.IntakeMode.ShouldBe(PatientIntakeConstants.IntakeModeApprovedJson);
+        extraction.FollowUpPlans.Count.ShouldBeGreaterThan(0);
+        extraction.FollowUpPlans[0].PathwayKey.ShouldBe("cough_or_difficulty_breathing");
     }
 
     [Fact]
@@ -88,6 +90,8 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
         extraction.IntakeMode.ShouldBe(PatientIntakeConstants.IntakeModeApcFallback);
         extraction.SelectedPathwayKey.ShouldBe(PatientIntakeConstants.GeneralFallbackPathwayKey);
         extraction.FallbackSummaryIds.Count.ShouldBeGreaterThan(0);
+        extraction.FollowUpPlans.Count.ShouldBe(1);
+        extraction.FollowUpPlans[0].IntakeMode.ShouldBe(PatientIntakeConstants.IntakeModeApcFallback);
     }
 
     [Fact]

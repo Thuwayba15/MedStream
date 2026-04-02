@@ -535,6 +535,15 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         background: rgba(224, 123, 42, 0.14);
         color: ${colors.amber};
         font-size: 1.4rem;
+        line-height: 1;
+        margin-inline: auto;
+
+        .anticon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
     `,
 
     queueCardIcon: css`
@@ -546,6 +555,15 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         background: rgba(42, 123, 224, 0.12);
         color: #2a7be0;
         font-size: 1.4rem;
+        line-height: 1;
+        margin-inline: auto;
+
+        .anticon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
     `,
 
     statusCardEyebrow: css`

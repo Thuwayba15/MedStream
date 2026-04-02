@@ -68,6 +68,11 @@ public class ExtractSymptomsOutput
     /// Gets or sets mapped input values inferred from free-text intake.
     /// </summary>
     public Dictionary<string, object> MappedInputValues { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets ordered follow-up plans shown to the patient.
+    /// </summary>
+    public List<FollowUpPlanDto> FollowUpPlans { get; set; } = new();
 }
 
 /// <summary>
@@ -115,4 +120,40 @@ public class PathwayClassificationSignalDto
     /// Gets or sets signal weight contribution.
     /// </summary>
     public decimal Weight { get; set; }
+}
+
+/// <summary>
+/// Follow-up plan DTO describing one patient follow-up page.
+/// </summary>
+public class FollowUpPlanDto
+{
+    /// <summary>
+    /// Gets or sets stable plan key.
+    /// </summary>
+    public string PlanKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets page title shown in the patient flow.
+    /// </summary>
+    public string Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets pathway key used to load questions.
+    /// </summary>
+    public string PathwayKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets symptom focus for this page.
+    /// </summary>
+    public string PrimarySymptom { get; set; }
+
+    /// <summary>
+    /// Gets or sets intake mode for the page.
+    /// </summary>
+    public string IntakeMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets APC fallback summary ids when needed.
+    /// </summary>
+    public List<string> FallbackSummaryIds { get; set; } = new();
 }

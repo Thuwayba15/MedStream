@@ -42,6 +42,7 @@ public partial class PathwayExtractionService : IPathwayExtractionService, ITran
     private readonly IPathwayDefinitionProvider _definitionProvider;
     private readonly IPathwayClassifier _pathwayClassifier;
     private readonly IApcFallbackRoutingService _apcFallbackRoutingService;
+    private readonly IApcSummaryProvider _apcSummaryProvider;
 
     /// <summary>
     /// Gets or sets logger.
@@ -55,12 +56,14 @@ public partial class PathwayExtractionService : IPathwayExtractionService, ITran
         IPathwayDefinitionProvider definitionProvider,
         IPathwayClassifier pathwayClassifier,
         IApcFallbackRoutingService apcFallbackRoutingService,
+        IApcSummaryProvider apcSummaryProvider,
         IConfiguration configuration = null)
     {
         _configuration = configuration;
         _definitionProvider = definitionProvider;
         _pathwayClassifier = pathwayClassifier;
         _apcFallbackRoutingService = apcFallbackRoutingService;
+        _apcSummaryProvider = apcSummaryProvider;
         Logger = NullLogger.Instance;
     }
 
@@ -96,6 +99,7 @@ public partial class PathwayExtractionService : IPathwayExtractionService, ITran
             : new ApcFallbackContext();
         Logger.Info($"[Intake][Extract] Classification selectedPathway={selectedPathwayId}, intakeMode={intakeMode}, confidence={classification.ConfidenceBand}, candidates={classification.Candidates.Count}, fallbackSummaries={string.Join(", ", fallbackRouting.SummaryIds)}");
         var mappedValues = await MapInputsForPathwayAsync(selectedPathwayId, freeText ?? string.Empty, selectedSymptoms ?? Array.Empty<string>());
+        var followUpPlans = BuildFollowUpPlans(selectedPathwayId, intakeMode, extractedSymptoms, fallbackRouting.SummaryIds);
 
         return new PathwayExtractionResult
         {
@@ -110,7 +114,8 @@ public partial class PathwayExtractionService : IPathwayExtractionService, ITran
             ConfidenceBand = classification.ConfidenceBand.ToString(),
             FallbackSectionIds = fallbackRouting.SectionIds,
             FallbackSummaryIds = fallbackRouting.SummaryIds,
-            MappedInputValues = mappedValues
+            MappedInputValues = mappedValues,
+            FollowUpPlans = followUpPlans
         };
     }
 

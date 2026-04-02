@@ -31,12 +31,22 @@ export interface IExtractSymptomsResponse {
     selectedPathwayKey: string;
     intakeMode: "approved_json" | "apc_fallback";
     mappedInputValues: Record<string, string | number | boolean | string[]>;
+    followUpPlans?: IFollowUpPlan[];
     candidates?: IPathwayClassificationCandidate[];
     confidenceBand?: "Low" | "Medium" | "High";
     shouldAskDisambiguation?: boolean;
     disambiguationPrompt?: string | null;
     fallbackSectionIds?: string[];
     fallbackSummaryIds?: string[];
+}
+
+export interface IFollowUpPlan {
+    planKey: string;
+    title: string;
+    pathwayKey: string;
+    primarySymptom: string;
+    intakeMode: "approved_json" | "apc_fallback";
+    fallbackSummaryIds: string[];
 }
 
 export interface IPathwayClassificationCandidateSignal {

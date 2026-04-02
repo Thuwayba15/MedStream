@@ -42,8 +42,14 @@ test.describe("patient intake flow", () => {
         await page.getByRole("button", { name: "Continue" }).click();
 
         await expect(page.getByText("Step 4 of 5")).toBeVisible();
+        await expect(page.getByText("Follow-up page 1 of 2")).toBeVisible();
         await page.getByRole("spinbutton", { name: "How many days have these symptoms been present?" }).fill("4");
         await page.getByRole("radiogroup", { name: "Have you had a fever?" }).getByLabel("Yes").check();
+        await page.getByRole("button", { name: "Continue" }).click();
+
+        await expect(page.getByText("Fever details")).toBeVisible();
+        await expect(page.getByText("Follow-up page 2 of 2")).toBeVisible();
+        await page.getByLabel("Please describe your main concern in one sentence.").fill("Fever and cough for four days.");
         await page.getByRole("button", { name: "Generate Status" }).click();
 
         await expect(page.getByText("Step 5 of 5")).toBeVisible();
@@ -115,9 +121,42 @@ test.describe("patient intake flow", () => {
         await expect(page.getByText("Step 2 of 5")).toBeVisible();
         await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     });
+
+    test("walks through multiple follow-up pages for multiple extracted symptoms", async ({ page, context }) => {
+        await installPatientIntakeMocks(page, { mode: "multi-pathway" });
+        await context.addCookies([{ name: "medstream_access_token", value: createPatientToken(), url: "http://localhost:3000" }]);
+
+        await page.goto("/patient");
+        await selectHospital(page);
+        await page.getByRole("button", { name: "Continue" }).click();
+        await page.getByRole("radiogroup", { name: "Are you struggling to breathe right now?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Do you have severe chest pain right now?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Do you have heavy bleeding that is not stopping?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Did you faint, collapse, or lose consciousness today?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Are you currently confused, unusually sleepy, or difficult to wake?" }).getByLabel("No").check();
+        await page.getByRole("button", { name: "Continue" }).click();
+
+        await page.getByPlaceholder("Describe your symptoms in your own words...").fill("I have an injury and a headache.");
+        await page.getByRole("button", { name: "Continue" }).click();
+
+        await expect(page.getByText("Hand or Upper Limb Injury")).toBeVisible();
+        await expect(page.getByText("Follow-up page 1 of 2")).toBeVisible();
+        await page.getByRole("radiogroup", { name: "Did this start after a fall or direct injury?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Do you see any deformity or severe swelling?" }).getByLabel("No").check();
+        await page.getByLabel("Can you move your fingers normally?").click();
+        await page.getByTitle("Yes").click();
+        await page.getByRole("button", { name: "Continue" }).click();
+
+        await expect(page.getByText("Headache details")).toBeVisible();
+        await expect(page.getByText("Follow-up page 2 of 2")).toBeVisible();
+        await page.getByLabel("Please describe your main concern in one sentence.").fill("Headache after injury.");
+        await page.getByRole("button", { name: "Generate Status" }).click();
+
+        await expect(page.getByText("Step 5 of 5")).toBeVisible();
+    });
 });
 
-type TMockMode = "approved-json" | "apc-fallback" | "urgent-fast-track";
+type TMockMode = "approved-json" | "apc-fallback" | "urgent-fast-track" | "multi-pathway";
 
 async function selectHospital(page: import("@playwright/test").Page): Promise<void> {
     await page.getByTestId("patient-hospital-select").click();
@@ -168,18 +207,67 @@ async function installPatientIntakeMocks(page: import("@playwright/test").Page, 
 
     await page.route("**/api/patient-intake/extract", async (route) => {
         const isFallback = mode === "apc-fallback";
+        const isMultiPathway = mode === "multi-pathway";
         await route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({
-                extractedPrimarySymptoms: isFallback ? ["General Illness"] : ["Cough", "Fever"],
+                extractedPrimarySymptoms: isFallback ? ["General Illness"] : isMultiPathway ? ["Injury", "Headache"] : ["Cough", "Fever"],
                 extractionSource: "deterministic_fallback",
-                likelyPathwayIds: isFallback ? ["general_unspecified_complaint"] : ["cough_or_difficulty_breathing"],
-                selectedPathwayKey: isFallback ? "general_unspecified_complaint" : "cough_or_difficulty_breathing",
+                likelyPathwayIds: isFallback ? ["general_unspecified_complaint"] : isMultiPathway ? ["hand_or_upper_limb_injury"] : ["cough_or_difficulty_breathing"],
+                selectedPathwayKey: isFallback ? "general_unspecified_complaint" : isMultiPathway ? "hand_or_upper_limb_injury" : "cough_or_difficulty_breathing",
                 intakeMode: isFallback ? "apc_fallback" : "approved_json",
                 fallbackSectionIds: isFallback ? ["fever"] : [],
                 fallbackSummaryIds: isFallback ? ["fever"] : [],
                 mappedInputValues: {},
+                followUpPlans: isFallback
+                    ? [
+                          {
+                              planKey: "apc_fallback_primary",
+                              title: "Tell us more about your symptoms",
+                              pathwayKey: "general_unspecified_complaint",
+                              primarySymptom: "General Illness",
+                              intakeMode: "apc_fallback",
+                              fallbackSummaryIds: ["fever"],
+                          },
+                      ]
+                    : isMultiPathway
+                      ? [
+                            {
+                                planKey: "hand_or_upper_limb_injury",
+                                title: "Hand or Upper Limb Injury",
+                                pathwayKey: "hand_or_upper_limb_injury",
+                                primarySymptom: "Injury",
+                                intakeMode: "approved_json",
+                                fallbackSummaryIds: [],
+                            },
+                            {
+                                planKey: "apc_headache",
+                                title: "Headache details",
+                                pathwayKey: "general_unspecified_complaint",
+                                primarySymptom: "Headache",
+                                intakeMode: "apc_fallback",
+                                fallbackSummaryIds: ["headache"],
+                            },
+                        ]
+                      : [
+                            {
+                                planKey: "cough_or_difficulty_breathing",
+                                title: "Cough or Difficulty Breathing",
+                                pathwayKey: "cough_or_difficulty_breathing",
+                                primarySymptom: "Cough",
+                                intakeMode: "approved_json",
+                                fallbackSummaryIds: [],
+                            },
+                            {
+                                planKey: "apc_fever",
+                                title: "Fever details",
+                                pathwayKey: "general_unspecified_complaint",
+                                primarySymptom: "Fever",
+                                intakeMode: "apc_fallback",
+                                fallbackSummaryIds: ["fever"],
+                            },
+                        ],
             }),
         });
     });
@@ -233,7 +321,7 @@ async function installPatientIntakeMocks(page: import("@playwright/test").Page, 
         const payload = JSON.parse(route.request().postData() || "{}") as Record<string, unknown>;
         onQuestionsPayload?.(payload);
 
-        if (mode === "apc-fallback") {
+        if (mode === "apc-fallback" || payload.useApcFallback === true) {
             await route.fulfill({
                 status: 200,
                 contentType: "application/json",
