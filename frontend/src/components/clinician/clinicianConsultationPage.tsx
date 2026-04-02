@@ -172,9 +172,21 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
     const workflowSteps = useMemo(() => {
         const steps = [
             { title: "Capture Context", content: workspace?.transcripts.length ? "Transcript attached" : "Attach transcript or typed notes", done: Boolean(workspace?.transcripts.length) },
-            { title: "Record Objective", content: workspace?.latestVitals || noteDraft.objective.trim() ? "Vitals or findings saved" : "Save vitals and exam findings", done: Boolean(workspace?.latestVitals || noteDraft.objective.trim()) },
-            { title: "Draft A/P", content: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "Review and refine" : "Generate A/P draft", done: Boolean(noteDraft.assessment.trim() && noteDraft.plan.trim()) },
-            { title: "Timeline Summary", content: missingTimelineSummaries.length === 0 ? "Summaries ready for final review" : "Add clinician and patient summaries", done: missingTimelineSummaries.length === 0 },
+            {
+                title: "Record Objective",
+                content: workspace?.latestVitals || noteDraft.objective.trim() ? "Vitals or findings saved" : "Save vitals and exam findings",
+                done: Boolean(workspace?.latestVitals || noteDraft.objective.trim()),
+            },
+            {
+                title: "Draft A/P",
+                content: noteDraft.assessment.trim() && noteDraft.plan.trim() ? "Review and refine" : "Generate A/P draft",
+                done: Boolean(noteDraft.assessment.trim() && noteDraft.plan.trim()),
+            },
+            {
+                title: "Timeline Summary",
+                content: missingTimelineSummaries.length === 0 ? "Summaries ready for final review" : "Add clinician and patient summaries",
+                done: missingTimelineSummaries.length === 0,
+            },
             { title: "Finalize Note", content: isFinalized ? "Note locked" : "Finalize when the consultation note is complete", done: isFinalized },
         ];
 
@@ -182,14 +194,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         return steps.map((item, index): { title: string; content: string; status: "wait" | "process" | "finish" } => ({
             title: item.title,
             content: item.content,
-            status:
-                currentIndex === -1
-                    ? "finish"
-                    : index < currentIndex && item.done
-                      ? "finish"
-                      : index === currentIndex
-                        ? "process"
-                        : "wait",
+            status: currentIndex === -1 ? "finish" : index < currentIndex && item.done ? "finish" : index === currentIndex ? "process" : "wait",
         }));
     }, [isFinalized, missingTimelineSummaries.length, noteDraft.assessment, noteDraft.objective, noteDraft.plan, workspace?.latestVitals, workspace?.transcripts.length]);
 
@@ -249,38 +254,39 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
         }
     };
 
-    const noteTabs = buildConsultationEditorTabs({
-        styles,
-        isFinalized,
-        noteDraft,
-        vitalsDraft,
-        missingTimelineSummaries,
-        subjectiveDraft: state.subjectiveDraft,
-        assessmentPlanDraft: state.assessmentPlanDraft,
-        isGeneratingSubjective: state.isGeneratingSubjective,
-        isRecording,
-        isSavingVitals: state.isSavingVitals,
-        isGeneratingAssessmentPlan: state.isGeneratingAssessmentPlan,
-        onGenerateSubjective: () => workspace && void actions.generateSubjectiveDraft(workspace.visitId),
-        onToggleRecording: () => void (isRecording ? stopRecording() : startRecording()),
-        onApplyGeneratedSubjective: () => {
-            if (!state.subjectiveDraft?.subjective) return;
-            updateNoteDraft((current) => ({ ...current, subjective: sanitizeClinicalCopy(state.subjectiveDraft?.subjective ?? current.subjective) }));
-        },
-        onSaveVitals: () => void saveVitals(),
-        onGenerateAssessmentPlan: () => workspace && void actions.generateAssessmentPlanDraft(workspace.visitId),
-        onApplyGeneratedAssessmentPlan: () => {
-            if (!state.assessmentPlanDraft) return;
-            updateNoteDraft((current) => ({
-                ...current,
-                assessment: sanitizeClinicalCopy(state.assessmentPlanDraft?.assessment ?? current.assessment),
-                plan: sanitizeClinicalCopy(state.assessmentPlanDraft?.plan ?? current.plan),
-            }));
-            setActiveTab("assessment");
-        },
-        onUpdateNoteDraft: updateNoteDraft,
-        onUpdateVitalsDraft: updateVitalsDraft,
-    }) ?? [];
+    const noteTabs =
+        buildConsultationEditorTabs({
+            styles,
+            isFinalized,
+            noteDraft,
+            vitalsDraft,
+            missingTimelineSummaries,
+            subjectiveDraft: state.subjectiveDraft,
+            assessmentPlanDraft: state.assessmentPlanDraft,
+            isGeneratingSubjective: state.isGeneratingSubjective,
+            isRecording,
+            isSavingVitals: state.isSavingVitals,
+            isGeneratingAssessmentPlan: state.isGeneratingAssessmentPlan,
+            onGenerateSubjective: () => workspace && void actions.generateSubjectiveDraft(workspace.visitId),
+            onToggleRecording: () => void (isRecording ? stopRecording() : startRecording()),
+            onApplyGeneratedSubjective: () => {
+                if (!state.subjectiveDraft?.subjective) return;
+                updateNoteDraft((current) => ({ ...current, subjective: sanitizeClinicalCopy(state.subjectiveDraft?.subjective ?? current.subjective) }));
+            },
+            onSaveVitals: () => void saveVitals(),
+            onGenerateAssessmentPlan: () => workspace && void actions.generateAssessmentPlanDraft(workspace.visitId),
+            onApplyGeneratedAssessmentPlan: () => {
+                if (!state.assessmentPlanDraft) return;
+                updateNoteDraft((current) => ({
+                    ...current,
+                    assessment: sanitizeClinicalCopy(state.assessmentPlanDraft?.assessment ?? current.assessment),
+                    plan: sanitizeClinicalCopy(state.assessmentPlanDraft?.plan ?? current.plan),
+                }));
+                setActiveTab("assessment");
+            },
+            onUpdateNoteDraft: updateNoteDraft,
+            onUpdateVitalsDraft: updateVitalsDraft,
+        }) ?? [];
 
     return (
         <section className={styles.page}>
@@ -315,12 +321,14 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                     onSetActiveTab={setActiveTab}
                     onSaveDraft={() => void saveNoteDraft()}
                     onFinalizeNote={() => void finalizeNote()}
-                    onCompleteVisit={() => void actions.completeVisit(review!.queueTicketId).then((result) => {
-                        if (result) {
-                            actions.clearActiveConsultation();
-                            router.push("/clinician/consultation");
-                        }
-                    })}
+                    onCompleteVisit={() =>
+                        void actions.completeVisit(review!.queueTicketId).then((result) => {
+                            if (result) {
+                                actions.clearActiveConsultation();
+                                router.push("/clinician/consultation");
+                            }
+                        })
+                    }
                     onGoToObjective={() => setActiveTab("objective")}
                 />
             )}
@@ -333,9 +341,7 @@ export const ClinicianConsultationPage = ({ visitId, queueTicketId }: IClinician
                         </Typography.Title>
                         {isTranscribing ? (
                             <>
-                                <Typography.Paragraph className={styles.helperText}>
-                                    We&apos;re turning the recording into editable text. This can take a few moments.
-                                </Typography.Paragraph>
+                                <Typography.Paragraph className={styles.helperText}>We&apos;re turning the recording into editable text. This can take a few moments.</Typography.Paragraph>
                                 <Skeleton active paragraph={{ rows: 6 }} />
                             </>
                         ) : (

@@ -250,11 +250,7 @@ export const buildClinicianTimelineSummary = (workspace: IConsultationWorkspace,
         return encounterSummary;
     }
 
-    return (
-        toSummarySentence(clinicianSummary) ||
-        toSummarySentence(workspace.encounterNote.assessment) ||
-        toSummarySentence(workspace.patientContext.subjectiveSummary)
-    );
+    return toSummarySentence(clinicianSummary) || toSummarySentence(workspace.encounterNote.assessment) || toSummarySentence(workspace.patientContext.subjectiveSummary);
 };
 
 export const buildPatientTimelineSummary = (workspace: IConsultationWorkspace): string => {

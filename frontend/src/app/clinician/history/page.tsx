@@ -18,13 +18,7 @@ const ClinicianHistoryPage = async ({ searchParams }: IClinicianHistoryPageProps
 
     return (
         <RoleAppShell roleLabel="Clinician" items={[]}>
-            <ClinicianWorkspaceShell
-                activeKey="history"
-                consultationVisitId={visitId}
-                consultationQueueTicketId={queueTicketId}
-                historyPatientUserId={patientUserId}
-                historyVisitId={visitId}
-            >
+            <ClinicianWorkspaceShell activeKey="history" consultationVisitId={visitId} consultationQueueTicketId={queueTicketId} historyPatientUserId={patientUserId} historyVisitId={visitId}>
                 <ClinicianHistoryWorkspace patientUserId={patientUserId} />
             </ClinicianWorkspaceShell>
         </RoleAppShell>

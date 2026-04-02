@@ -64,7 +64,15 @@ export const ConsultationWorkspaceContent = ({
                     <Button icon={<SaveOutlined />} className={styles.secondaryAction} loading={isSavingDraft} disabled={isFinalized} onClick={onSaveDraft} data-testid="consultation-save-draft">
                         Save Draft
                     </Button>
-                    <Button type="primary" icon={<FileDoneOutlined />} className={styles.primaryAction} loading={isFinalizing} disabled={isFinalized} onClick={onFinalizeNote} data-testid="consultation-finalize-note">
+                    <Button
+                        type="primary"
+                        icon={<FileDoneOutlined />}
+                        className={styles.primaryAction}
+                        loading={isFinalizing}
+                        disabled={isFinalized}
+                        onClick={onFinalizeNote}
+                        data-testid="consultation-finalize-note"
+                    >
                         {isFinalized ? "Note Finalized" : "Finalize Note"}
                     </Button>
                     {canCompleteVisit ? (
@@ -79,7 +87,9 @@ export const ConsultationWorkspaceContent = ({
                 <aside className={styles.sideRail}>
                     <Card className={styles.panelCard}>
                         <div className={styles.patientContextHeader}>
-                            <Typography.Title level={5} className={styles.sectionHeading}>Patient Context</Typography.Title>
+                            <Typography.Title level={5} className={styles.sectionHeading}>
+                                Patient Context
+                            </Typography.Title>
                             <div className={styles.tagRow}>
                                 <Tag className={styles.queueTag}>{getStatusLabel(queueStatus)}</Tag>
                                 <Tag className={getUrgencyClassName(urgencyLevel, styles)}>Triage: {urgencyLevel}</Tag>
@@ -95,22 +105,57 @@ export const ConsultationWorkspaceContent = ({
 
                     <Card className={styles.panelCard}>
                         <div className={styles.cardTitleRow}>
-                            <Typography.Title level={5} className={styles.sectionHeading} style={{ marginBottom: 0 }}>Latest Vitals</Typography.Title>
-                            <Button size="small" className={styles.secondaryAction} onClick={onGoToObjective}>Update</Button>
+                            <Typography.Title level={5} className={styles.sectionHeading} style={{ marginBottom: 0 }}>
+                                Latest Vitals
+                            </Typography.Title>
+                            <Button size="small" className={styles.secondaryAction} onClick={onGoToObjective}>
+                                Update
+                            </Button>
                         </div>
                         <div className={styles.metricStack}>
-                            <VitalMetricRow label="BP" value={workspace.latestVitals?.bloodPressureSystolic && workspace.latestVitals?.bloodPressureDiastolic ? `${workspace.latestVitals.bloodPressureSystolic}/${workspace.latestVitals.bloodPressureDiastolic}` : "Not recorded"} alert={isConcerning("BP", workspace.latestVitals)} styles={styles} />
-                            <VitalMetricRow label="HR" value={workspace.latestVitals?.heartRate ? `${workspace.latestVitals.heartRate} bpm` : "Not recorded"} alert={isConcerning("HR", workspace.latestVitals)} styles={styles} />
-                            <VitalMetricRow label="Temp" value={workspace.latestVitals?.temperatureCelsius ? `${workspace.latestVitals.temperatureCelsius} deg C` : "Not recorded"} alert={isConcerning("Temp", workspace.latestVitals)} styles={styles} />
-                            <VitalMetricRow label="SpO2" value={workspace.latestVitals?.oxygenSaturation ? `${workspace.latestVitals.oxygenSaturation}%` : "Not recorded"} alert={isConcerning("SpO2", workspace.latestVitals)} styles={styles} />
-                            <VitalMetricRow label="RR" value={workspace.latestVitals?.respiratoryRate ? `${workspace.latestVitals.respiratoryRate}/min` : "Not recorded"} alert={isConcerning("RR", workspace.latestVitals)} styles={styles} />
+                            <VitalMetricRow
+                                label="BP"
+                                value={
+                                    workspace.latestVitals?.bloodPressureSystolic && workspace.latestVitals?.bloodPressureDiastolic
+                                        ? `${workspace.latestVitals.bloodPressureSystolic}/${workspace.latestVitals.bloodPressureDiastolic}`
+                                        : "Not recorded"
+                                }
+                                alert={isConcerning("BP", workspace.latestVitals)}
+                                styles={styles}
+                            />
+                            <VitalMetricRow
+                                label="HR"
+                                value={workspace.latestVitals?.heartRate ? `${workspace.latestVitals.heartRate} bpm` : "Not recorded"}
+                                alert={isConcerning("HR", workspace.latestVitals)}
+                                styles={styles}
+                            />
+                            <VitalMetricRow
+                                label="Temp"
+                                value={workspace.latestVitals?.temperatureCelsius ? `${workspace.latestVitals.temperatureCelsius} deg C` : "Not recorded"}
+                                alert={isConcerning("Temp", workspace.latestVitals)}
+                                styles={styles}
+                            />
+                            <VitalMetricRow
+                                label="SpO2"
+                                value={workspace.latestVitals?.oxygenSaturation ? `${workspace.latestVitals.oxygenSaturation}%` : "Not recorded"}
+                                alert={isConcerning("SpO2", workspace.latestVitals)}
+                                styles={styles}
+                            />
+                            <VitalMetricRow
+                                label="RR"
+                                value={workspace.latestVitals?.respiratoryRate ? `${workspace.latestVitals.respiratoryRate}/min` : "Not recorded"}
+                                alert={isConcerning("RR", workspace.latestVitals)}
+                                styles={styles}
+                            />
                         </div>
                     </Card>
                 </aside>
 
                 <div className={styles.mainColumn}>
                     <Card className={styles.panelCard}>
-                        <Typography.Title level={5} className={styles.sectionHeading}>Visit Workflow</Typography.Title>
+                        <Typography.Title level={5} className={styles.sectionHeading}>
+                            Visit Workflow
+                        </Typography.Title>
                         <Steps size="small" responsive items={workflowSteps} className={styles.workflowSteps} />
                     </Card>
                     <Card className={styles.workspaceCard}>

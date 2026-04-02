@@ -19,11 +19,7 @@ interface IUseConsultationRecorderResult {
     stopRecording: () => void;
 }
 
-export const useConsultationRecorder = ({
-    visitId,
-    onTranscriptReady,
-    transcribeAudio,
-}: IUseConsultationRecorderParams): IUseConsultationRecorderResult => {
+export const useConsultationRecorder = ({ visitId, onTranscriptReady, transcribeAudio }: IUseConsultationRecorderParams): IUseConsultationRecorderResult => {
     const [isRecording, setIsRecording] = useState(false);
     const [isTranscribing, setIsTranscribing] = useState(false);
     const [recordingSeconds, setRecordingSeconds] = useState(0);

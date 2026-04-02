@@ -67,7 +67,7 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
 
     summaryWarning: css`
         border-color: rgba(224, 123, 42, 0.25);
-        
+
         &::after {
             background: ${colors.priority};
         }
@@ -75,7 +75,7 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
 
     summaryDanger: css`
         border-color: rgba(201, 64, 64, 0.25);
-        
+
         &::after {
             background: ${colors.urgent};
         }
@@ -83,7 +83,7 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
 
     summarySuccess: css`
         border-color: rgba(35, 160, 112, 0.25);
-        
+
         &::after {
             background: #198a60;
         }

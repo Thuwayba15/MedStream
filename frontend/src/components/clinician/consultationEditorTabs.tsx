@@ -30,20 +30,25 @@ interface IConsultationEditorTabsProps {
     onUpdateVitalsDraft: (updater: IVitalsDraftState | ((current: IVitalsDraftState) => IVitalsDraftState)) => void;
 }
 
-const buildObjectiveVitalCards = (
-    vitalsDraft: IVitalsDraftState,
-    isFinalized: boolean,
-    styles: Record<string, string>,
-    onUpdateVitalsDraft: IConsultationEditorTabsProps["onUpdateVitalsDraft"]
-) => [
+const buildObjectiveVitalCards = (vitalsDraft: IVitalsDraftState, isFinalized: boolean, styles: Record<string, string>, onUpdateVitalsDraft: IConsultationEditorTabsProps["onUpdateVitalsDraft"]) => [
     {
         key: "bloodPressure",
         label: "Blood pressure",
         unit: "mmHg",
         content: (
             <div className={styles.bpGrid}>
-                <Input value={vitalsDraft.bloodPressureSystolic} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, bloodPressureSystolic: event.target.value }))} placeholder="Systolic" disabled={isFinalized} />
-                <Input value={vitalsDraft.bloodPressureDiastolic} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, bloodPressureDiastolic: event.target.value }))} placeholder="Diastolic" disabled={isFinalized} />
+                <Input
+                    value={vitalsDraft.bloodPressureSystolic}
+                    onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, bloodPressureSystolic: event.target.value }))}
+                    placeholder="Systolic"
+                    disabled={isFinalized}
+                />
+                <Input
+                    value={vitalsDraft.bloodPressureDiastolic}
+                    onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, bloodPressureDiastolic: event.target.value }))}
+                    placeholder="Diastolic"
+                    disabled={isFinalized}
+                />
             </div>
         ),
     },
@@ -51,37 +56,74 @@ const buildObjectiveVitalCards = (
         key: "heartRate",
         label: "Heart rate",
         unit: "bpm",
-        content: <Input value={vitalsDraft.heartRate} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, heartRate: event.target.value }))} placeholder="Heart rate" disabled={isFinalized} />,
+        content: (
+            <Input
+                value={vitalsDraft.heartRate}
+                onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, heartRate: event.target.value }))}
+                placeholder="Heart rate"
+                disabled={isFinalized}
+            />
+        ),
     },
     {
         key: "respiratoryRate",
         label: "Respiratory rate",
         unit: "breaths/min",
-        content: <Input value={vitalsDraft.respiratoryRate} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, respiratoryRate: event.target.value }))} placeholder="Respiratory rate" disabled={isFinalized} />,
+        content: (
+            <Input
+                value={vitalsDraft.respiratoryRate}
+                onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, respiratoryRate: event.target.value }))}
+                placeholder="Respiratory rate"
+                disabled={isFinalized}
+            />
+        ),
     },
     {
         key: "temperature",
         label: "Temperature",
         unit: "deg C",
-        content: <Input value={vitalsDraft.temperatureCelsius} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, temperatureCelsius: event.target.value }))} placeholder="Temperature" disabled={isFinalized} />,
+        content: (
+            <Input
+                value={vitalsDraft.temperatureCelsius}
+                onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, temperatureCelsius: event.target.value }))}
+                placeholder="Temperature"
+                disabled={isFinalized}
+            />
+        ),
     },
     {
         key: "spo2",
         label: "Oxygen saturation",
         unit: "%",
-        content: <Input value={vitalsDraft.oxygenSaturation} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, oxygenSaturation: event.target.value }))} placeholder="SpO2" disabled={isFinalized} />,
+        content: (
+            <Input
+                value={vitalsDraft.oxygenSaturation}
+                onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, oxygenSaturation: event.target.value }))}
+                placeholder="SpO2"
+                disabled={isFinalized}
+            />
+        ),
     },
     {
         key: "glucose",
         label: "Blood glucose",
         unit: "mmol/L",
-        content: <Input value={vitalsDraft.bloodGlucose} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, bloodGlucose: event.target.value }))} placeholder="Blood glucose" disabled={isFinalized} />,
+        content: (
+            <Input
+                value={vitalsDraft.bloodGlucose}
+                onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, bloodGlucose: event.target.value }))}
+                placeholder="Blood glucose"
+                disabled={isFinalized}
+            />
+        ),
     },
     {
         key: "weight",
         label: "Weight",
         unit: "kg",
-        content: <Input value={vitalsDraft.weightKg} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, weightKg: event.target.value }))} placeholder="Weight" disabled={isFinalized} />,
+        content: (
+            <Input value={vitalsDraft.weightKg} onChange={(event) => onUpdateVitalsDraft((current) => ({ ...current, weightKg: event.target.value }))} placeholder="Weight" disabled={isFinalized} />
+        ),
     },
 ];
 
@@ -116,7 +158,9 @@ export const buildConsultationEditorTabs = ({
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
                         <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>Subjective</Typography.Title>
+                            <Typography.Title level={3} className={styles.editorTitle}>
+                                Subjective
+                            </Typography.Title>
                             <Typography.Text className={styles.editorHint}>Starts from intake, then gets refined with consultation context.</Typography.Text>
                         </div>
                         <Space size={8}>
@@ -144,7 +188,12 @@ export const buildConsultationEditorTabs = ({
                             </Button>
                         </div>
                     ) : null}
-                    <TextArea value={noteDraft.subjective} onChange={(event) => onUpdateNoteDraft((current) => ({ ...current, subjective: event.target.value }))} className={styles.editorArea} disabled={isFinalized} />
+                    <TextArea
+                        value={noteDraft.subjective}
+                        onChange={(event) => onUpdateNoteDraft((current) => ({ ...current, subjective: event.target.value }))}
+                        className={styles.editorArea}
+                        disabled={isFinalized}
+                    />
                 </div>
             ),
         },
@@ -155,7 +204,9 @@ export const buildConsultationEditorTabs = ({
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
                         <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>Objective</Typography.Title>
+                            <Typography.Title level={3} className={styles.editorTitle}>
+                                Objective
+                            </Typography.Title>
                             <Typography.Text className={styles.editorHint}>Structured vitals first, then free-text findings.</Typography.Text>
                         </div>
                         <Button icon={<HeartOutlined />} className={styles.signalAction} loading={isSavingVitals} disabled={isFinalized} onClick={onSaveVitals}>
@@ -190,7 +241,9 @@ export const buildConsultationEditorTabs = ({
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
                         <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>Assessment</Typography.Title>
+                            <Typography.Title level={3} className={styles.editorTitle}>
+                                Assessment
+                            </Typography.Title>
                             <Typography.Text className={styles.editorHint}>Draft from consultation notes, vitals, and pathway context, then refine clinically.</Typography.Text>
                         </div>
                         <Button icon={<RobotOutlined />} className={styles.signalAction} loading={isGeneratingAssessmentPlan} disabled={isFinalized} onClick={onGenerateAssessmentPlan}>
@@ -199,13 +252,20 @@ export const buildConsultationEditorTabs = ({
                     </div>
                     {assessmentPlanDraft?.assessment || assessmentPlanDraft?.plan ? (
                         <div className={styles.draftPreview}>
-                            <Typography.Paragraph className={styles.bodyText}>{sanitizeClinicalCopy(assessmentPlanDraft.summary || "Assessment and plan draft ready for review.")}</Typography.Paragraph>
+                            <Typography.Paragraph className={styles.bodyText}>
+                                {sanitizeClinicalCopy(assessmentPlanDraft.summary || "Assessment and plan draft ready for review.")}
+                            </Typography.Paragraph>
                             <Button type="primary" className={styles.primaryAction} disabled={isFinalized} onClick={onApplyGeneratedAssessmentPlan}>
                                 Apply Assessment & Plan
                             </Button>
                         </div>
                     ) : null}
-                    <TextArea value={noteDraft.assessment} onChange={(event) => onUpdateNoteDraft((current) => ({ ...current, assessment: event.target.value }))} className={styles.editorArea} disabled={isFinalized} />
+                    <TextArea
+                        value={noteDraft.assessment}
+                        onChange={(event) => onUpdateNoteDraft((current) => ({ ...current, assessment: event.target.value }))}
+                        className={styles.editorArea}
+                        disabled={isFinalized}
+                    />
                 </div>
             ),
         },
@@ -214,8 +274,15 @@ export const buildConsultationEditorTabs = ({
             label: "Plan",
             children: (
                 <div className={styles.editorPanel}>
-                    <Typography.Title level={3} className={styles.editorTitle}>Plan</Typography.Title>
-                    <TextArea value={noteDraft.plan} onChange={(event) => onUpdateNoteDraft((current) => ({ ...current, plan: event.target.value }))} className={styles.editorArea} disabled={isFinalized} />
+                    <Typography.Title level={3} className={styles.editorTitle}>
+                        Plan
+                    </Typography.Title>
+                    <TextArea
+                        value={noteDraft.plan}
+                        onChange={(event) => onUpdateNoteDraft((current) => ({ ...current, plan: event.target.value }))}
+                        className={styles.editorArea}
+                        disabled={isFinalized}
+                    />
                 </div>
             ),
         },
@@ -226,8 +293,12 @@ export const buildConsultationEditorTabs = ({
                 <div className={styles.editorPanel}>
                     <div className={styles.editorHeader}>
                         <div>
-                            <Typography.Title level={3} className={styles.editorTitle}>Timeline Summaries</Typography.Title>
-                            <Typography.Text className={styles.editorHint}>Finalize with one concise internal summary and one patient-friendly summary for the cross-facility timeline.</Typography.Text>
+                            <Typography.Title level={3} className={styles.editorTitle}>
+                                Timeline Summaries
+                            </Typography.Title>
+                            <Typography.Text className={styles.editorHint}>
+                                Finalize with one concise internal summary and one patient-friendly summary for the cross-facility timeline.
+                            </Typography.Text>
                         </div>
                         <Tag className={missingTimelineSummaries.length === 0 ? styles.timelineReadyTag : styles.timelinePendingTag}>
                             {missingTimelineSummaries.length === 0 ? "Ready to finalize" : "Required before finalizing"}
@@ -237,7 +308,9 @@ export const buildConsultationEditorTabs = ({
                         <div className={styles.timelineSummaryCard}>
                             <div className={styles.timelineSummaryHeader}>
                                 <div>
-                                    <Typography.Title level={5} className={styles.timelineSummaryTitle}>Clinician-facing summary</Typography.Title>
+                                    <Typography.Title level={5} className={styles.timelineSummaryTitle}>
+                                        Clinician-facing summary
+                                    </Typography.Title>
                                     <Typography.Text className={styles.helperText}>Internal clinical recap for history review across facilities.</Typography.Text>
                                 </div>
                                 <span className={styles.summaryCounter}>{noteDraft.clinicianTimelineSummary.trim().length}/2000</span>
@@ -255,7 +328,9 @@ export const buildConsultationEditorTabs = ({
                         <div className={styles.timelineSummaryCard}>
                             <div className={styles.timelineSummaryHeader}>
                                 <div>
-                                    <Typography.Title level={5} className={styles.timelineSummaryTitle}>Patient-friendly summary</Typography.Title>
+                                    <Typography.Title level={5} className={styles.timelineSummaryTitle}>
+                                        Patient-friendly summary
+                                    </Typography.Title>
                                     <Typography.Text className={styles.helperText}>Plain-language summary that the patient will see in their own history.</Typography.Text>
                                 </div>
                                 <span className={styles.summaryCounter}>{noteDraft.patientTimelineSummary.trim().length}/2000</span>
