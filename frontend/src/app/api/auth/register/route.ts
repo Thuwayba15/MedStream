@@ -92,7 +92,6 @@ export const POST = async (request: Request): Promise<Response> => {
         const authError = getAbpErrorDetails(error, "Registration failed.");
         const rawMessage = authError.message;
         const debugCode = `REG-${Date.now()}`;
-        console.error(`[${debugCode}] /api/auth/register failed: ${rawMessage}`);
 
         return NextResponse.json(
             {

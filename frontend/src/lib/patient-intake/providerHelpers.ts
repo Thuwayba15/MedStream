@@ -33,11 +33,8 @@ export const logIntakeDebug = (message: string, payload?: unknown): void => {
     }
 
     if (payload === undefined) {
-        console.info(`[PatientIntake] ${message}`);
         return;
     }
-
-    console.info(`[PatientIntake] ${message}`, payload);
 };
 
 export const readPersistedQueuedVisit = (): IPersistedQueuedVisit | null => {
