@@ -69,6 +69,47 @@ public class PathwayExtractionResult
     /// Gets or sets mapped pathway input values inferred from intake text.
     /// </summary>
     public Dictionary<string, object> MappedInputValues { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets ordered follow-up plans to collect additional intake details.
+    /// </summary>
+    public List<FollowUpPlan> FollowUpPlans { get; set; } = new();
+}
+
+/// <summary>
+/// Follow-up plan describing one intake question page.
+/// </summary>
+public class FollowUpPlan
+{
+    /// <summary>
+    /// Gets or sets stable plan key.
+    /// </summary>
+    public string PlanKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets display title.
+    /// </summary>
+    public string Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets pathway key used to load questions.
+    /// </summary>
+    public string PathwayKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets the primary symptom represented by this plan.
+    /// </summary>
+    public string PrimarySymptom { get; set; }
+
+    /// <summary>
+    /// Gets or sets intake mode for this plan.
+    /// </summary>
+    public string IntakeMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets APC fallback summary ids when AI-backed fallback questions should be used.
+    /// </summary>
+    public List<string> FallbackSummaryIds { get; set; } = new();
 }
 
 /// <summary>

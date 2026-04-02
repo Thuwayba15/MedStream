@@ -55,6 +55,9 @@ export interface ISymptomsStepProps {
 }
 
 export interface IFollowUpStepProps {
+    title: string;
+    currentPlanIndex: number;
+    totalPlans: number;
     extractedPrimarySymptoms: string[];
     questions: IIntakeQuestion[];
     answers: Record<string, string | number | boolean | string[]>;
@@ -106,7 +109,7 @@ export const stepDescription = (step: number): string => {
     }
 
     if (step === 3) {
-        return "Answer a few follow-up questions so we can understand your symptoms better.";
+        return "Answer each follow-up page so we can understand all of your symptoms better.";
     }
 
     return "See your triage result and current queue status.";

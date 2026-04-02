@@ -11,11 +11,8 @@ namespace MedStream.PatientIntake;
 
 public partial class PatientIntakeAppService
 {
-    private string BuildSubjectiveSummary(string pathwayKey, SymptomIntake intake, IReadOnlyDictionary<string, object> answers)
+    private string BuildSubjectiveSummary(string _, SymptomIntake intake, IReadOnlyDictionary<string, object> answers)
     {
-        var safePathwayKey = string.IsNullOrWhiteSpace(pathwayKey) || string.Equals(pathwayKey, PatientIntakeConstants.UnassignedPathwayKey, StringComparison.OrdinalIgnoreCase)
-            ? PatientIntakeConstants.GeneralFallbackPathwayKey
-            : pathwayKey;
         var selectedSymptoms = DeserializeList(intake.SelectedSymptoms);
         var extractedSymptoms = DeserializeList(intake.ExtractedPrimarySymptoms);
         var combinedSymptoms = selectedSymptoms
@@ -41,19 +38,11 @@ public partial class PatientIntakeAppService
             return string.Join("\n", summaryParts);
         }
 
-        PathwayDefinitionJson pathwayDefinition;
-        try
-        {
-            pathwayDefinition = _pathwayDefinitionProvider.GetById(safePathwayKey);
-        }
-        catch
-        {
-            pathwayDefinition = _pathwayDefinitionProvider.GetById(PatientIntakeConstants.GeneralFallbackPathwayKey);
-        }
-
-        var inputLookup = pathwayDefinition.Inputs
+        var inputLookup = _pathwayDefinitionProvider.GetAllActive()
+            .SelectMany(item => item.Inputs)
             .Where(item => string.Equals(item.Stage, "patient_intake", StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(item => item.Id, item => item.Label, StringComparer.OrdinalIgnoreCase);
+            .GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(item => item.Key, item => item.First().Label, StringComparer.OrdinalIgnoreCase);
 
         var keyDetails = answers
             .Where(item => ShouldIncludeAnswerInSummary(item.Value))

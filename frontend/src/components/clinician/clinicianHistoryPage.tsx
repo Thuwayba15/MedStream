@@ -3,6 +3,7 @@
 import { Card, Empty, Result, Skeleton, Space, Tag, Typography } from "antd";
 import { useEffect, useMemo } from "react";
 import { useClinicianToastMessages } from "@/hooks/clinician/useClinicianToastMessages";
+import { formatMedstreamDateTime } from "@/lib/time/medstreamTime";
 import { useClinicianConsultationState } from "@/providers/clinician-consultation";
 import { useClinicianHistoryActions, useClinicianHistoryState } from "@/providers/clinician-history";
 import type { IPatientTimelineVisit } from "@/services/patient-timeline/types";
@@ -11,26 +12,6 @@ import { useClinicianHistoryStyles } from "./historyStyle";
 interface IClinicianHistoryPageProps {
     patientUserId?: number;
 }
-
-const formatDate = (value?: string | null): string => {
-    if (!value) {
-        return "-";
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
-
-    return date.toLocaleString("en-ZA", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Africa/Johannesburg",
-    });
-};
 
 const byNewestVisit = (left: IPatientTimelineVisit, right: IPatientTimelineVisit): number => {
     return new Date(right.visitDate).getTime() - new Date(left.visitDate).getTime();
@@ -111,8 +92,8 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
                         Patient #{patient.patientUserId} {activeVisitId ? `· Active Visit ${activeVisitId}` : ""} · {patient.totalVisits} total visits
                     </Typography.Text>
                     <div className={styles.chipRow}>
-                        <Tag>Last Visit: {formatDate(patient.mostRecentVisitAt)}</Tag>
-                        {patient.dateOfBirth ? <Tag>DOB: {formatDate(patient.dateOfBirth)}</Tag> : null}
+                        <Tag>Last Visit: {formatMedstreamDateTime(patient.mostRecentVisitAt)}</Tag>
+                        {patient.dateOfBirth ? <Tag>DOB: {formatMedstreamDateTime(patient.dateOfBirth)}</Tag> : null}
                         {patient.idNumber ? <Tag>ID: {patient.idNumber}</Tag> : null}
                     </div>
                 </div>
@@ -135,7 +116,7 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
                                 <span className={styles.timelineDot} />
                                 <Card className={styles.visitCard}>
                                     <div className={styles.visitTopRow}>
-                                        <Typography.Text className={styles.eventMeta}>{formatDate(visit.visitDate)}</Typography.Text>
+                                        <Typography.Text className={styles.eventMeta}>{formatMedstreamDateTime(visit.visitDate)}</Typography.Text>
                                         <Space size={6} wrap>
                                             <Tag>{visit.visitStatus}</Tag>
                                             <Tag>{visit.facilityName}</Tag>

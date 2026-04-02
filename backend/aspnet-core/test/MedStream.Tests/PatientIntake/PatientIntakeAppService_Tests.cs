@@ -1,5 +1,6 @@
 using MedStream.Authorization.Accounts;
 using MedStream.Authorization.Accounts.Dto;
+using MedStream.Facilities;
 using MedStream.PatientIntake;
 using MedStream.PatientIntake.Dto;
 using Microsoft.EntityFrameworkCore;
@@ -27,16 +28,22 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     public async Task CheckIn_Should_Create_Visit_For_Current_Patient()
     {
         var patientEmail = await RegisterAndLoginPatientAsync();
+        var facilityId = await GetActiveFacilityIdAsync();
 
-        var result = await _patientIntakeAppService.CheckIn();
+        var result = await _patientIntakeAppService.CheckIn(new PatientCheckInInput
+        {
+            SelectedFacilityId = facilityId
+        });
 
         result.VisitId.ShouldBeGreaterThan(0);
+        result.FacilityId.ShouldBe(facilityId);
         result.PathwayKey.ShouldBe(PatientIntakeConstants.UnassignedPathwayKey);
 
         await UsingDbContextAsync(async context =>
         {
             var visit = await context.Set<Visit>().FirstOrDefaultAsync(item => item.Id == result.VisitId);
             visit.ShouldNotBeNull();
+            visit.FacilityId.ShouldBe(facilityId);
             visit.PathwayKey.ShouldBe(PatientIntakeConstants.UnassignedPathwayKey);
             visit.Status.ShouldBe(PatientIntakeConstants.VisitStatusIntakeInProgress);
         });
@@ -48,7 +55,7 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     public async Task ExtractSymptoms_Should_Use_Deterministic_Fallback_When_OpenAi_Is_Not_Configured()
     {
         await RegisterAndLoginPatientAsync();
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await CheckInAsync();
 
         var extraction = await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
@@ -63,13 +70,15 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
         extraction.SelectedPathwayKey.ShouldNotBeNullOrWhiteSpace();
         extraction.SelectedPathwayKey.ShouldNotBe(PatientIntakeConstants.UnassignedPathwayKey);
         extraction.IntakeMode.ShouldBe(PatientIntakeConstants.IntakeModeApprovedJson);
+        extraction.FollowUpPlans.Count.ShouldBeGreaterThan(0);
+        extraction.FollowUpPlans[0].PathwayKey.ShouldBe("cough_or_difficulty_breathing");
     }
 
     [Fact]
     public async Task ExtractSymptoms_Should_Select_ApcFallback_Mode_When_No_Strong_Pathway_Match()
     {
         await RegisterAndLoginPatientAsync();
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await CheckInAsync();
 
         var extraction = await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
@@ -81,13 +90,15 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
         extraction.IntakeMode.ShouldBe(PatientIntakeConstants.IntakeModeApcFallback);
         extraction.SelectedPathwayKey.ShouldBe(PatientIntakeConstants.GeneralFallbackPathwayKey);
         extraction.FallbackSummaryIds.Count.ShouldBeGreaterThan(0);
+        extraction.FollowUpPlans.Count.ShouldBe(1);
+        extraction.FollowUpPlans[0].IntakeMode.ShouldBe(PatientIntakeConstants.IntakeModeApcFallback);
     }
 
     [Fact]
     public async Task UrgentCheck_Should_FastTrack_When_Global_Urgent_Answer_Is_True()
     {
         await RegisterAndLoginPatientAsync();
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await CheckInAsync();
 
         var urgentCheck = await _patientIntakeAppService.UrgentCheck(new UrgentCheckInput
         {
@@ -130,7 +141,7 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     public async Task AssessTriage_Should_Save_Triage_Assessment_And_Update_Visit_Status()
     {
         await RegisterAndLoginPatientAsync();
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await CheckInAsync();
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = checkIn.VisitId,
@@ -195,10 +206,120 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     }
 
     [Fact]
+    public async Task AssessTriage_Should_Use_Highest_Risk_Approved_FollowUp_Pathway()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await CheckInAsync();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "I have a cough and I injured my arm",
+            SelectedSymptoms = new List<string> { "Cough", "Injury" }
+        });
+
+        var output = await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "cough and arm injury",
+            SelectedSymptoms = new List<string> { "Cough", "Injury" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough", "Injury" },
+            FollowUpPlans = new List<AssessTriageFollowUpPlanInput>
+            {
+                new()
+                {
+                    PathwayKey = "cough_or_difficulty_breathing",
+                    PrimarySymptom = "Cough",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApprovedJson
+                },
+                new()
+                {
+                    PathwayKey = "hand_or_upper_limb_injury",
+                    PrimarySymptom = "Injury",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApprovedJson
+                }
+            },
+            Answers = new Dictionary<string, object>
+            {
+                { "coughDurationWeeks", 1 },
+                { "hasDifficultyBreathing", false },
+                { "hasChestPain", false },
+                { "injuryFromFall", true },
+                { "visibleDeformity", true },
+                { "cannotMoveFingers", "no" }
+            }
+        });
+
+        output.Triage.UrgencyLevel.ShouldBe("Urgent");
+        output.Triage.RedFlags.ShouldContain("possible_fracture");
+        output.Triage.Explanation.ShouldContain("Highest-risk follow-up pathway");
+        output.Execution.TriggeredRedFlags.ShouldContain("possible_fracture");
+    }
+
+    [Fact]
+    public async Task AssessTriage_Should_Allow_Apc_Fallback_FollowUp_To_Raise_Urgency()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await CheckInAsync();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "I have a cough and a wound",
+            SelectedSymptoms = new List<string> { "Cough" }
+        });
+
+        var output = await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "cough and bleeding wound",
+            SelectedSymptoms = new List<string> { "Cough" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough" },
+            FollowUpPlans = new List<AssessTriageFollowUpPlanInput>
+            {
+                new()
+                {
+                    PathwayKey = "cough_or_difficulty_breathing",
+                    PrimarySymptom = "Cough",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApprovedJson
+                },
+                new()
+                {
+                    PathwayKey = PatientIntakeConstants.GeneralFallbackPathwayKey,
+                    PrimarySymptom = "Wound",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApcFallback,
+                    FallbackSummaryIds = new List<string> { "hand_laceration" }
+                }
+            },
+            FollowUpQuestions = new List<AssessTriageFollowUpQuestionInput>
+            {
+                new()
+                {
+                    PlanKey = "apc_wound",
+                    PathwayKey = PatientIntakeConstants.GeneralFallbackPathwayKey,
+                    IntakeMode = PatientIntakeConstants.IntakeModeApcFallback,
+                    QuestionKey = "apc_bleeding",
+                    QuestionText = "Do you have heavy bleeding that is not stopping?",
+                    InputType = "Boolean"
+                }
+            },
+            Answers = new Dictionary<string, object>
+            {
+                { "coughDurationWeeks", 1 },
+                { "hasDifficultyBreathing", false },
+                { "hasChestPain", false },
+                { "apc_bleeding", true }
+            }
+        });
+
+        output.Triage.UrgencyLevel.ShouldBe("Urgent");
+        output.Triage.RedFlags.ShouldContain(item => item.StartsWith("apc_", StringComparison.OrdinalIgnoreCase));
+        output.Triage.Explanation.ShouldContain("Additional fallback concerns");
+    }
+
+    [Fact]
     public async Task AssessTriage_Should_Format_General_Complaint_Summary_Readably()
     {
         await RegisterAndLoginPatientAsync();
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await CheckInAsync();
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = checkIn.VisitId,
@@ -241,7 +362,7 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     public async Task AssessTriage_Should_Not_Create_Duplicate_Active_QueueTicket_For_Same_Visit()
     {
         await RegisterAndLoginPatientAsync();
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await CheckInAsync();
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = checkIn.VisitId,
@@ -280,7 +401,7 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     {
         await RegisterAndLoginPatientAsync();
 
-        var firstVisit = await _patientIntakeAppService.CheckIn();
+        var firstVisit = await CheckInAsync();
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = firstVisit.VisitId,
@@ -301,7 +422,7 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
             }
         });
 
-        var secondVisit = await _patientIntakeAppService.CheckIn();
+        var secondVisit = await CheckInAsync();
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = secondVisit.VisitId,
@@ -347,7 +468,7 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     public async Task GetCurrentQueueStatus_Should_Return_Latest_Status_For_Current_Patient_Visit()
     {
         await RegisterAndLoginPatientAsync();
-        var checkIn = await _patientIntakeAppService.CheckIn();
+        var checkIn = await CheckInAsync();
         await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
         {
             VisitId = checkIn.VisitId,
@@ -397,5 +518,26 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
 
         LoginAsTenant("Default", email);
         return email;
+    }
+
+    private async Task<PatientCheckInOutput> CheckInAsync()
+    {
+        var facilityId = await GetActiveFacilityIdAsync();
+        return await _patientIntakeAppService.CheckIn(new PatientCheckInInput
+        {
+            SelectedFacilityId = facilityId
+        });
+    }
+
+    private async Task<int> GetActiveFacilityIdAsync()
+    {
+        return await UsingDbContextAsync(async context =>
+        {
+            var facility = await context.Set<Facility>()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .OrderBy(item => item.Id)
+                .FirstAsync();
+            return facility.Id;
+        });
     }
 }

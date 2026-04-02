@@ -2,23 +2,11 @@
 
 import { Button, Card, Empty, Skeleton, Tag, Typography, message } from "antd";
 import { useEffect, useMemo } from "react";
+import { formatMedstreamDate } from "@/lib/time/medstreamTime";
 import { usePatientHistoryActions, usePatientHistoryState } from "@/providers/patient-history";
 import type { IPatientTimelineVisit } from "@/services/patient-timeline/types";
 import { PatientBottomNav } from "./patientBottomNav";
 import { usePatientHistoryStyles } from "./patientHistoryStyle";
-
-const formatDate = (value?: string | null): string => {
-    if (!value) {
-        return "-";
-    }
-
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-
-    return parsed.toLocaleDateString([], { year: "numeric", month: "short", day: "2-digit" });
-};
 
 const byNewestVisit = (left: IPatientTimelineVisit, right: IPatientTimelineVisit): number => {
     return new Date(right.visitDate).getTime() - new Date(left.visitDate).getTime();
@@ -104,7 +92,7 @@ export const PatientHistoryPage = (): React.JSX.Element => {
                                                 <span className={styles.timelineDot} />
                                                 <Card className={styles.visitCard}>
                                                     <div className={styles.visitMetaRow}>
-                                                        <Tag>{formatDate(visit.visitDate)}</Tag>
+                                                        <Tag>{formatMedstreamDate(visit.visitDate)}</Tag>
                                                         <Tag color={status.color}>{status.label}</Tag>
                                                     </div>
                                                     <Typography.Title level={4} className={styles.visitTitle}>

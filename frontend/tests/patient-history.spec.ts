@@ -20,7 +20,7 @@ function createPatientToken(): string {
 
 const persistedQueueVisit = {
     visitId: 101,
-    facilityName: "Assigned Facility",
+    facilityName: "Chris Hani Baragwanath Hospital",
     selectedFacilityId: 11,
     startedAt: new Date().toISOString(),
     pathwayKey: "unassigned",
@@ -209,7 +209,8 @@ async function installPatientPageMocks(page: import("@playwright/test").Page): P
             contentType: "application/json",
             body: JSON.stringify({
                 visitId: 101,
-                facilityName: "Assigned Facility",
+                facilityId: 11,
+                facilityName: "Chris Hani Baragwanath Hospital",
                 startedAt: new Date().toISOString(),
                 pathwayKey: "unassigned",
             }),

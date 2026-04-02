@@ -39,4 +39,76 @@ public class AssessTriageInput
     /// Gets or sets clinician objective observations keyed by input id.
     /// </summary>
     public Dictionary<string, object> Observations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets follow-up plans completed before final triage submission.
+    /// </summary>
+    public List<AssessTriageFollowUpPlanInput> FollowUpPlans { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets follow-up question metadata to support merged triage.
+    /// </summary>
+    public List<AssessTriageFollowUpQuestionInput> FollowUpQuestions { get; set; } = new();
+}
+
+/// <summary>
+/// Follow-up plan metadata included with final triage submission.
+/// </summary>
+public class AssessTriageFollowUpPlanInput
+{
+    /// <summary>
+    /// Gets or sets pathway key represented by the page.
+    /// </summary>
+    public string PathwayKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets primary symptom focus for the page.
+    /// </summary>
+    public string PrimarySymptom { get; set; }
+
+    /// <summary>
+    /// Gets or sets intake mode for the page.
+    /// </summary>
+    public string IntakeMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets APC fallback summary ids associated with the page.
+    /// </summary>
+    public List<string> FallbackSummaryIds { get; set; } = new();
+}
+
+/// <summary>
+/// Follow-up question metadata submitted with triage to support deterministic fallback scoring.
+/// </summary>
+public class AssessTriageFollowUpQuestionInput
+{
+    /// <summary>
+    /// Gets or sets owning plan key.
+    /// </summary>
+    public string PlanKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets pathway key for the question page.
+    /// </summary>
+    public string PathwayKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets intake mode for the question page.
+    /// </summary>
+    public string IntakeMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets question key.
+    /// </summary>
+    public string QuestionKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets displayed question text.
+    /// </summary>
+    public string QuestionText { get; set; }
+
+    /// <summary>
+    /// Gets or sets input type.
+    /// </summary>
+    public string InputType { get; set; }
 }
