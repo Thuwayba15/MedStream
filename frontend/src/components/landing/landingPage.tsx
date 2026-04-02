@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Button } from "antd";
+import Link from "next/link";
 import { FeatureSpotlight } from "./featureSpotlight";
 import { useLandingStyles } from "./style";
 
@@ -33,12 +34,16 @@ export const LandingPage = () => {
                     </div>
 
                     <div className={styles.actions}>
-                        <Button type="primary" size="large" href="/login" className={styles.primaryButton}>
-                            Login
-                        </Button>
-                        <Button size="large" href="/registration" className={styles.secondaryButton}>
-                            Sign Up
-                        </Button>
+                        <Link href="/login">
+                            <Button type="primary" size="large" className={styles.primaryButton}>
+                                Login
+                            </Button>
+                        </Link>
+                        <Link href="/registration">
+                            <Button size="large" className={styles.secondaryButton}>
+                                Sign Up
+                            </Button>
+                        </Link>
                     </div>
                 </section>
 

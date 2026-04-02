@@ -429,7 +429,7 @@ test.describe("clinician queue dashboard", () => {
         await page.getByTestId("consultation-transcript-preview").fill("Patient reports chest pain easing after rest and ongoing nausea.");
         await page.getByRole("button", { name: "Confirm transcript" }).click();
         await expect(page.getByRole("heading", { name: "Review recorded transcript" })).toHaveCount(0);
-        await expect(page.getByText("Transcript attached", { exact: true })).toBeVisible();
+        await expect(page.getByText("Consultation transcript attached.", { exact: true })).toBeVisible();
         await page.getByRole("tab", { name: "objective" }).click();
         await expect(page.getByText("Blood pressure")).toBeVisible();
         await page
