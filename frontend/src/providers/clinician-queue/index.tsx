@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useCallback, useContext, useEffect, useMemo, useReducer, useRef } from "react";
 import { API } from "@/constants/api";
 import { subscribeToQueueRealtime } from "@/services/realtime/queueRealtimeClient";
@@ -11,6 +12,14 @@ import type { IClinicianQueueResponse, TQueueStatus, TUrgencyLevel } from "@/ser
 interface IMessageResponse {
     message?: string;
 }
+
+const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
+    if (axios.isAxiosError<IMessageResponse>(error)) {
+        return new Error(error.response?.data?.message ?? fallbackMessage);
+    }
+
+    return error instanceof Error ? error : new Error(fallbackMessage);
+};
 
 const getUrgencyLevels = (urgencyFilter: TQueueTabFilter): TUrgencyLevel[] => {
     if (urgencyFilter === "urgent") {
@@ -45,15 +54,6 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
         stateRef.current = state;
     }, [state]);
 
-    const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
-        const body = (await response.json()) as TResponse & IMessageResponse;
-        if (!response.ok) {
-            throw new Error(body.message ?? fallbackMessage);
-        }
-
-        return body;
-    };
-
     const loadQueueByFilters = useCallback(
         async (
             searchText: string,
@@ -81,12 +81,12 @@ export const ClinicianQueueProvider = ({ children }: { children: React.ReactNode
                 query.set("skipCount", String(Math.max(0, (page - 1) * pageSize)));
                 query.set("maxResultCount", String(pageSize));
 
-                const response = await fetch(`${API.CLINICIAN_QUEUE_ROUTE}?${query.toString()}`);
-                const body = await parseResponse<IClinicianQueueResponse>(response, "Unable to load clinician queue.");
-                dispatch(loadSucceeded(body.items ?? [], body.totalCount ?? 0, body.summary ?? INITIAL_STATE.summary));
+                // Get Clinician Queue
+                // GET /api/clinician/queue
+                const response = await axios.get<IClinicianQueueResponse>(`${API.CLINICIAN_QUEUE_ROUTE}?${query.toString()}`);
+                dispatch(loadSucceeded(response.data.items ?? [], response.data.totalCount ?? 0, response.data.summary ?? INITIAL_STATE.summary));
             } catch (error) {
-                const message = error instanceof Error ? error.message : "Unable to load clinician queue.";
-                dispatch(loadFailed(message));
+                dispatch(loadFailed(parseRouteError(error, "Unable to load clinician queue.").message));
             }
         },
         []

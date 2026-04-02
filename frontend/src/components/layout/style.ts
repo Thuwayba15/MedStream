@@ -18,6 +18,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         align-items: center;
         gap: 10px;
         min-width: 170px;
+        line-height: 1;
     `,
 
     brandMark: css`
@@ -50,29 +51,45 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         padding: 0;
         background: linear-gradient(90deg, ${colors.navy} 0%, ${colors.navyMid} 100%) !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
     `,
 
     headerInner: css`
-        max-width: ${medstreamTheme.layout.pageMaxWidth}px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: none;
+        margin: 0;
         min-height: 74px;
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: auto minmax(0, 1fr) auto;
         align-items: center;
         gap: 16px;
-        padding: 12px 16px;
+        padding: 12px 100px;
 
         @media (max-width: 960px) {
             grid-template-columns: 1fr auto;
             min-height: 68px;
             gap: 8px;
+            padding: 10px 12px;
+        }
+    `,
+
+    headerRightCluster: css`
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        justify-self: end;
+        gap: 14px;
+        min-width: 0;
+
+        @media (max-width: 960px) {
+            display: none;
         }
     `,
 
     topMenu: css`
         background: transparent !important;
         border-bottom: none !important;
-        justify-self: center;
         min-width: 0;
 
         .ant-menu-item {
@@ -80,6 +97,10 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
             border-radius: ${radius.pill}px;
             font-weight: 700;
             margin-inline: 4px;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            min-height: 42px;
         }
 
         .ant-menu-item-selected {
@@ -98,6 +119,7 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
 
     menuSpacer: css`
         min-height: 1px;
+        justify-self: end;
 
         @media (max-width: 960px) {
             display: none;
@@ -107,6 +129,11 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
     actionArea: css`
         align-items: center;
         justify-self: end;
+
+        .ant-space-item {
+            display: flex;
+            align-items: center;
+        }
 
         @media (max-width: 960px) {
             display: none !important;
@@ -161,6 +188,9 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
 
         @media (max-width: 960px) {
             display: inline-flex !important;
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: end;
             align-items: center;
             justify-content: center;
             color: ${colors.white} !important;
@@ -171,9 +201,36 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
     `,
 
     mobileDrawer: css`
+        .ant-drawer-content,
+        .ant-drawer-header,
+        .ant-drawer-body {
+            background: linear-gradient(180deg, ${colors.amberLight} 0%, ${colors.amber} 100%);
+        }
+
         .ant-drawer-header-title {
             color: ${colors.navy};
             font-family: ${typography.fontDisplay};
+        }
+
+        .ant-drawer-close {
+            color: ${colors.navy};
+        }
+    `,
+
+    mobileDrawerMenu: css`
+        background: transparent !important;
+        border-inline-end: none !important;
+
+        .ant-menu-item {
+            border-radius: ${radius.sm}px;
+            margin-block: 6px;
+            color: ${colors.navy};
+            font-weight: 700;
+        }
+
+        .ant-menu-item-selected {
+            background: rgba(13, 27, 46, 0.1) !important;
+            color: ${colors.navy} !important;
         }
     `,
 
@@ -190,23 +247,40 @@ export const useRoleShellStyles = createStyles(({ css }) => ({
         border-radius: ${radius.sm}px !important;
         height: 42px;
         font-weight: 700;
+        border-color: ${colors.amber} !important;
+        color: ${colors.white} !important;
+        background: linear-gradient(180deg, ${colors.amberLight} 0%, ${colors.amber} 100%) !important;
+        box-shadow: 0 10px 24px rgba(224, 123, 42, 0.24);
+
+        &:hover,
+        &:focus {
+            color: ${colors.white} !important;
+            border-color: ${colors.amber} !important;
+            background: linear-gradient(180deg, ${colors.amber} 0%, ${colors.amber} 100%) !important;
+        }
     `,
 
     content: css`
+        min-height: calc(100vh - 74px);
         padding: 22px 16px 26px;
         background: ${pageBackground} !important;
 
         @media (max-width: 768px) {
+            min-height: calc(100vh - 68px);
             padding: 14px 12px 20px;
         }
     `,
 
     contentInner: css`
         width: 100%;
-        max-width: 1180px;
+        max-width: 85%;
         margin: 0 auto;
         display: grid;
         gap: 16px;
         background: transparent;
+
+        @media (max-width: 1100px) {
+            max-width: 100%;
+        }
     `,
 }));

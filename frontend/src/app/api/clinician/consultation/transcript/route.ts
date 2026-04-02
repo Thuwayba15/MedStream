@@ -1,6 +1,7 @@
-import { getAbpErrorMessage } from "@/lib/api/abp";
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
-import { consultationService } from "@/services/consultation/consultationService";
 import type { IAttachConsultationTranscriptRequest } from "@/services/consultation/types";
 import { transcribeConsultationAudio } from "@/services/consultation/consultationTranscriptionService";
 import { NextResponse } from "next/server";
@@ -28,17 +29,20 @@ export const POST = async (request: Request): Promise<Response> => {
             }
 
             const transcription = await transcribeConsultationAudio(audioFile, typeof language === "string" ? language : undefined);
-            const result = await consultationService.attachConsultationTranscript(
+            const response = await apiClient.post(
+                API.CONSULTATION_ATTACH_TRANSCRIPT_ENDPOINT,
                 {
                     visitId,
                     inputMode: "audio_upload",
                     rawTranscriptText: transcription.text,
                     languageDetected: transcription.languageDetected,
                 },
-                guardResult.accessToken
+                {
+                    headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+                }
             );
 
-            return NextResponse.json(result);
+            return NextResponse.json(unwrapAbpResponse(response.data));
         }
 
         const body = (await request.json()) as IAttachConsultationTranscriptRequest;
@@ -46,8 +50,10 @@ export const POST = async (request: Request): Promise<Response> => {
             return NextResponse.json({ message: "Visit id is required." }, { status: 400 });
         }
 
-        const result = await consultationService.attachConsultationTranscript(body, guardResult.accessToken);
-        return NextResponse.json(result);
+        const response = await apiClient.post(API.CONSULTATION_ATTACH_TRANSCRIPT_ENDPOINT, body, {
+            headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+        });
+        return NextResponse.json(unwrapAbpResponse(response.data));
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to attach consultation transcript.") }, { status: 400 });
     }

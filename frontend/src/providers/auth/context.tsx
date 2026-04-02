@@ -1,32 +1,19 @@
 "use client";
 
 import { createContext } from "react";
+import type { IAuthFieldError, ILoginRequest, IRegisterRequest } from "@/lib/auth/types";
 
 export interface IAuthStateContext {
     isPending: boolean;
     isSuccess: boolean;
     isError: boolean;
     errorMessage?: string;
+    fieldErrors: IAuthFieldError[];
 }
 
 export interface IAuthActionContext {
-    login: (payload: { userNameOrEmailAddress: string; password: string }) => Promise<{ homePath: string }>;
-    register: (payload: {
-        firstName: string;
-        lastName: string;
-        emailAddress: string;
-        phoneNumber: string;
-        password: string;
-        confirmPassword: string;
-        idNumber?: string;
-        dateOfBirth?: string;
-        accountType: "Patient" | "Clinician";
-        professionType?: "Doctor" | "Nurse" | "AlliedHealth" | "Other";
-        regulatoryBody?: "HPCSA" | "SANC" | "Other";
-        registrationNumber?: string;
-        requestedFacility?: string;
-        requestedFacilityId?: number;
-    }) => Promise<{ homePath: string }>;
+    login: (payload: ILoginRequest) => Promise<{ homePath: string }>;
+    register: (payload: IRegisterRequest) => Promise<{ homePath: string }>;
     logout: () => Promise<void>;
     getCurrentHomePath: () => Promise<string>;
     clearError: () => void;
@@ -37,6 +24,7 @@ export const INITIAL_STATE: IAuthStateContext = {
     isSuccess: false,
     isError: false,
     errorMessage: undefined,
+    fieldErrors: [],
 };
 
 export const INITIAL_ACTION_STATE: IAuthActionContext = {

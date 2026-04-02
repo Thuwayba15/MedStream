@@ -1,6 +1,7 @@
-﻿import { getAbpErrorMessage } from "@/lib/api/abp";
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
-import { queueOperationsService } from "@/services/queue-operations/queueOperationsService";
 import type { TQueueStatus } from "@/services/queue-operations/types";
 import { NextResponse } from "next/server";
 
@@ -33,15 +34,19 @@ export const POST = async (request: Request, context: IRouteContext): Promise<Re
             return NextResponse.json({ message: "New status is required." }, { status: 400 });
         }
 
-        const result = await queueOperationsService.updateQueueTicketStatus(
+        const response = await apiClient.put(
+            API.QUEUE_OPERATIONS_UPDATE_QUEUE_STATUS_ENDPOINT,
             {
                 queueTicketId: parsedQueueTicketId,
                 newStatus: body.newStatus,
                 note: body.note ?? "",
             },
-            guardResult.accessToken
+            {
+                headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+            }
         );
-        return NextResponse.json(result);
+
+        return NextResponse.json(unwrapAbpResponse(response.data));
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to update queue status.") }, { status: 400 });
     }

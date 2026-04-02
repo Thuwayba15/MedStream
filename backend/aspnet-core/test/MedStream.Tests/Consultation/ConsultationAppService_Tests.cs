@@ -25,6 +25,8 @@ namespace MedStream.Tests.Consultation;
 
 public class ConsultationAppService_Tests : MedStreamTestBase
 {
+    private static int _clinicianIdentitySequence = 1000000;
+
     private readonly IAccountAppService _accountAppService;
     private readonly IUserAppService _userAppService;
     private readonly IFacilityAppService _facilityAppService;
@@ -370,6 +372,7 @@ public class ConsultationAppService_Tests : MedStreamTestBase
     private async Task<string> RegisterAndApproveClinicianWithFacilityAsync(string prefix)
     {
         var clinicianEmail = $"{prefix}-{Guid.NewGuid():N}@medstream.test";
+        var clinicianIdNumber = CreateUniqueClinicianIdNumber();
         await _accountAppService.Register(new RegisterInput
         {
             FirstName = "Consultation",
@@ -379,7 +382,7 @@ public class ConsultationAppService_Tests : MedStreamTestBase
             Password = "Password1",
             ConfirmPassword = "Password1",
             AccountType = "Clinician",
-            IdNumber = "9001015009087",
+            IdNumber = clinicianIdNumber,
             ProfessionType = "Doctor",
             RegulatoryBody = "HPCSA",
             RegistrationNumber = $"HPCSA-{Guid.NewGuid():N}".Substring(0, 18),
@@ -410,6 +413,11 @@ public class ConsultationAppService_Tests : MedStreamTestBase
         });
 
         return clinicianEmail;
+    }
+
+    private static string CreateUniqueClinicianIdNumber()
+    {
+        return $"900101{System.Threading.Interlocked.Increment(ref _clinicianIdentitySequence):D7}";
     }
 
     private async Task<AssessTriageOutput> CreateQueuedVisitForPatientAsync(string patientEmail, bool isUrgent)

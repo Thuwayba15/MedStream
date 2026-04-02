@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
 import type { IPatientTimeline } from "@/services/patient-timeline/types";
@@ -11,13 +12,12 @@ interface IMessageResponse {
     message?: string;
 }
 
-const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
-    const body = (await response.json()) as TResponse & IMessageResponse;
-    if (!response.ok) {
-        throw new Error(body.message ?? fallbackMessage);
+const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
+    if (axios.isAxiosError<IMessageResponse>(error)) {
+        return new Error(error.response?.data?.message ?? fallbackMessage);
     }
 
-    return body;
+    return error instanceof Error ? error : new Error(fallbackMessage);
 };
 
 export const PatientHistoryProvider = ({ children }: { children: React.ReactNode }): React.JSX.Element => {
@@ -26,11 +26,12 @@ export const PatientHistoryProvider = ({ children }: { children: React.ReactNode
     const loadTimeline = useCallback(async (): Promise<void> => {
         dispatch(loadTimelineStarted());
         try {
-            const response = await fetch(API.PATIENT_HISTORY_ROUTE);
-            const timeline = await parseResponse<IPatientTimeline>(response, "Unable to load your visit history.");
-            dispatch(loadTimelineSucceeded(timeline));
+            // Get Patient Timeline
+            // GET /api/patient/history
+            const response = await axios.get<IPatientTimeline>(API.PATIENT_HISTORY_ROUTE);
+            dispatch(loadTimelineSucceeded(response.data));
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Unable to load your visit history.";
+            const message = parseRouteError(error, "Unable to load your visit history.").message;
             dispatch(loadTimelineFailed(message));
         }
     }, []);

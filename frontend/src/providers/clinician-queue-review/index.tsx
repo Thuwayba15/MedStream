@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
 import type { IClinicianQueueReview, IOverrideQueueUrgencyResponse, IUpdateQueueStatusResponse, TQueueStatus, TUrgencyLevel } from "@/services/queue-operations/types";
@@ -22,13 +23,12 @@ interface IMessageResponse {
     message?: string;
 }
 
-const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
-    const body = (await response.json()) as TResponse & IMessageResponse;
-    if (!response.ok) {
-        throw new Error(body.message ?? fallbackMessage);
+const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
+    if (axios.isAxiosError<IMessageResponse>(error)) {
+        return new Error(error.response?.data?.message ?? fallbackMessage);
     }
 
-    return body;
+    return error instanceof Error ? error : new Error(fallbackMessage);
 };
 
 export const ClinicianQueueReviewProvider = ({ children }: { children: React.ReactNode }) => {
@@ -37,12 +37,12 @@ export const ClinicianQueueReviewProvider = ({ children }: { children: React.Rea
     const loadReview = useCallback(async (queueTicketId: number): Promise<void> => {
         dispatch(loadReviewStarted());
         try {
-            const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}`);
-            const review = await parseResponse<IClinicianQueueReview>(response, "Unable to load queue review.");
-            dispatch(loadReviewSucceeded(review));
+            // Get Queue Review
+            // GET /api/clinician/queue/{queueTicketId}
+            const response = await axios.get<IClinicianQueueReview>(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}`);
+            dispatch(loadReviewSucceeded(response.data));
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Unable to load queue review.";
-            dispatch(loadReviewFailed(message));
+            dispatch(loadReviewFailed(parseRouteError(error, "Unable to load queue review.").message));
         }
     }, []);
 
@@ -50,24 +50,17 @@ export const ClinicianQueueReviewProvider = ({ children }: { children: React.Rea
         async (queueTicketId: number, newStatus: TQueueStatus, note?: string): Promise<IUpdateQueueStatusResponse | null> => {
             dispatch(updateStatusStarted());
             try {
-                const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/status`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        newStatus,
-                        note: note ?? "",
-                    }),
+                // Update Queue Status
+                // POST /api/clinician/queue/{queueTicketId}/status
+                const response = await axios.post<IUpdateQueueStatusResponse>(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/status`, {
+                    newStatus,
+                    note: note ?? "",
                 });
-
-                const updateResult = await parseResponse<IUpdateQueueStatusResponse>(response, "Unable to update queue status.");
-                dispatch(updateStatusSucceeded(updateResult.newStatus, updateResult.currentStage));
+                dispatch(updateStatusSucceeded(response.data.newStatus, response.data.currentStage));
                 await loadReview(queueTicketId);
-                return updateResult;
+                return response.data;
             } catch (error) {
-                const message = error instanceof Error ? error.message : "Unable to update queue status.";
-                dispatch(updateStatusFailed(message));
+                dispatch(updateStatusFailed(parseRouteError(error, "Unable to update queue status.").message));
                 return null;
             }
         },
@@ -78,24 +71,17 @@ export const ClinicianQueueReviewProvider = ({ children }: { children: React.Rea
         async (queueTicketId: number, urgencyLevel: TUrgencyLevel, note?: string): Promise<IOverrideQueueUrgencyResponse | null> => {
             dispatch(overrideUrgencyStarted());
             try {
-                const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/urgency`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        urgencyLevel,
-                        note: note ?? "",
-                    }),
+                // Override Queue Urgency
+                // POST /api/clinician/queue/{queueTicketId}/urgency
+                const response = await axios.post<IOverrideQueueUrgencyResponse>(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/urgency`, {
+                    urgencyLevel,
+                    note: note ?? "",
                 });
-
-                const result = await parseResponse<IOverrideQueueUrgencyResponse>(response, "Unable to override urgency.");
-                dispatch(overrideUrgencySucceeded(result.urgencyLevel));
+                dispatch(overrideUrgencySucceeded(response.data.urgencyLevel));
                 await loadReview(queueTicketId);
-                return result;
+                return response.data;
             } catch (error) {
-                const message = error instanceof Error ? error.message : "Unable to override urgency.";
-                dispatch(overrideUrgencyFailed(message));
+                dispatch(overrideUrgencyFailed(parseRouteError(error, "Unable to override urgency.").message));
                 return null;
             }
         },

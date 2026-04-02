@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
 import type { IClinicianQueueReview, IUpdateQueueStatusResponse } from "@/services/queue-operations/types";
@@ -61,23 +62,22 @@ interface IMessageResponse {
     message?: string;
 }
 
-const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
-    const body = (await response.json()) as TResponse & IMessageResponse;
-    if (!response.ok) {
-        throw new Error(body.message ?? fallbackMessage);
+const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
+    if (axios.isAxiosError<IMessageResponse>(error)) {
+        return new Error(error.response?.data?.message ?? fallbackMessage);
     }
 
-    return body;
+    return error instanceof Error ? error : new Error(fallbackMessage);
 };
 
 const loadQueueReview = async (queueTicketId: number): Promise<IClinicianQueueReview> => {
-    const response = await fetch(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}`);
-    return parseResponse<IClinicianQueueReview>(response, "Unable to load consultation handoff.");
+    const response = await axios.get<IClinicianQueueReview>(`${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}`);
+    return response.data;
 };
 
 const loadConsultationInbox = async (): Promise<IConsultationInbox> => {
-    const response = await fetch(API.CLINICIAN_CONSULTATION_ROUTE);
-    return parseResponse<IConsultationInbox>(response, "Unable to load clinician consultation list.");
+    const response = await axios.get<IConsultationInbox>(API.CLINICIAN_CONSULTATION_ROUTE);
+    return response.data;
 };
 
 const loadConsultationWorkspace = async (visitId: number, queueTicketId?: number): Promise<IConsultationWorkspace> => {
@@ -86,29 +86,26 @@ const loadConsultationWorkspace = async (visitId: number, queueTicketId?: number
         query.set("queueTicketId", String(queueTicketId));
     }
 
-    const response = await fetch(`${API.CLINICIAN_CONSULTATION_ROUTE}?${query.toString()}`);
-    return parseResponse<IConsultationWorkspace>(response, "Unable to load consultation workspace.");
+    const response = await axios.get<IConsultationWorkspace>(`${API.CLINICIAN_CONSULTATION_ROUTE}?${query.toString()}`);
+    return response.data;
 };
 
 const postJson = async <TResponse,>(url: string, payload: object, fallbackMessage: string): Promise<TResponse> => {
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-    });
-
-    return parseResponse<TResponse>(response, fallbackMessage);
+    try {
+        const response = await axios.post<TResponse>(url, payload);
+        return response.data;
+    } catch (error) {
+        throw parseRouteError(error, fallbackMessage);
+    }
 };
 
 const postFormData = async <TResponse,>(url: string, payload: FormData, fallbackMessage: string): Promise<TResponse> => {
-    const response = await fetch(url, {
-        method: "POST",
-        body: payload,
-    });
-
-    return parseResponse<TResponse>(response, fallbackMessage);
+    try {
+        const response = await axios.post<TResponse>(url, payload);
+        return response.data;
+    } catch (error) {
+        throw parseRouteError(error, fallbackMessage);
+    }
 };
 
 export const ClinicianConsultationProvider = ({ children }: { children: React.ReactNode }) => {
@@ -117,6 +114,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
     const loadInbox = useCallback(async (): Promise<void> => {
         dispatch(loadInboxStarted());
         try {
+            // Get Consultation Inbox
+            // GET /api/clinician/consultation
             const inbox = await loadConsultationInbox();
             dispatch(loadInboxSucceeded(inbox));
         } catch (error) {
@@ -135,6 +134,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
     const loadWorkspace = useCallback(async (input: ILoadConsultationWorkspaceInput): Promise<void> => {
         dispatch(loadWorkspaceStarted());
         try {
+            // Get Consultation Workspace
+            // GET /api/clinician/consultation
             const [workspace, review] = await Promise.all([
                 loadConsultationWorkspace(input.visitId, input.queueTicketId),
                 input.queueTicketId ? loadQueueReview(input.queueTicketId) : Promise.resolve(null),
@@ -151,6 +152,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
         async (payload: ISaveEncounterNoteDraftRequest): Promise<IEncounterNote | null> => {
             dispatch(saveDraftStarted());
             try {
+                // Save Encounter Note Draft
+                // POST /api/clinician/consultation/note
                 const note = await postJson<IEncounterNote>(API.CLINICIAN_CONSULTATION_NOTE_ROUTE, payload, "Unable to save SOAP draft.");
                 const workspace = await refreshWorkspace(payload.visitId);
                 dispatch(saveDraftSucceeded(workspace, "Draft saved."));
@@ -168,6 +171,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
         async (payload: ISaveVitalsRequest): Promise<IConsultationVitalSigns | null> => {
             dispatch(saveVitalsStarted());
             try {
+                // Save Consultation Vitals
+                // POST /api/clinician/consultation/vitals
                 const vitals = await postJson<IConsultationVitalSigns>(API.CLINICIAN_CONSULTATION_VITALS_ROUTE, payload, "Unable to save vitals.");
                 const workspace = await refreshWorkspace(payload.visitId);
                 dispatch(saveVitalsSucceeded(workspace));
@@ -185,6 +190,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
         async (payload: IAttachConsultationTranscriptRequest): Promise<IConsultationTranscript | null> => {
             dispatch(attachTranscriptStarted());
             try {
+                // Attach Consultation Transcript
+                // POST /api/clinician/consultation/transcript
                 const transcript = await postJson<IConsultationTranscript>(API.CLINICIAN_CONSULTATION_TRANSCRIPT_ROUTE, payload, "Unable to attach consultation transcript.");
                 const workspace = await refreshWorkspace(payload.visitId);
                 dispatch(attachTranscriptSucceeded(workspace));
@@ -209,6 +216,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
                     formData.append("language", payload.language.trim());
                 }
 
+                // Transcribe Consultation Audio
+                // POST /api/clinician/consultation/transcript
                 const transcript = await postFormData<IConsultationTranscript>(API.CLINICIAN_CONSULTATION_TRANSCRIPT_ROUTE, formData, "Unable to transcribe consultation audio.");
                 const workspace = await refreshWorkspace(payload.visitId);
                 dispatch(attachTranscriptSucceeded(workspace));
@@ -225,6 +234,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
     const generateSubjectiveDraft = useCallback(async (visitId: number): Promise<IConsultationAiDraft | null> => {
         dispatch(generateSubjectiveStarted());
         try {
+            // Generate Subjective Draft
+            // POST /api/clinician/consultation/drafts/subjective
             const draft = await postJson<IConsultationAiDraft>(API.CLINICIAN_CONSULTATION_SUBJECTIVE_DRAFT_ROUTE, { visitId }, "Unable to generate subjective draft.");
             dispatch(generateSubjectiveSucceeded(draft));
             return draft;
@@ -238,6 +249,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
     const generateAssessmentPlanDraft = useCallback(async (visitId: number): Promise<IConsultationAiDraft | null> => {
         dispatch(generateAssessmentPlanStarted());
         try {
+            // Generate Assessment And Plan Draft
+            // POST /api/clinician/consultation/drafts/assessment-plan
             const draft = await postJson<IConsultationAiDraft>(API.CLINICIAN_CONSULTATION_ASSESSMENT_PLAN_DRAFT_ROUTE, { visitId }, "Unable to generate assessment and plan draft.");
             dispatch(generateAssessmentPlanSucceeded(draft));
             return draft;
@@ -252,6 +265,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
         async (payload: IFinalizeEncounterNoteRequest): Promise<IEncounterNote | null> => {
             dispatch(finalizeStarted());
             try {
+                // Finalize Encounter Note
+                // POST /api/clinician/consultation/finalize
                 const note = await postJson<IEncounterNote>(API.CLINICIAN_CONSULTATION_FINALIZE_ROUTE, payload, "Unable to finalize note.");
                 const workspace = await refreshWorkspace(payload.visitId);
                 dispatch(finalizeSucceeded(workspace));
@@ -268,6 +283,8 @@ export const ClinicianConsultationProvider = ({ children }: { children: React.Re
     const completeVisit = useCallback(async (queueTicketId: number): Promise<IUpdateQueueStatusResponse | null> => {
         dispatch(completeVisitStarted());
         try {
+            // Complete Consultation Visit
+            // POST /api/clinician/queue/{queueTicketId}/status
             const result = await postJson<IUpdateQueueStatusResponse>(
                 `${API.CLINICIAN_QUEUE_TICKET_ROUTE_PREFIX}/${queueTicketId}/status`,
                 { newStatus: "completed" },

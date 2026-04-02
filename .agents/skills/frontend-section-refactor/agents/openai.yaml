@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Section Refactor"
+  short_description: "Refactor one frontend section cleanly."
+  default_prompt: "Use $frontend-section-refactor to clean up one MedStream frontend section end-to-end."

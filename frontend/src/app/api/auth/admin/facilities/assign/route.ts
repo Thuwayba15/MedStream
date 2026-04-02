@@ -1,6 +1,6 @@
 import { getAbpErrorMessage } from "@/lib/api/abp";
 import { requireAdminAccessToken } from "@/lib/server/adminAuthGuard";
-import { adminAuthService } from "@/services/auth/adminAuthService";
+import { assignAdminClinicianFacility } from "@/lib/server/authApi";
 import { NextResponse } from "next/server";
 
 interface AssignBody {
@@ -20,7 +20,7 @@ export const POST = async (request: Request): Promise<Response> => {
             return NextResponse.json({ message: "clinicianUserId and facilityId are required." }, { status: 400 });
         }
 
-        await adminAuthService.assignClinicianFacility(body.clinicianUserId, body.facilityId, guardResult.accessToken);
+        await assignAdminClinicianFacility(body.clinicianUserId, body.facilityId, guardResult.accessToken);
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to assign clinician to facility.") }, { status: 400 });

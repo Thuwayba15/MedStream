@@ -1,5 +1,7 @@
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requirePatientAccessToken } from "@/lib/server/patientAuthGuard";
-import { patientIntakeService } from "@/services/patient-intake/patientIntakeService";
 import type { ISymptomCaptureRequest } from "@/services/patient-intake/types";
 import { NextResponse } from "next/server";
 
@@ -23,17 +25,18 @@ export const POST = async (request: Request): Promise<Response> => {
     }
 
     try {
-        const result = await patientIntakeService.captureSymptoms(
+        const response = await apiClient.post(
+            API.PATIENT_INTAKE_CAPTURE_SYMPTOMS_ENDPOINT,
             {
                 visitId: payload.visitId,
                 freeText: payload.freeText ?? "",
                 selectedSymptoms: payload.selectedSymptoms ?? [],
             },
-            guardResult.accessToken
+            { headers: { Authorization: `Bearer ${guardResult.accessToken}` } }
         );
 
-        return NextResponse.json(result);
-    } catch {
-        return NextResponse.json({ message: "Unable to save symptoms." }, { status: 400 });
+        return NextResponse.json(unwrapAbpResponse(response.data));
+    } catch (error) {
+        return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to save symptoms.") }, { status: 400 });
     }
 };

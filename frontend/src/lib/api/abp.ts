@@ -1,7 +1,9 @@
 import { AxiosError } from "axios";
+import type { IAuthFieldError } from "@/lib/auth/types";
 
 interface IAbpValidationError {
     message?: string;
+    members?: string[];
 }
 
 interface IAbpError {
@@ -31,27 +33,34 @@ export const unwrapAbpResponse = <T>(payload: IAbpResponseEnvelope<T> | T): T =>
 };
 
 export const getAbpErrorMessage = (error: unknown, fallbackMessage: string): string => {
+    return getAbpErrorDetails(error, fallbackMessage).message;
+};
+
+export const getAbpErrorDetails = (error: unknown, fallbackMessage: string): { message: string; fieldErrors: IAuthFieldError[] } => {
     if (error instanceof AxiosError) {
         const responseData: unknown = error.response?.data;
 
         if (isAbpEnvelope(responseData) && responseData.error) {
-            return buildAbpErrorMessage(responseData.error, fallbackMessage);
+            return {
+                message: buildAbpErrorMessage(responseData.error, fallbackMessage),
+                fieldErrors: buildAbpFieldErrors(responseData.error),
+            };
         }
 
         if (typeof responseData === "string" && responseData.trim().length > 0) {
-            return responseData;
+            return { message: responseData, fieldErrors: [] };
         }
 
         if (error.message) {
-            return error.message;
+            return { message: error.message, fieldErrors: [] };
         }
     }
 
     if (error instanceof Error) {
-        return error.message;
+        return { message: error.message, fieldErrors: [] };
     }
 
-    return fallbackMessage;
+    return { message: fallbackMessage, fieldErrors: [] };
 };
 
 const buildAbpErrorMessage = (error: IAbpError | undefined, fallbackMessage: string): string => {
@@ -73,6 +82,37 @@ const buildAbpErrorMessage = (error: IAbpError | undefined, fallbackMessage: str
     }
 
     return fallbackMessage;
+};
+
+const buildAbpFieldErrors = (error: IAbpError | undefined): IAuthFieldError[] => {
+    if (!error?.validationErrors?.length) {
+        return [];
+    }
+
+    return error.validationErrors.flatMap((validationError) => {
+        const message = validationError.message?.trim();
+        if (!message) {
+            return [];
+        }
+
+        const members = validationError.members?.filter((member) => member.trim().length > 0) ?? [];
+        if (members.length === 0) {
+            return [];
+        }
+
+        return members.map((member) => ({
+            field: toCamelCase(member),
+            message,
+        }));
+    });
+};
+
+const toCamelCase = (value: string): string => {
+    if (!value) {
+        return value;
+    }
+
+    return `${value.charAt(0).toLowerCase()}${value.slice(1)}`;
 };
 
 const isAbpEnvelope = <T>(payload: IAbpResponseEnvelope<T> | T): payload is IAbpResponseEnvelope<T> => {

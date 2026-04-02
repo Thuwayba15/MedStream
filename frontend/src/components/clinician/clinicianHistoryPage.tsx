@@ -1,7 +1,8 @@
 "use client";
 
-import { Alert, Button, Card, Empty, Result, Skeleton, Space, Tag, Typography } from "antd";
+import { Card, Empty, Result, Skeleton, Space, Tag, Typography } from "antd";
 import { useEffect, useMemo } from "react";
+import { useClinicianToastMessages } from "@/hooks/clinician/useClinicianToastMessages";
 import { useClinicianConsultationState } from "@/providers/clinician-consultation";
 import { useClinicianHistoryActions, useClinicianHistoryState } from "@/providers/clinician-history";
 import type { IPatientTimelineVisit } from "@/services/patient-timeline/types";
@@ -21,7 +22,14 @@ const formatDate = (value?: string | null): string => {
         return value;
     }
 
-    return date.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleString("en-ZA", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Africa/Johannesburg",
+    });
 };
 
 const byNewestVisit = (left: IPatientTimelineVisit, right: IPatientTimelineVisit): number => {
@@ -33,9 +41,15 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
     const consultationState = useClinicianConsultationState();
     const timelineState = useClinicianHistoryState();
     const timelineActions = useClinicianHistoryActions();
-
     const activePatientUserId = patientUserId ?? consultationState.workspace?.patientContext.patientUserId ?? consultationState.review?.patientUserId;
     const activeVisitId = consultationState.workspace?.visitId ?? consultationState.review?.visitId;
+    const unauthorized = /access|authorize|authoriz|forbidden|permission/i.test(timelineState.errorMessage ?? "");
+    const toastContext = useClinicianToastMessages([
+        {
+            type: "error",
+            content: unauthorized ? null : timelineState.errorMessage,
+        },
+    ]);
 
     useEffect(() => {
         if (activePatientUserId && activePatientUserId > 0) {
@@ -49,8 +63,6 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
     const visits = useMemo(() => {
         return [...(timelineState.timeline?.visits ?? [])].sort(byNewestVisit);
     }, [timelineState.timeline?.visits]);
-
-    const unauthorized = /access|authorize|authoriz|forbidden|permission/i.test(timelineState.errorMessage ?? "");
 
     if (!activePatientUserId) {
         return (
@@ -76,24 +88,10 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
         );
     }
 
-    if (timelineState.errorMessage) {
-        return (
-            <Alert
-                type="error"
-                showIcon
-                message={timelineState.errorMessage}
-                action={
-                    <Button size="small" onClick={() => void timelineActions.loadTimeline(activePatientUserId)}>
-                        Retry
-                    </Button>
-                }
-            />
-        );
-    }
-
     if (!timelineState.timeline) {
         return (
             <Card className={styles.sectionCard}>
+                {toastContext}
                 <Empty description="No timeline data available for this patient yet." />
             </Card>
         );
@@ -103,6 +101,7 @@ export const ClinicianHistoryPage = ({ patientUserId }: IClinicianHistoryPagePro
 
     return (
         <section className={styles.page}>
+            {toastContext}
             <Card className={styles.sectionCard}>
                 <div className={styles.patientHeader}>
                     <Typography.Title level={3} className={styles.patientName}>

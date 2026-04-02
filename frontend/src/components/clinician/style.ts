@@ -27,49 +27,112 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         border: 1px solid rgba(13, 27, 46, 0.1);
         box-shadow: ${shadows.soft};
         background: ${colors.white};
-        min-height: 120px;
+        min-height: 132px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        position: relative;
+        overflow: hidden;
+        transition:
+            transform 180ms ease,
+            box-shadow 180ms ease;
 
-        .ant-statistic-title {
-            color: #7f90ad;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            font-weight: 700;
+        &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            opacity: 0;
+            transition: opacity 180ms ease;
         }
 
-        .ant-statistic-content {
-            color: ${colors.navy};
-            font-family: ${typography.fontDisplay};
-            font-size: clamp(1.7rem, 3vw, 2.4rem);
+        &:hover {
+            transform: translateY(-2px);
+        }
+
+        &:hover::after {
+            opacity: 1;
         }
     `,
 
     summaryNeutral: css`
         border-color: rgba(13, 27, 46, 0.1);
+
+        &::after {
+            background: ${colors.navy};
+        }
     `,
 
     summaryWarning: css`
         border-color: rgba(224, 123, 42, 0.25);
 
-        .ant-statistic-content {
-            color: ${colors.priority};
+        &::after {
+            background: ${colors.priority};
         }
     `,
 
     summaryDanger: css`
         border-color: rgba(201, 64, 64, 0.25);
 
-        .ant-statistic-content {
-            color: ${colors.urgent};
+        &::after {
+            background: ${colors.urgent};
         }
     `,
 
     summarySuccess: css`
         border-color: rgba(35, 160, 112, 0.25);
 
-        .ant-statistic-content {
-            color: #198a60;
+        &::after {
+            background: #198a60;
         }
+    `,
+
+    summaryIconWrap: css`
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+        background: rgba(13, 27, 46, 0.06);
+        color: ${colors.navy};
+    `,
+
+    summaryInfo: css`
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+    `,
+
+    summaryLabel: css`
+        color: #7f90ad;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+    `,
+
+    summaryValue: css`
+        margin: 0 !important;
+        color: ${colors.navy} !important;
+        font-family: ${typography.fontDisplay};
+        font-size: clamp(1.8rem, 3vw, 2.4rem) !important;
+        line-height: 1 !important;
+    `,
+
+    summarySuffix: css`
+        font-size: 0.95rem;
+        margin-left: 3px;
+        font-family: ${typography.fontBody};
+        font-weight: 700;
+    `,
+
+    summaryHint: css`
+        color: ${colors.slate};
+        font-size: 0.9rem;
     `,
 
     filterCard: css`
@@ -84,17 +147,11 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
+        justify-content: space-between;
 
         @media (max-width: 768px) {
             align-items: stretch;
         }
-    `,
-
-    refreshButton: css`
-        border-radius: ${radius.sm}px !important;
-        min-width: 132px;
-        background: linear-gradient(180deg, ${colors.navyLight} 0%, ${colors.navy} 100%) !important;
-        border-color: ${colors.navy} !important;
     `,
 
     filterGroup: css`
@@ -102,6 +159,17 @@ export const useClinicianQueueStyles = createStyles(({ css }) => ({
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
+    `,
+
+    searchInput: css`
+        flex: 1 1 300px;
+        min-width: 220px;
+
+        .ant-input-affix-wrapper {
+            border-color: rgba(13, 27, 46, 0.18) !important;
+            border-radius: ${radius.sm}px !important;
+            min-height: 48px;
+        }
     `,
 
     filterLabel: css`

@@ -1,17 +1,14 @@
 "use client";
 
-import { Tabs, Typography } from "antd";
-import Link from "next/link";
-import { useMemo } from "react";
+import { Skeleton, Tabs } from "antd";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import { useClinicianWorkspaceShellStyles } from "./workspaceShellStyle";
 
 type TClinicianWorkspaceTabKey = "queue" | "review" | "consultation" | "history";
 
 interface IClinicianWorkspaceShellProps {
     activeKey: TClinicianWorkspaceTabKey;
-    title: string;
-    subtitle: string;
-    extra?: React.ReactNode;
     reviewQueueTicketId?: number;
     consultationVisitId?: number;
     consultationQueueTicketId?: number;
@@ -22,9 +19,6 @@ interface IClinicianWorkspaceShellProps {
 
 export const ClinicianWorkspaceShell = ({
     activeKey,
-    title,
-    subtitle,
-    extra,
     reviewQueueTicketId,
     consultationVisitId,
     consultationQueueTicketId,
@@ -33,8 +27,11 @@ export const ClinicianWorkspaceShell = ({
     children,
 }: IClinicianWorkspaceShellProps): React.JSX.Element => {
     const { styles } = useClinicianWorkspaceShellStyles();
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [pendingKey, setPendingKey] = useState<TClinicianWorkspaceTabKey | null>(null);
 
-    const tabs = useMemo(() => {
+    const tabTargets = useMemo(() => {
         const consultationQuery = new URLSearchParams();
         if (consultationVisitId && consultationVisitId > 0) {
             consultationQuery.set("visitId", String(consultationVisitId));
@@ -61,31 +58,45 @@ export const ClinicianWorkspaceShell = ({
             { key: "history", label: "Patient Timeline", href: historyHref },
         ];
 
-        return items.map((item) => ({
-            key: item.key,
-            label: (
-                <Link href={item.href} className={styles.tabLink}>
-                    {item.label}
-                </Link>
-            ),
-        }));
-    }, [consultationQueueTicketId, consultationVisitId, historyPatientUserId, historyVisitId, reviewQueueTicketId, styles.tabLink]);
+        return items;
+    }, [consultationQueueTicketId, consultationVisitId, historyPatientUserId, historyVisitId, reviewQueueTicketId]);
+
+    const tabs = useMemo(
+        () =>
+            tabTargets.map((item) => ({
+                key: item.key,
+                label: item.label,
+            })),
+        [tabTargets]
+    );
+
+    const handleTabChange = (nextKey: string): void => {
+        const target = tabTargets.find((item) => item.key === nextKey);
+        if (!target || target.key === activeKey) {
+            return;
+        }
+
+        setPendingKey(target.key);
+        startTransition(() => {
+            router.push(target.href);
+        });
+    };
+
+    const isShowingLoadingState = isPending || (pendingKey !== null && pendingKey !== activeKey);
 
     return (
         <section className={styles.page}>
-            <header className={styles.header}>
-                <div>
-                    <Typography.Title level={1} className={styles.title}>
-                        {title}
-                    </Typography.Title>
-                    <Typography.Text className={styles.subtitle}>{subtitle}</Typography.Text>
-                </div>
-                {extra ? <div className={styles.extra}>{extra}</div> : null}
-            </header>
-
             <section className={styles.tabCard}>
-                <Tabs activeKey={activeKey} items={tabs} className={styles.tabs} />
-                <div className={styles.content}>{children}</div>
+                <Tabs activeKey={activeKey} items={tabs} className={styles.tabs} onChange={handleTabChange} />
+                <div className={styles.content}>
+                    {isShowingLoadingState ? (
+                        <div className={styles.loadingState}>
+                            <Skeleton active paragraph={{ rows: 10 }} />
+                        </div>
+                    ) : (
+                        children
+                    )}
+                </div>
             </section>
         </section>
     );

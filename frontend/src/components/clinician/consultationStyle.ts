@@ -13,6 +13,10 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         align-items: flex-start;
         gap: 16px;
         flex-wrap: wrap;
+
+        @media (max-width: 768px) {
+            gap: 12px;
+        }
     `,
     topBarLeft: css`
         display: flex;
@@ -28,6 +32,12 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         margin: 0 !important;
         color: ${colors.navy} !important;
         font-family: ${typography.fontDisplay};
+        word-break: break-word;
+
+        @media (max-width: 768px) {
+            font-size: 1.85rem !important;
+            line-height: 1.1 !important;
+        }
     `,
     pageMeta: css`
         color: #7d8ca4;
@@ -38,6 +48,14 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         gap: 10px;
         flex-wrap: wrap;
         justify-content: flex-end;
+
+        @media (max-width: 768px) {
+            width: 100%;
+
+            > * {
+                flex: 1 1 calc(50% - 8px);
+            }
+        }
     `,
     secondaryAction: css`
         border-radius: ${radius.sm}px !important;
@@ -50,7 +68,17 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         border-radius: ${radius.sm}px !important;
         background: linear-gradient(180deg, ${colors.navyLight} 0%, ${colors.navy} 100%) !important;
         border-color: ${colors.navy} !important;
+        color: ${colors.white} !important;
         font-weight: 700;
+
+        &:disabled,
+        &.ant-btn-primary:disabled,
+        &.ant-btn-color-primary[disabled] {
+            color: ${colors.white} !important;
+            background: ${colors.navyMid} !important;
+            border-color: ${colors.navyMid} !important;
+            opacity: 0.9;
+        }
     `,
     signalAction: css`
         border-radius: ${radius.sm}px !important;
@@ -61,6 +89,14 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         box-shadow: 0 10px 24px rgba(224, 123, 42, 0.2);
         min-height: 40px;
     `,
+    micAction: css`
+        border-radius: ${radius.sm}px !important;
+        min-width: 40px;
+        height: 40px;
+        border-color: rgba(13, 27, 46, 0.16) !important;
+        color: ${colors.navy} !important;
+        background: ${colors.white} !important;
+    `,
     shellGrid: css`
         display: grid;
         gap: 18px;
@@ -69,6 +105,10 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
 
         @media (max-width: 1080px) {
             grid-template-columns: 1fr;
+        }
+
+        @media (max-width: 768px) {
+            gap: 14px;
         }
     `,
     sideRail: css`
@@ -80,6 +120,10 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         @media (max-width: 1080px) {
             position: static;
         }
+
+        @media (max-width: 768px) {
+            gap: 12px;
+        }
     `,
     panelCard: css`
         border-radius: ${radius.md}px;
@@ -87,6 +131,10 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         box-shadow: ${shadows.soft};
         background: ${colors.white};
         overflow: hidden;
+
+        @media (max-width: 768px) {
+            border-radius: 20px;
+        }
     `,
     sectionHeading: css`
         margin: 0 0 12px !important;
@@ -104,6 +152,10 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         border-radius: ${radius.sm}px;
         background: linear-gradient(180deg, #fffdfa 0%, #f8f3ec 100%);
         border: 1px solid rgba(224, 123, 42, 0.18);
+
+        @media (max-width: 768px) {
+            padding: 14px;
+        }
     `,
     patientSummaryLead: css`
         margin: 0 !important;
@@ -120,6 +172,11 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+    `,
+    patientContextHeader: css`
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
     `,
     queueTag: css`
         border-radius: ${radius.pill}px;
@@ -244,8 +301,16 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
     mainColumn: css`
         display: grid;
         gap: 14px;
+
+        @media (max-width: 768px) {
+            gap: 12px;
+        }
     `,
     workflowSteps: css`
+        .ant-steps-item {
+            min-height: 54px;
+        }
+
         .ant-steps-item-content {
             min-height: auto !important;
         }
@@ -263,6 +328,11 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         .ant-steps-item-process .ant-steps-item-icon {
             background: ${colors.amber} !important;
             border-color: ${colors.amber} !important;
+        }
+
+        .ant-steps-item-process .ant-steps-icon,
+        .ant-steps-item-wait .ant-steps-icon {
+            color: ${colors.white} !important;
         }
 
         .ant-steps-item-finish .ant-steps-item-icon {
@@ -382,6 +452,67 @@ export const useClinicianConsultationStyles = createStyles(({ css }) => ({
         min-height: 180px !important;
         border-radius: 20px !important;
         padding: 14px 16px !important;
+    `,
+    transcriptPreviewModal: css`
+        max-height: 340px;
+        overflow: auto;
+        white-space: pre-line;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: linear-gradient(180deg, #fffdfa 0%, #f8f4ee 100%);
+        color: ${colors.navy};
+        line-height: 1.7;
+    `,
+    transcriptPreviewArea: css`
+        .ant-input {
+            border-radius: 18px !important;
+            border-color: rgba(13, 27, 46, 0.12) !important;
+            padding: 14px 16px !important;
+            line-height: 1.7 !important;
+        }
+    `,
+    transcriptOverlay: css`
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 27, 46, 0.32);
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        z-index: 1200;
+    `,
+    transcriptPreviewCard: css`
+        width: min(680px, 100%);
+        display: grid;
+        gap: 14px;
+        padding: 24px;
+        border-radius: 28px;
+        background: ${colors.white};
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        box-shadow: ${shadows.panel};
+
+        @media (max-width: 640px) {
+            gap: 12px;
+            padding: 18px;
+            border-radius: 22px;
+        }
+    `,
+    transcriptPreviewTitle: css`
+        margin: 0 !important;
+        color: ${colors.navy} !important;
+        font-family: ${typography.fontDisplay};
+    `,
+    transcriptPreviewActions: css`
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+
+        @media (max-width: 640px) {
+            > * {
+                flex: 1 1 100%;
+            }
+        }
     `,
     objectiveGrid: css`
         display: grid;
