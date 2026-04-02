@@ -1,7 +1,22 @@
 "use client";
 
 import { useCallback, useContext, useEffect, useMemo, useReducer } from "react";
-import { API } from "@/constants/api";
+import {
+    assessTriage,
+    checkIn,
+    clearPersistedQueuedVisit,
+    extractSymptoms,
+    getActiveFacilities,
+    getCurrentQueueStatus,
+    getMissingFollowUpQuestion,
+    getMissingUrgentQuestion,
+    loadQuestions,
+    logIntakeDebug,
+    persistQueuedVisit,
+    readPersistedQueuedVisit,
+    runUrgentCheck,
+    submitSymptoms,
+} from "@/lib/patient-intake/providerHelpers";
 import { subscribeToQueueRealtime } from "@/services/realtime/queueRealtimeClient";
 import {
     actionFailed,
@@ -15,6 +30,7 @@ import {
     setFreeText,
     setSelectedFacilityId,
     setStep,
+    startNewVisitDraft,
     symptomProcessingSucceeded,
     toggleSymptom,
     triageSucceeded,
@@ -22,186 +38,12 @@ import {
 } from "./actions";
 import { INITIAL_STATE, IPatientIntakeActionContext, IPatientIntakeStateContext, PatientIntakeActionContext, PatientIntakeStateContext } from "./context";
 import { patientIntakeReducer } from "./reducer";
-import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
-import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ISymptomCaptureRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
-
-const PATIENT_QUEUE_STORAGE_KEY = "medstream.patient.queue";
-
-interface IPersistedQueuedVisit {
-    visitId: number;
-    facilityName: string;
-    selectedFacilityId: number | null;
-    startedAt: string | null;
-    pathwayKey: string;
-}
-
-interface IFacility {
-    id: number;
-    name: string;
-}
-
-interface IFacilitiesResponse {
-    facilities: IFacility[];
-}
-
-const logIntakeDebug = (message: string, payload?: unknown): void => {
-    if (process.env.NODE_ENV === "production") {
-        return;
-    }
-
-    if (payload === undefined) {
-        console.info(`[PatientIntake] ${message}`);
-        return;
-    }
-
-    console.info(`[PatientIntake] ${message}`, payload);
-};
 
 export const PatientIntakeProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(patientIntakeReducer, INITIAL_STATE);
 
-    const readPersistedQueuedVisit = useCallback((): IPersistedQueuedVisit | null => {
-        if (typeof window === "undefined") {
-            return null;
-        }
-
-        try {
-            const rawValue = window.localStorage.getItem(PATIENT_QUEUE_STORAGE_KEY);
-            if (!rawValue) {
-                return null;
-            }
-
-            return JSON.parse(rawValue) as IPersistedQueuedVisit;
-        } catch {
-            return null;
-        }
-    }, []);
-
-    const clearPersistedQueuedVisit = useCallback((): void => {
-        if (typeof window === "undefined") {
-            return;
-        }
-
-        window.localStorage.removeItem(PATIENT_QUEUE_STORAGE_KEY);
-    }, []);
-
-    const persistQueuedVisit = useCallback((queuedVisit: IPersistedQueuedVisit): void => {
-        if (typeof window === "undefined") {
-            return;
-        }
-
-        window.localStorage.setItem(PATIENT_QUEUE_STORAGE_KEY, JSON.stringify(queuedVisit));
-    }, []);
-
-    const parseResponse = async <T,>(response: Response, fallbackMessage: string): Promise<T> => {
-        const body = (await response.json()) as T & { message?: string };
-        if (!response.ok) {
-            throw new Error(body.message ?? fallbackMessage);
-        }
-
-        return body;
-    };
-
-    const checkIn = useCallback(async (): Promise<ICheckInResponse> => {
-        const response = await fetch(API.PATIENT_INTAKE_CHECKIN_ROUTE, { method: "POST" });
-        return parseResponse<ICheckInResponse>(response, "Unable to start patient check-in.");
-    }, []);
-
-    const getActiveFacilities = useCallback(async (): Promise<IFacility[]> => {
-        const response = await fetch(API.ACTIVE_FACILITIES_ROUTE);
-        const body = await parseResponse<IFacilitiesResponse>(response, "Unable to load facilities.");
-        return body.facilities ?? [];
-    }, []);
-
-    const submitSymptoms = useCallback(async (payload: ISymptomCaptureRequest): Promise<void> => {
-        const response = await fetch(API.PATIENT_INTAKE_SYMPTOMS_ROUTE, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
-
-        await parseResponse<Record<string, unknown>>(response, "Unable to save symptoms.");
-    }, []);
-
-    const extractSymptoms = useCallback(async (payload: ISymptomCaptureRequest): Promise<IExtractSymptomsResponse> => {
-        const response = await fetch(API.PATIENT_INTAKE_EXTRACT_ROUTE, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
-
-        return parseResponse<IExtractSymptomsResponse>(response, "Unable to extract symptoms.");
-    }, []);
-
-    const runUrgentCheck = useCallback(
-        async (payload: {
-            visitId: number;
-            pathwayKey: string;
-            intakeMode: "approved_json" | "apc_fallback";
-            freeText: string;
-            selectedSymptoms: string[];
-            extractedPrimarySymptoms: string[];
-            fallbackSummaryIds: string[];
-            answers: Record<string, string | number | boolean | string[]>;
-        }): Promise<IUrgentCheckResponse> => {
-            const response = await fetch(API.PATIENT_INTAKE_URGENT_CHECK_ROUTE, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            return parseResponse<IUrgentCheckResponse>(response, "Unable to run urgent check.");
-        },
-        []
-    );
-
-    const loadQuestions = useCallback(
-        async (payload: {
-            visitId: number;
-            pathwayKey: string;
-            primarySymptom: string | null;
-            freeText: string;
-            selectedSymptoms: string[];
-            extractedPrimarySymptoms: string[];
-            fallbackSummaryIds: string[];
-            useApcFallback: boolean;
-            answers: Record<string, string | number | boolean | string[]>;
-        }): Promise<IIntakeQuestion[]> => {
-            const response = await fetch(API.PATIENT_INTAKE_QUESTIONS_ROUTE, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            const body = await parseResponse<{ questionSet: IIntakeQuestion[] }>(response, "Unable to load follow-up questions.");
-            return body.questionSet ?? [];
-        },
-        []
-    );
-
-    const assessTriage = useCallback(
-        async (payload: {
-            visitId: number;
-            freeText: string;
-            selectedSymptoms: string[];
-            extractedPrimarySymptoms: string[];
-            answers: Record<string, string | number | boolean | string[]>;
-        }): Promise<ITriageResponse> => {
-            const response = await fetch(API.PATIENT_INTAKE_TRIAGE_ROUTE, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            return parseResponse<ITriageResponse>(response, "Unable to generate triage result.");
-        },
-        []
-    );
-
-    const getCurrentQueueStatus = useCallback(async (visitId: number): Promise<ITriageResponse> => {
-        const response = await fetch(`${API.PATIENT_INTAKE_QUEUE_STATUS_ROUTE}?visitId=${visitId}`);
-        return parseResponse<ITriageResponse>(response, "Unable to load current queue status.");
-    }, []);
-
+    // Initialize Patient Intake
+    // POST /api/patient-intake/check-in + GET /api/auth/facilities/active
     const initializeFlow = useCallback(async (): Promise<void> => {
         dispatch(initializeStarted());
         try {
@@ -239,8 +81,10 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to initialize patient intake.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn, clearPersistedQueuedVisit, getActiveFacilities, getCurrentQueueStatus, readPersistedQueuedVisit]);
+    }, []);
 
+    // Process Symptoms And Load Follow-Up Questions
+    // POST /api/patient-intake/symptoms + POST /api/patient-intake/extract + POST /api/patient-intake/questions
     const continueFromSymptoms = useCallback(async (): Promise<void> => {
         if (!state.freeText.trim() && state.selectedSymptoms.length === 0) {
             dispatch(actionFailed("Describe at least one symptom before continuing."));
@@ -296,17 +140,17 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to process symptom input.";
             dispatch(actionFailed(message));
         }
-    }, [checkIn, extractSymptoms, getActiveFacilities, loadQuestions, state.answers, state.freeText, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId, submitSymptoms]);
+    }, [state.answers, state.freeText, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
 
+    // Run Urgent Safety Check
+    // POST /api/patient-intake/urgent-check + POST /api/patient-intake/triage
     const continueFromUrgentCheck = useCallback(async (): Promise<void> => {
         if (!state.visitId) {
             dispatch(actionFailed("Visit session is missing. Please restart check-in."));
             return;
         }
 
-        const missingUrgentAnswer = state.urgentQuestionSet.find(
-            (question) => question.isRequired && (state.answers[question.questionKey] === undefined || state.answers[question.questionKey] === null || state.answers[question.questionKey] === "")
-        );
+        const missingUrgentAnswer = getMissingUrgentQuestion(state.urgentQuestionSet, state.answers);
         if (missingUrgentAnswer) {
             dispatch(actionFailed(`Please answer "${missingUrgentAnswer.questionText}" before continuing.`));
             return;
@@ -350,47 +194,17 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to continue urgent check.";
             dispatch(actionFailed(message));
         }
-    }, [
-        assessTriage,
-        runUrgentCheck,
-        state.answers,
-        state.extractedPrimarySymptoms,
-        state.fallbackSummaryIds,
-        state.freeText,
-        state.intakeMode,
-        state.pathwayKey,
-        state.selectedSymptoms,
-        state.urgentQuestionSet,
-        state.visitId,
-    ]);
+    }, [state.answers, state.extractedPrimarySymptoms, state.fallbackSummaryIds, state.freeText, state.intakeMode, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
 
+    // Complete Follow-Up Assessment
+    // POST /api/patient-intake/triage
     const continueFromFollowUp = useCallback(async (): Promise<void> => {
         if (!state.visitId) {
             dispatch(actionFailed("Visit session is missing. Please restart check-in."));
             return;
         }
 
-        const visibleQuestions = getVisibleQuestions(state.questionSet, state.answers, state.extractedPrimarySymptoms);
-        const missingQuestion = visibleQuestions.find((question) => {
-            if (!question.isRequired) {
-                return false;
-            }
-
-            const answer = state.answers[question.questionKey];
-            if (question.inputType === "MultiSelect") {
-                return !Array.isArray(answer) || answer.length === 0;
-            }
-
-            if (question.inputType === "Text") {
-                return !String(answer ?? "").trim();
-            }
-
-            if (question.inputType === "Number") {
-                return answer === undefined || answer === null || String(answer).trim() === "";
-            }
-
-            return answer === undefined || answer === null || String(answer).trim() === "";
-        });
+        const missingQuestion = getMissingFollowUpQuestion(state.questionSet, state.answers, state.extractedPrimarySymptoms);
 
         if (missingQuestion) {
             dispatch(actionFailed(`Please answer "${missingQuestion.questionText}" before continuing.`));
@@ -413,8 +227,10 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to complete triage assessment.";
             dispatch(actionFailed(message));
         }
-    }, [assessTriage, state.answers, state.extractedPrimarySymptoms, state.freeText, state.questionSet, state.selectedSymptoms, state.visitId]);
+    }, [state.answers, state.extractedPrimarySymptoms, state.freeText, state.questionSet, state.selectedSymptoms, state.visitId]);
 
+    // Start Check-In Safety Screen
+    // POST /api/patient-intake/check-in + POST /api/patient-intake/urgent-check
     const continueFromCheckIn = useCallback(async (): Promise<void> => {
         if (!state.selectedFacilityId) {
             dispatch(actionFailed("Select your hospital before continuing."));
@@ -448,19 +264,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to start urgent safety check.";
             dispatch(actionFailed(message));
         }
-    }, [
-        checkIn,
-        getActiveFacilities,
-        runUrgentCheck,
-        state.extractedPrimarySymptoms,
-        state.fallbackSummaryIds,
-        state.freeText,
-        state.intakeMode,
-        state.pathwayKey,
-        state.selectedFacilityId,
-        state.selectedSymptoms,
-        state.visitId,
-    ]);
+    }, [state.extractedPrimarySymptoms, state.fallbackSummaryIds, state.freeText, state.intakeMode, state.pathwayKey, state.selectedFacilityId, state.selectedSymptoms, state.visitId]);
 
     const actions: IPatientIntakeActionContext = useMemo(
         () => ({
@@ -498,24 +302,14 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             },
             clearError: () => dispatch(clearError()),
             goToStep: (step: number) => dispatch(setStep(step)),
+            startNewVisitDraft: () => dispatch(startNewVisitDraft(state.availableFacilities)),
             resetFlow: async () => {
                 clearPersistedQueuedVisit();
                 dispatch(setStep(0));
                 await initializeFlow();
             },
         }),
-        [
-            clearPersistedQueuedVisit,
-            continueFromCheckIn,
-            continueFromFollowUp,
-            continueFromSymptoms,
-            continueFromUrgentCheck,
-            initializeFlow,
-            state.answers,
-            state.availableFacilities,
-            state.currentStep,
-            state.selectedSymptoms,
-        ]
+        [continueFromCheckIn, continueFromFollowUp, continueFromSymptoms, continueFromUrgentCheck, initializeFlow, state.answers, state.availableFacilities, state.currentStep, state.selectedSymptoms]
     );
 
     useEffect(() => {
@@ -534,7 +328,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
         });
 
         return unsubscribe;
-    }, [getCurrentQueueStatus, state.currentStep, state.visitId]);
+    }, [state.currentStep, state.visitId]);
 
     useEffect(() => {
         if (state.currentStep !== 4 || !state.visitId || !state.queue) {
@@ -553,7 +347,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             startedAt: state.startedAt,
             pathwayKey: state.pathwayKey,
         });
-    }, [clearPersistedQueuedVisit, persistQueuedVisit, state.currentStep, state.facilityName, state.pathwayKey, state.queue, state.selectedFacilityId, state.startedAt, state.visitId]);
+    }, [state.currentStep, state.facilityName, state.pathwayKey, state.queue, state.selectedFacilityId, state.startedAt, state.visitId]);
 
     return (
         <PatientIntakeStateContext.Provider value={state}>

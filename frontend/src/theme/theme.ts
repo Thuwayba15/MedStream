@@ -105,7 +105,7 @@ export const medstreamAntdTheme: ThemeConfig = {
     },
 };
 
-export const { createStyles, ThemeProvider } = createInstance<MedstreamCustomToken>({
+export const { createStyles, StyleProvider, ThemeProvider } = createInstance<MedstreamCustomToken>({
     prefixCls: "medstream",
     customToken: medstreamCustomToken,
 });

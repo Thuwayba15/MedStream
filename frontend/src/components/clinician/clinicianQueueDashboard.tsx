@@ -1,9 +1,11 @@
-﻿"use client";
+"use client";
 
-import { ClockCircleOutlined, EyeOutlined, ReloadOutlined, WarningOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Empty, Input, Pagination, Segmented, Skeleton, Space, Statistic, Tag, Typography } from "antd";
+import { CheckOutlined, ClockCircleOutlined, EyeOutlined, SearchOutlined, TeamOutlined, WarningOutlined } from "@ant-design/icons";
+import { Button, Card, Empty, Input, Pagination, Segmented, Skeleton, Space, Tag, Typography } from "antd";
 import Link from "next/link";
 import { useMemo } from "react";
+import { useClinicianToastMessages } from "@/hooks/clinician/useClinicianToastMessages";
+import { useMinuteClock } from "@/hooks/clinician/useMinuteClock";
 import { useClinicianQueueActions, useClinicianQueueState } from "@/providers/clinician-queue";
 import type { IClinicianQueueItem, TUrgencyLevel } from "@/services/queue-operations/types";
 import { useClinicianQueueStyles } from "./style";
@@ -13,6 +15,7 @@ interface ISummaryCard {
     value: number;
     suffix?: string;
     hint: string;
+    icon: React.ReactNode;
     tone: "neutral" | "warning" | "danger" | "success";
 }
 
@@ -64,17 +67,35 @@ const buildClinicalPreview = (item: IClinicianQueueItem): string => {
     return "Routine visit currently waiting for clinician availability and consultation start.";
 };
 
+const getLiveWaitingMinutes = (enteredQueueAt: string, fallbackMinutes: number, now: number): number => {
+    const enteredAt = new Date(enteredQueueAt).getTime();
+    if (Number.isNaN(enteredAt)) {
+        return fallbackMinutes;
+    }
+
+    return Math.max(fallbackMinutes, Math.max(0, Math.floor((now - enteredAt) / 60000)));
+};
+
 export const ClinicianQueueDashboard = (): React.JSX.Element => {
     const { styles } = useClinicianQueueStyles();
     const state = useClinicianQueueState();
     const actions = useClinicianQueueActions();
+    const now = useMinuteClock();
+    const toastContext = useClinicianToastMessages([
+        {
+            type: "error",
+            content: state.errorMessage,
+            onClose: actions.clearError,
+        },
+    ]);
 
-    const summaryCards = useMemo<ISummaryCard[]>(() => {
-        return [
+    const summaryCards = useMemo<ISummaryCard[]>(
+        () => [
             {
                 title: "Patients Waiting",
                 value: state.summary.waitingCount,
                 hint: "In the queue now",
+                icon: <TeamOutlined />,
                 tone: "neutral",
             },
             {
@@ -82,43 +103,43 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                 value: state.summary.averageWaitingMinutes,
                 suffix: "m",
                 hint: "Across waiting patients",
+                icon: <ClockCircleOutlined />,
                 tone: "warning",
             },
             {
                 title: "Urgent Cases",
                 value: state.summary.urgentCount,
                 hint: "Needs immediate attention",
+                icon: <WarningOutlined />,
                 tone: "danger",
             },
             {
                 title: "Seen Today",
                 value: state.summary.seenTodayCount,
                 hint: "Consultations completed",
+                icon: <CheckOutlined />,
                 tone: "success",
             },
-        ];
-    }, [state.summary]);
+        ],
+        [state.summary]
+    );
 
     return (
         <section className={styles.queuePage}>
-            {state.errorMessage ? (
-                <Alert
-                    type="error"
-                    showIcon
-                    message={state.errorMessage}
-                    action={
-                        <Button size="small" onClick={actions.clearError}>
-                            Dismiss
-                        </Button>
-                    }
-                />
-            ) : null}
+            {toastContext}
 
             <div className={styles.summaryGrid}>
                 {summaryCards.map((card) => (
                     <Card key={card.title} className={`${styles.summaryCard} ${styles[`summary${card.tone.charAt(0).toUpperCase()}${card.tone.slice(1)}` as keyof typeof styles]}`}>
-                        <Statistic title={card.title} value={card.value} suffix={card.suffix} />
-                        <Typography.Text type="secondary">{card.hint}</Typography.Text>
+                        <div className={styles.summaryIconWrap}>{card.icon}</div>
+                        <div className={styles.summaryInfo}>
+                            <Typography.Text className={styles.summaryLabel}>{card.title}</Typography.Text>
+                            <Typography.Title level={3} className={styles.summaryValue}>
+                                {card.value}
+                                {card.suffix ? <span className={styles.summarySuffix}>{card.suffix}</span> : null}
+                            </Typography.Title>
+                            <Typography.Text className={styles.summaryHint}>{card.hint}</Typography.Text>
+                        </div>
                     </Card>
                 ))}
             </div>
@@ -128,14 +149,12 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                     <Input
                         allowClear
                         size="large"
-                        prefix={<ClockCircleOutlined />}
+                        prefix={<SearchOutlined />}
                         placeholder="Search patient name or queue #"
                         value={state.searchText}
                         onChange={(event) => actions.setSearchText(event.target.value)}
+                        className={styles.searchInput}
                     />
-                    <Button type="primary" className={styles.refreshButton} icon={<ReloadOutlined />} loading={state.isRefreshing} onClick={() => void actions.loadQueue("refresh")}>
-                        Refresh
-                    </Button>
                     <Space size={8} wrap className={styles.filterGroup}>
                         <Typography.Text className={styles.filterLabel}>Status</Typography.Text>
                         <Segmented
@@ -177,7 +196,7 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                     </Typography.Text>
                 </div>
 
-                {state.isLoading ? (
+                {state.isLoading || state.isRefreshing ? (
                     <div className={styles.loadingWrap}>
                         <Skeleton active paragraph={{ rows: 3 }} />
                         <Skeleton active paragraph={{ rows: 3 }} />
@@ -190,7 +209,7 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
                     <>
                         <div className={styles.queueList}>
                             {state.items.map((item) => (
-                                <QueueRow key={item.queueTicketId} item={item} />
+                                <QueueRow key={item.queueTicketId} item={item} now={now} />
                             ))}
                         </div>
                         <div className={styles.paginationRow}>
@@ -210,8 +229,9 @@ export const ClinicianQueueDashboard = (): React.JSX.Element => {
     );
 };
 
-const QueueRow = ({ item }: { item: IClinicianQueueItem }): React.JSX.Element => {
+const QueueRow = ({ item, now }: { item: IClinicianQueueItem; now: number }): React.JSX.Element => {
     const { styles } = useClinicianQueueStyles();
+    const waitingMinutes = getLiveWaitingMinutes(item.enteredQueueAt, item.waitingMinutes, now);
 
     return (
         <article className={`${styles.queueItem} ${getQueueAccentClassName(item.urgencyLevel, styles)}`}>
@@ -232,7 +252,7 @@ const QueueRow = ({ item }: { item: IClinicianQueueItem }): React.JSX.Element =>
                 <div className={styles.detailRow}>
                     <Space size={8}>
                         <ClockCircleOutlined />
-                        <span>Waiting {item.waitingMinutes} min</span>
+                        <span>Waiting {waitingMinutes} min</span>
                     </Space>
                     <Space size={8}>
                         <WarningOutlined />

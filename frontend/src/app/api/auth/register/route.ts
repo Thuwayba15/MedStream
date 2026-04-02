@@ -1,7 +1,7 @@
 import { ACCESS_TOKEN_COOKIE_NAME, AUTH_STATE_COOKIE_NAME, SIGNALR_TOKEN_COOKIE_NAME } from "@/lib/auth/constants";
-import { getAbpErrorMessage } from "@/lib/api/abp";
+import { getAbpErrorDetails } from "@/lib/api/abp";
+import { authenticateUser, registerUser } from "@/lib/server/authApi";
 import { deriveAuthInfoFromAccessToken } from "@/lib/server/tokenState";
-import { authService } from "@/services/auth/authService";
 import { NextResponse } from "next/server";
 
 interface RegisterRequestBody {
@@ -28,7 +28,7 @@ export const POST = async (request: Request): Promise<Response> => {
             return NextResponse.json({ message: "All registration fields are required." }, { status: 400 });
         }
 
-        const registerResult = await authService.register({
+        const registerResult = await registerUser({
             firstName: body.firstName,
             lastName: body.lastName,
             emailAddress: body.emailAddress,
@@ -49,7 +49,7 @@ export const POST = async (request: Request): Promise<Response> => {
             return NextResponse.json({ message: "Registration succeeded but automatic login is unavailable." }, { status: 400 });
         }
 
-        const authResult = await authService.login({
+        const authResult = await authenticateUser({
             userNameOrEmailAddress: body.emailAddress,
             password: body.password,
         });
@@ -89,13 +89,15 @@ export const POST = async (request: Request): Promise<Response> => {
 
         return response;
     } catch (error) {
-        const rawMessage = getAbpErrorMessage(error, "Registration failed.");
+        const authError = getAbpErrorDetails(error, "Registration failed.");
+        const rawMessage = authError.message;
         const debugCode = `REG-${Date.now()}`;
         console.error(`[${debugCode}] /api/auth/register failed: ${rawMessage}`);
 
         return NextResponse.json(
             {
                 message: sanitizeRegistrationErrorMessage(rawMessage, debugCode),
+                fieldErrors: authError.fieldErrors,
                 debugCode,
                 rawMessage: process.env.NODE_ENV !== "production" ? rawMessage : undefined,
             },

@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useContext, useReducer } from "react";
 import { API } from "@/constants/api";
 import { clearMessages, loadFailed, loadStarted, loadSucceeded, mutationFailed, mutationStarted, mutationSucceeded, setApprovalFilter, setSearchText } from "./actions";
@@ -36,79 +37,68 @@ interface IFacilitiesResponse {
 export const AdminGovernanceProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(adminGovernanceReducer, INITIAL_STATE);
 
-    const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
-        const body = (await response.json()) as TResponse & IMessageResponse;
-        if (!response.ok) {
-            throw new Error(body.message ?? fallbackMessage);
+    const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
+        if (axios.isAxiosError<IMessageResponse>(error)) {
+            return new Error(error.response?.data?.message ?? fallbackMessage);
         }
 
-        return body;
+        return error instanceof Error ? error : new Error(fallbackMessage);
     };
 
     const getApplicants = async (): Promise<IClinicianApplicant[]> => {
-        const response = await fetch(API.ADMIN_USERS_ROUTE);
-        const body = await parseResponse<IApplicantsResponse>(response, "Unable to load clinician applicants.");
+        const response = await axios.get<IApplicantsResponse>(API.ADMIN_USERS_ROUTE);
+        const body = response.data;
         return body.users ?? [];
     };
 
     const getFacilities = async (): Promise<IFacility[]> => {
-        const response = await fetch(API.ADMIN_FACILITIES_ROUTE);
-        const body = await parseResponse<IFacilitiesResponse>(response, "Unable to load facilities.");
+        const response = await axios.get<IFacilitiesResponse>(API.ADMIN_FACILITIES_ROUTE);
+        const body = response.data;
         return body.facilities ?? [];
     };
 
     const decideClinician = async (userId: number, decisionReason: string, mode: "approve" | "decline"): Promise<void> => {
         const endpoint = mode === "approve" ? API.ADMIN_APPROVE_ROUTE : API.ADMIN_DECLINE_ROUTE;
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+        await axios.post(
+            endpoint,
+            {
                 userId,
                 decisionReason: decisionReason.trim(),
-            }),
-        });
-
-        await parseResponse<Record<string, unknown>>(response, "Unable to submit clinician decision.");
+            },
+            { headers: { "Content-Type": "application/json" } }
+        );
     };
 
     const createFacility = async (payload: IFacilityUpsertRequest): Promise<void> => {
-        const response = await fetch(API.ADMIN_FACILITIES_ROUTE, {
-            method: "POST",
+        await axios.post(API.ADMIN_FACILITIES_ROUTE, payload, {
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
         });
-
-        await parseResponse<Record<string, unknown>>(response, "Unable to create facility.");
     };
 
     const updateFacility = async (payload: IFacilityUpsertRequest): Promise<void> => {
-        const response = await fetch(API.ADMIN_FACILITIES_ROUTE, {
-            method: "PUT",
+        await axios.put(API.ADMIN_FACILITIES_ROUTE, payload, {
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
         });
-
-        await parseResponse<Record<string, unknown>>(response, "Unable to update facility.");
     };
 
     const setActivation = async (id: number, isActive: boolean): Promise<void> => {
-        const response = await fetch(API.ADMIN_FACILITIES_ACTIVATION_ROUTE, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, isActive }),
-        });
-
-        await parseResponse<Record<string, unknown>>(response, "Unable to update facility activation.");
+        await axios.post(
+            API.ADMIN_FACILITIES_ACTIVATION_ROUTE,
+            { id, isActive },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        );
     };
 
     const assignClinicianFacility = async (clinicianUserId: number, facilityId: number): Promise<void> => {
-        const response = await fetch(API.ADMIN_FACILITIES_ASSIGN_ROUTE, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clinicianUserId, facilityId }),
-        });
-
-        await parseResponse<Record<string, unknown>>(response, "Unable to assign clinician facility.");
+        await axios.post(
+            API.ADMIN_FACILITIES_ASSIGN_ROUTE,
+            { clinicianUserId, facilityId },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        );
     };
 
     const loadGovernanceData = async (): Promise<void> => {
@@ -133,7 +123,7 @@ export const AdminGovernanceProvider = ({ children }: { children: React.ReactNod
             dispatch(loadSucceeded(users, facilities));
             dispatch(mutationSucceeded(successMessage));
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Action failed.";
+            const message = parseRouteError(error, "Action failed.").message;
             dispatch(mutationFailed(message));
         }
     };
@@ -143,31 +133,43 @@ export const AdminGovernanceProvider = ({ children }: { children: React.ReactNod
         setSearchText: (value) => dispatch(setSearchText(value)),
         setApprovalFilter: (value: ApprovalFilter) => dispatch(setApprovalFilter(value)),
         clearMessages: () => dispatch(clearMessages()),
+        // Approve Clinician
+        // POST /api/auth/admin/approve
         approveClinician: async (userId, decisionReason) =>
             executeMutation(() => decideClinician(userId, decisionReason, "approve"), "Clinician approved successfully.", {
                 users: true,
                 facilities: false,
             }),
+        // Decline Clinician
+        // POST /api/auth/admin/decline
         declineClinician: async (userId, decisionReason) =>
             executeMutation(() => decideClinician(userId, decisionReason, "decline"), "Clinician application declined.", {
                 users: true,
                 facilities: false,
             }),
+        // Create Facility
+        // POST /api/auth/admin/facilities
         createFacility: async (payload: IFacilityUpsertRequest) =>
             executeMutation(() => createFacility(payload), "Facility created successfully.", {
                 users: false,
                 facilities: true,
             }),
+        // Update Facility
+        // PUT /api/auth/admin/facilities
         updateFacility: async (payload: IFacilityUpsertRequest) =>
             executeMutation(() => updateFacility(payload), "Facility updated successfully.", {
                 users: false,
                 facilities: true,
             }),
+        // Set Facility Activation
+        // POST /api/auth/admin/facilities/activation
         setFacilityActivation: async (id: number, isActive: boolean) =>
             executeMutation(() => setActivation(id, isActive), isActive ? "Facility activated." : "Facility deactivated.", {
                 users: false,
                 facilities: true,
             }),
+        // Assign Clinician Facility
+        // POST /api/auth/admin/facilities/assign
         assignClinicianFacility: async (clinicianUserId, facilityId) =>
             executeMutation(() => assignClinicianFacility(clinicianUserId, facilityId), "Clinician facility assignment updated.", {
                 users: true,

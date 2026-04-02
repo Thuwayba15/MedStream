@@ -1,6 +1,7 @@
-﻿import { getAbpErrorMessage } from "@/lib/api/abp";
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
-import { queueOperationsService } from "@/services/queue-operations/queueOperationsService";
 import { NextResponse } from "next/server";
 
 interface IRouteContext {
@@ -22,8 +23,12 @@ export const GET = async (_request: Request, context: IRouteContext): Promise<Re
             return NextResponse.json({ message: "Queue ticket id is invalid." }, { status: 400 });
         }
 
-        const review = await queueOperationsService.getQueueTicketForReview(parsedQueueTicketId, guardResult.accessToken);
-        return NextResponse.json(review);
+        const response = await apiClient.get(API.QUEUE_OPERATIONS_GET_QUEUE_REVIEW_ENDPOINT, {
+            params: { id: parsedQueueTicketId },
+            headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+        });
+
+        return NextResponse.json(unwrapAbpResponse(response.data));
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to load queue review context.") }, { status: 400 });
     }

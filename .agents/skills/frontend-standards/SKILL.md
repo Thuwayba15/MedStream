@@ -84,6 +84,14 @@ Break work into focused pieces such as:
 - colocated styles
 - colocated types when needed
 
+### File organization
+- Within a feature area, prefer the order `hooks`, then `helpers`, then `actions`.
+- Keep separation of concerns clear: hooks for stateful orchestration, helpers for pure logic and mapping, actions for workflow triggers.
+- For provider-related work, enforce the order `hooks`, then `helpers`, then `actions` in supporting files and nearby feature structure.
+- No file should grow beyond 350 lines; split before it becomes hard to navigate.
+- Provider files may exceed 350 lines when the orchestration is clearer kept together and still follows the standard cleanly.
+- `style.ts` or `styles.ts` files may exceed 350 lines when keeping the visual system together is clearer than splitting them artificially.
+
 ### File naming
 - Use clear, intention-revealing names.
 - Match file names to the main component or exported function.
@@ -154,8 +162,10 @@ For this repository, enforce these architecture rules on every frontend task:
 - Provider state must follow the exact 4-file pattern per feature: `actions.tsx`, `context.tsx`, `reducer.tsx`, `index.tsx`.
 - Provider actions must use `redux-actions` (`createAction`) and reducers must use `redux-actions` (`handleActions`) to mirror the standard provider structure.
 - Provider `index.tsx` files own the client-side API workflow for that provider feature (pending/success/error dispatch around network operations).
+- Do not add a separate client-side service file for provider request flows unless the task explicitly needs shared logic beyond a single provider.
+- Add short operation comments above provider request methods, for example `// Get Single User` and `// GET /api/users/{id}`.
 - Components and pages must call provider actions; they must not perform business API calls directly.
-- Server route handlers under `src/app/api/**` stay thin and delegate backend calls to server-side services under `src/services/auth/**`.
+- Server route handlers under `src/app/api/**` should stay thin, but they do not need an extra shared helper layer unless reuse clearly justifies it.
 - Components and route pages should not call `fetch` directly for business flows; they should use provider actions.
 - Remove dead frontend artifacts (unused components, helpers, exports, and constants) as part of refactors.
 - Avoid eager loading for role-specific data: load clinician-only data only when clinician flows are active.
@@ -164,6 +174,7 @@ For this repository, enforce these architecture rules on every frontend task:
 
 When implementing or changing frontend behavior:
 - preserve existing flows unless the task explicitly changes them
+- preserve existing functionality while refactoring unless the user explicitly requests a functional change
 - do not silently remove validation, confirmations, or guardrails
 - keep navigation predictable
 - keep domain terminology consistent with MedStream docs and entities
@@ -212,6 +223,7 @@ Where practical, tests should cover:
 - avoid brittle selectors
 - keep tests readable and task-focused
 - update existing tests if behavior changed
+- if a refactor changes UI structure, feedback placement, or selectors, update the affected tests in the same task
 - do not leave stale failing tests behind
 
 If a feature cannot reasonably be covered end-to-end yet, add the best achievable Playwright coverage and note the remaining gap in your response.

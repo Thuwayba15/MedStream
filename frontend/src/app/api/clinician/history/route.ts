@@ -1,6 +1,7 @@
-import { getAbpErrorMessage } from "@/lib/api/abp";
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requireClinicianAccessToken } from "@/lib/server/clinicianAuthGuard";
-import { patientTimelineService } from "@/services/patient-timeline/patientTimelineService";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (request: NextRequest): Promise<Response> => {
@@ -16,8 +17,12 @@ export const GET = async (request: NextRequest): Promise<Response> => {
             return NextResponse.json({ message: "Patient user id is invalid." }, { status: 400 });
         }
 
-        const timeline = await patientTimelineService.getPatientTimeline({ patientUserId }, guardResult.accessToken);
-        return NextResponse.json(timeline);
+        const response = await apiClient.get(API.PATIENT_TIMELINE_GET_ENDPOINT, {
+            params: { patientUserId },
+            headers: { Authorization: `Bearer ${guardResult.accessToken}` },
+        });
+
+        return NextResponse.json(unwrapAbpResponse(response.data));
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to load patient timeline.") }, { status: 400 });
     }

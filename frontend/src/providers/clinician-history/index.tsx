@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useCallback, useContext, useMemo, useReducer } from "react";
 import { API } from "@/constants/api";
 import { loadTimelineFailed, loadTimelineStarted, loadTimelineSucceeded, clearTimeline } from "./actions";
@@ -11,13 +12,12 @@ interface IMessageResponse {
     message?: string;
 }
 
-const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
-    const body = (await response.json()) as TResponse & IMessageResponse;
-    if (!response.ok) {
-        throw new Error(body.message ?? fallbackMessage);
+const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
+    if (axios.isAxiosError<IMessageResponse>(error)) {
+        return new Error(error.response?.data?.message ?? fallbackMessage);
     }
 
-    return body;
+    return error instanceof Error ? error : new Error(fallbackMessage);
 };
 
 export const ClinicianHistoryProvider = ({ children }: { children: React.ReactNode }): React.JSX.Element => {
@@ -30,12 +30,12 @@ export const ClinicianHistoryProvider = ({ children }: { children: React.ReactNo
                 patientUserId: String(patientUserId),
             });
 
-            const response = await fetch(`${API.CLINICIAN_HISTORY_ROUTE}?${query.toString()}`);
-            const timeline = await parseResponse<IPatientTimeline>(response, "Unable to load patient timeline.");
-            dispatch(loadTimelineSucceeded(patientUserId, timeline));
+            // Get Patient Timeline
+            // GET /api/clinician/history
+            const response = await axios.get<IPatientTimeline>(`${API.CLINICIAN_HISTORY_ROUTE}?${query.toString()}`);
+            dispatch(loadTimelineSucceeded(patientUserId, response.data));
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Unable to load patient timeline.";
-            dispatch(loadTimelineFailed(patientUserId, message));
+            dispatch(loadTimelineFailed(patientUserId, parseRouteError(error, "Unable to load patient timeline.").message));
         }
     }, []);
 

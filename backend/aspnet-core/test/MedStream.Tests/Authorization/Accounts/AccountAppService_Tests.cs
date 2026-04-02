@@ -1,5 +1,6 @@
 using Abp.Application.Services.Dto;
 using Abp.Authorization;
+using Abp.Runtime.Validation;
 using Abp.MultiTenancy;
 using MedStream.Authorization.Accounts;
 using MedStream.Authorization.Accounts.Dto;
@@ -227,6 +228,112 @@ public class AccountAppService_Tests : MedStreamTestBase
             user.ClinicianDeclinedAt.ShouldNotBeNull();
             roles.ShouldNotContain(StaticRoleNames.Tenants.Clinician);
         });
+    }
+
+    [Fact]
+    public async Task Register_Should_Reject_Duplicate_Email_Address()
+    {
+        var emailAddress = $"duplicate-email-{Guid.NewGuid():N}@medstream.test";
+        await _accountAppService.Register(new RegisterInput
+        {
+            FirstName = "Original",
+            LastName = "User",
+            EmailAddress = emailAddress,
+            PhoneNumber = "0634113456",
+            Password = "Password1",
+            ConfirmPassword = "Password1",
+            AccountType = "Patient"
+        });
+
+        var exception = await Should.ThrowAsync<AbpValidationException>(async () =>
+            await _accountAppService.Register(new RegisterInput
+            {
+                FirstName = "Duplicate",
+                LastName = "User",
+                EmailAddress = emailAddress,
+                PhoneNumber = "0634113457",
+                Password = "Password1",
+                ConfirmPassword = "Password1",
+                AccountType = "Patient"
+            }));
+
+        exception.ValidationErrors.ShouldContain(error => error.ErrorMessage == "An account with this email address already exists.");
+    }
+
+    [Fact]
+    public async Task Register_Should_Reject_Duplicate_Id_Number()
+    {
+        var originalEmailAddress = $"duplicate-id-{Guid.NewGuid():N}@medstream.test";
+        await _accountAppService.Register(new RegisterInput
+        {
+            FirstName = "Original",
+            LastName = "Patient",
+            EmailAddress = originalEmailAddress,
+            PhoneNumber = "0634113456",
+            Password = "Password1",
+            ConfirmPassword = "Password1",
+            AccountType = "Patient",
+            IdNumber = "9001015009087"
+        });
+
+        var exception = await Should.ThrowAsync<AbpValidationException>(async () =>
+            await _accountAppService.Register(new RegisterInput
+            {
+                FirstName = "Duplicate",
+                LastName = "Clinician",
+                EmailAddress = $"duplicate-id-target-{Guid.NewGuid():N}@medstream.test",
+                PhoneNumber = "0634113458",
+                Password = "Password1",
+                ConfirmPassword = "Password1",
+                AccountType = "Clinician",
+                IdNumber = "9001015009087",
+                ProfessionType = "Doctor",
+                RegulatoryBody = "HPCSA",
+                RegistrationNumber = "HPCSA-DUP-ID",
+                RequestedFacilityId = await GetFacilityIdAsync("Thembisa Hospital")
+            }));
+
+        exception.ValidationErrors.ShouldContain(error => error.ErrorMessage == "An account with this ID number already exists.");
+    }
+
+    [Fact]
+    public async Task Register_Should_Reject_Duplicate_Clinician_Registration_Number()
+    {
+        var facilityId = await GetFacilityIdAsync("Soweto Community Health Centre");
+        await _accountAppService.Register(new RegisterInput
+        {
+            FirstName = "Original",
+            LastName = "Clinician",
+            EmailAddress = $"duplicate-reg-{Guid.NewGuid():N}@medstream.test",
+            PhoneNumber = "0634113456",
+            Password = "Password1",
+            ConfirmPassword = "Password1",
+            AccountType = "Clinician",
+            IdNumber = "9001015009087",
+            ProfessionType = "Doctor",
+            RegulatoryBody = "HPCSA",
+            RegistrationNumber = "HPCSA-UNIQUE-1",
+            RequestedFacilityId = facilityId
+        });
+
+        var exception = await Should.ThrowAsync<AbpValidationException>(async () =>
+            await _accountAppService.Register(new RegisterInput
+            {
+                FirstName = "Duplicate",
+                LastName = "Clinician",
+                EmailAddress = $"duplicate-reg-target-{Guid.NewGuid():N}@medstream.test",
+                PhoneNumber = "0634113459",
+                Password = "Password1",
+                ConfirmPassword = "Password1",
+                AccountType = "Clinician",
+                IdNumber = "9101015009088",
+                ProfessionType = "Doctor",
+                RegulatoryBody = "HPCSA",
+                RegistrationNumber = "HPCSA-UNIQUE-1",
+                RequestedFacilityId = facilityId
+            }));
+
+        exception.ValidationErrors.ShouldContain(error => error.ErrorMessage == "A clinician with this registration number already exists.");
     }
 
     private async Task<int> GetFacilityIdAsync(string name)

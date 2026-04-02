@@ -18,6 +18,14 @@ function createPatientToken(): string {
     });
 }
 
+const persistedQueueVisit = {
+    visitId: 101,
+    facilityName: "Assigned Facility",
+    selectedFacilityId: 11,
+    startedAt: new Date().toISOString(),
+    pathwayKey: "unassigned",
+};
+
 test.describe("patient history", () => {
     test("opens history from patient intake nav and shows patient-safe visit summaries", async ({ page, context }) => {
         await installPatientPageMocks(page);
@@ -123,6 +131,61 @@ test.describe("patient history", () => {
         await page.getByTestId("patient-nav-new-visit").click();
         await expect(page).toHaveURL(/\/patient$/);
         await expect(page.getByText("Step 1 of 5")).toBeVisible();
+    });
+
+    test("keeps my queue available from history when a queue session is persisted", async ({ page, context }) => {
+        await installPatientPageMocks(page);
+        await page.route("**/api/patient/history", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    isClinicianView: false,
+                    patient: {
+                        patientUserId: 5101,
+                        patientName: "Patient Two",
+                        totalVisits: 0,
+                        mostRecentVisitAt: null,
+                    },
+                    visits: [],
+                    timeline: [],
+                    conditions: [],
+                    allergies: [],
+                    medications: [],
+                }),
+            });
+        });
+
+        await page.route("**/api/patient-intake/queue-status?visitId=101", async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    triage: {
+                        urgencyLevel: "Priority",
+                        explanation: "Priority triage based on symptom severity profile.",
+                        redFlags: [],
+                    },
+                    queue: {
+                        positionPending: true,
+                        message: "You have been marked as priority. Queue position is being prepared.",
+                        lastUpdatedAt: new Date().toISOString(),
+                    },
+                }),
+            });
+        });
+
+        await context.addCookies([{ name: "medstream_access_token", value: createPatientToken(), url: "http://localhost:3000" }]);
+
+        await page.addInitScript((queuedVisit) => {
+            window.localStorage.setItem("medstream.patient.queue", JSON.stringify(queuedVisit));
+        }, persistedQueueVisit);
+
+        await page.goto("/patient/history", { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("patient-nav-my-queue")).toBeEnabled();
+        await page.getByTestId("patient-nav-my-queue").click();
+        await expect(page).toHaveURL(/\/patient$/);
+        await expect(page.getByText("Step 5 of 5")).toBeVisible();
     });
 });
 

@@ -1,6 +1,8 @@
+import { API } from "@/constants/api";
+import { getAbpErrorMessage, unwrapAbpResponse } from "@/lib/api/abp";
+import { apiClient } from "@/lib/api/client";
 import { requirePatientAccessToken } from "@/lib/server/patientAuthGuard";
-import { patientIntakeService } from "@/services/patient-intake/patientIntakeService";
-import type { ITriageAssessRequest } from "@/services/patient-intake/types";
+import type { ITriageAssessRequest, ITriageResponse } from "@/services/patient-intake/types";
 import { NextResponse } from "next/server";
 
 const hasGlobalUrgentPositiveAnswers = (answers: ITriageAssessRequest["answers"]): boolean => {
@@ -53,7 +55,18 @@ export const POST = async (request: Request): Promise<Response> => {
     }
 
     try {
-        const result = await patientIntakeService.assessTriage(payload, guardResult.accessToken);
+        const response = await apiClient.post(
+            API.PATIENT_INTAKE_ASSESS_TRIAGE_ENDPOINT,
+            {
+                visitId: payload.visitId,
+                freeText: payload.freeText,
+                selectedSymptoms: payload.selectedSymptoms,
+                extractedPrimarySymptoms: payload.extractedPrimarySymptoms,
+                answers: payload.answers,
+            },
+            { headers: { Authorization: `Bearer ${guardResult.accessToken}` } }
+        );
+        const result = unwrapAbpResponse<ITriageResponse>(response.data);
         return NextResponse.json({
             ...result,
             triage: {
@@ -62,7 +75,7 @@ export const POST = async (request: Request): Promise<Response> => {
                 redFlags: result.triage.redFlags,
             },
         });
-    } catch {
-        return NextResponse.json({ message: "Unable to assess triage." }, { status: 400 });
+    } catch (error) {
+        return NextResponse.json({ message: getAbpErrorMessage(error, "Unable to assess triage.") }, { status: 400 });
     }
 };

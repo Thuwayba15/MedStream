@@ -1,6 +1,6 @@
 import { getAbpErrorMessage } from "@/lib/api/abp";
 import { requireAdminAccessToken } from "@/lib/server/adminAuthGuard";
-import { adminAuthService } from "@/services/auth/adminAuthService";
+import { setAdminFacilityActivation } from "@/lib/server/authApi";
 import { NextResponse } from "next/server";
 
 interface ActivationBody {
@@ -20,7 +20,7 @@ export const POST = async (request: Request): Promise<Response> => {
             return NextResponse.json({ message: "Valid facility id is required." }, { status: 400 });
         }
 
-        const facility = await adminAuthService.setFacilityActivation(body.id, body.isActive, guardResult.accessToken);
+        const facility = await setAdminFacilityActivation(body.id, body.isActive, guardResult.accessToken);
         return NextResponse.json({ facility });
     } catch (error) {
         return NextResponse.json({ message: getAbpErrorMessage(error, "Failed to update facility activation.") }, { status: 400 });

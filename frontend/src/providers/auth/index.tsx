@@ -1,18 +1,12 @@
 "use client";
 
+import axios from "axios";
 import { useContext, useReducer } from "react";
 import { API } from "@/constants/api";
-import { clearError, requestError, requestPending, requestSuccess } from "./actions";
+import type { IAuthRouteErrorResponse, IAuthRouteResponse } from "@/lib/auth/types";
+import { clearError, requestErrorWithFields, requestPending, requestSuccess } from "./actions";
 import { AuthActionContext, AuthStateContext, INITIAL_STATE, type IAuthActionContext, type IAuthStateContext } from "./context";
 import { authReducer } from "./reducer";
-
-interface IMessageResponse {
-    message?: string;
-}
-
-interface IAuthRouteResponse {
-    homePath?: string;
-}
 
 interface ICurrentUserResponse {
     user?: {
@@ -23,71 +17,89 @@ interface ICurrentUserResponse {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(authReducer, INITIAL_STATE);
 
-    const parseResponse = async <TResponse,>(response: Response, fallbackMessage: string): Promise<TResponse> => {
-        const body = (await response.json()) as TResponse & IMessageResponse;
-        if (!response.ok) {
-            throw new Error(body.message ?? fallbackMessage);
+    const parseRouteError = (error: unknown, fallbackMessage: string): IAuthRouteErrorResponse => {
+        if (axios.isAxiosError<IAuthRouteErrorResponse>(error)) {
+            return {
+                message: error.response?.data?.message ?? fallbackMessage,
+                fieldErrors: error.response?.data?.fieldErrors ?? [],
+            };
         }
 
-        return body;
+        return {
+            message: error instanceof Error ? error.message : fallbackMessage,
+            fieldErrors: [],
+        };
     };
 
     const actions: IAuthActionContext = {
+        // Login User
+        // POST /api/auth/login
         login: async (payload) => {
             dispatch(requestPending());
             try {
-                const response = await fetch(API.AUTH_LOGIN_ROUTE, {
-                    method: "POST",
+                const response = await axios.post<IAuthRouteResponse>(API.AUTH_LOGIN_ROUTE, payload, {
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
                 });
-                const body = await parseResponse<IAuthRouteResponse>(response, "Authentication request failed.");
+                const body = response.data;
                 if (!body.homePath) {
                     throw new Error("Authentication request failed.");
                 }
                 dispatch(requestSuccess());
                 return { homePath: body.homePath };
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : "Authentication request failed.";
-                dispatch(requestError(errorMessage));
-                throw new Error(errorMessage);
+                const routeError = parseRouteError(error, "Authentication request failed.");
+                dispatch(
+                    requestErrorWithFields({
+                        errorMessage: routeError.message ?? "Authentication request failed.",
+                        fieldErrors: routeError.fieldErrors,
+                    })
+                );
+                throw new Error(routeError.message ?? "Authentication request failed.");
             }
         },
+        // Register User
+        // POST /api/auth/register
         register: async (payload) => {
             dispatch(requestPending());
             try {
-                const response = await fetch(API.AUTH_REGISTER_ROUTE, {
-                    method: "POST",
+                const response = await axios.post<IAuthRouteResponse>(API.AUTH_REGISTER_ROUTE, payload, {
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
                 });
-                const body = await parseResponse<IAuthRouteResponse>(response, "Authentication request failed.");
+                const body = response.data;
                 if (!body.homePath) {
                     throw new Error("Authentication request failed.");
                 }
                 dispatch(requestSuccess());
                 return { homePath: body.homePath };
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : "Authentication request failed.";
-                dispatch(requestError(errorMessage));
-                throw new Error(errorMessage);
+                const routeError = parseRouteError(error, "Authentication request failed.");
+                dispatch(
+                    requestErrorWithFields({
+                        errorMessage: routeError.message ?? "Authentication request failed.",
+                        fieldErrors: routeError.fieldErrors,
+                    })
+                );
+                throw new Error(routeError.message ?? "Authentication request failed.");
             }
         },
+        // Logout User
+        // POST /api/auth/logout
         logout: async () => {
             dispatch(requestPending());
             try {
-                const response = await fetch(API.AUTH_LOGOUT_ROUTE, { method: "POST" });
-                await parseResponse<Record<string, unknown>>(response, "Unable to log out.");
+                await axios.post(API.AUTH_LOGOUT_ROUTE);
                 dispatch(requestSuccess());
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : "Unable to log out.";
-                dispatch(requestError(errorMessage));
-                throw new Error(errorMessage);
+                const routeError = parseRouteError(error, "Unable to log out.");
+                dispatch(requestErrorWithFields({ errorMessage: routeError.message ?? "Unable to log out." }));
+                throw new Error(routeError.message ?? "Unable to log out.");
             }
         },
+        // Get Current Home Path
+        // GET /api/auth/me
         getCurrentHomePath: async () => {
-            const response = await fetch(API.AUTH_ME_ROUTE);
-            const body = await parseResponse<ICurrentUserResponse>(response, "Unable to check current approval status.");
+            const response = await axios.get<ICurrentUserResponse>(API.AUTH_ME_ROUTE);
+            const body = response.data;
             if (!body.user?.homePath) {
                 throw new Error("Unable to check current approval status.");
             }

@@ -56,6 +56,10 @@ export const patientIntakeReducer = handleActions<IPatientIntakeStateContext, IP
             ...state,
             ...action.payload,
         }),
+        [PatientIntakeActionEnums.startNewVisitDraft]: (state, action) => ({
+            ...state,
+            ...action.payload,
+        }),
         [PatientIntakeActionEnums.actionFailed]: (state, action) => ({
             ...state,
             ...action.payload,
