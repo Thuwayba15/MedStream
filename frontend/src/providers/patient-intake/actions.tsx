@@ -1,5 +1,5 @@
 import { createAction } from "redux-actions";
-import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
+import type { IAssessTriageFollowUpQuestion, ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
 import type { IPatientIntakeStateContext } from "./context";
 
 export enum PatientIntakeActionEnums {
@@ -45,6 +45,7 @@ export const initializeStarted = createAction<IPatientIntakeStatePayload>(Patien
     urgentTriggered: false,
     followUpPlans: [],
     currentFollowUpPlanIndex: 0,
+    askedFollowUpQuestions: [],
     questionSet: [],
     answers: {},
     triage: null,
@@ -65,6 +66,7 @@ export const initializeSucceeded = createAction<IPatientIntakeStatePayload, IChe
         pathwayKey: payload.pathwayKey,
         followUpPlans: [],
         currentFollowUpPlanIndex: 0,
+        askedFollowUpQuestions: [],
         errorMessage: undefined,
     })
 );
@@ -118,6 +120,7 @@ export const symptomProcessingSucceeded = createAction<IPatientIntakeStatePayloa
         urgentQuestionSet,
         followUpPlans: extractResult.followUpPlans ?? [],
         currentFollowUpPlanIndex: 0,
+        askedFollowUpQuestions: [],
         questionSet: [],
         answers: extractResult.mappedInputValues ?? {},
         currentStep: 2,
@@ -135,19 +138,23 @@ export const urgentCheckSucceeded = createAction<IPatientIntakeStatePayload, IUr
     errorMessage: undefined,
 }));
 
-export const followUpQuestionsLoaded = createAction<IPatientIntakeStatePayload, IIntakeQuestion[]>(PatientIntakeActionEnums.followUpQuestionsLoaded, (questionSet: IIntakeQuestion[]) => ({
+export const followUpQuestionsLoaded = createAction<IPatientIntakeStatePayload, IIntakeQuestion[], IAssessTriageFollowUpQuestion[]>(
+    PatientIntakeActionEnums.followUpQuestionsLoaded,
+    (questionSet: IIntakeQuestion[], askedFollowUpQuestions: IAssessTriageFollowUpQuestion[]) => ({
     isProcessing: false,
     questionSet,
+    askedFollowUpQuestions,
     currentStep: 3,
     errorMessage: undefined,
 }));
 
-export const followUpPlanAdvanced = createAction<IPatientIntakeStatePayload, number, IIntakeQuestion[]>(
+export const followUpPlanAdvanced = createAction<IPatientIntakeStatePayload, number, IIntakeQuestion[], IAssessTriageFollowUpQuestion[]>(
     PatientIntakeActionEnums.followUpPlanAdvanced,
-    (currentFollowUpPlanIndex: number, questionSet: IIntakeQuestion[]) => ({
+    (currentFollowUpPlanIndex: number, questionSet: IIntakeQuestion[], askedFollowUpQuestions: IAssessTriageFollowUpQuestion[]) => ({
         isProcessing: false,
         currentFollowUpPlanIndex,
         questionSet,
+        askedFollowUpQuestions,
         currentStep: 3,
         errorMessage: undefined,
     })
@@ -184,6 +191,7 @@ export const queuedVisitRestored = createAction<
     pathwayKey: snapshot.pathwayKey,
     followUpPlans: [],
     currentFollowUpPlanIndex: 0,
+    askedFollowUpQuestions: [],
     triage: snapshot.triage,
     queue: snapshot.queue,
     errorMessage: undefined,
@@ -210,6 +218,7 @@ export const startNewVisitDraft = createAction<IPatientIntakeStatePayload, Array
     urgentTriggered: false,
     followUpPlans: [],
     currentFollowUpPlanIndex: 0,
+    askedFollowUpQuestions: [],
     questionSet: [],
     answers: {},
     triage: null,

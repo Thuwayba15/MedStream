@@ -81,18 +81,12 @@ public partial class PatientIntakeAppService
         var safePathwayKey = string.IsNullOrWhiteSpace(visit.PathwayKey) || string.Equals(visit.PathwayKey, PatientIntakeConstants.UnassignedPathwayKey, StringComparison.OrdinalIgnoreCase)
             ? PatientIntakeConstants.GeneralFallbackPathwayKey
             : visit.PathwayKey;
-        var pathwayExecution = _pathwayExecutionEngine.Execute(new PathwayExecutionRequest
-        {
-            PathwayId = safePathwayKey,
-            StageId = "patient_intake",
-            Audience = "patient",
-            PrimarySymptoms = input.ExtractedPrimarySymptoms ?? new List<string>(),
-            Answers = input.Answers ?? new Dictionary<string, object>(),
-            Observations = input.Observations ?? new Dictionary<string, object>()
-        });
+        var safeAnswers = input.Answers ?? new Dictionary<string, object>();
+        var safeObservations = input.Observations ?? new Dictionary<string, object>();
+        var mergedTriage = ResolveMergedTriageAssessment(input, safePathwayKey, safeAnswers, safeObservations);
 
-        var hasGlobalUrgent = HasGlobalUrgentPositiveAnswers(input.Answers);
-        var resolvedRedFlags = pathwayExecution.TriggeredRedFlags ?? new List<string>();
+        var hasGlobalUrgent = HasGlobalUrgentPositiveAnswers(safeAnswers);
+        var resolvedRedFlags = mergedTriage.Execution.TriggeredRedFlags ?? new List<string>();
         if (hasGlobalUrgent && !resolvedRedFlags.Contains("global_urgent_check_positive", StringComparer.OrdinalIgnoreCase))
         {
             resolvedRedFlags = resolvedRedFlags
@@ -101,13 +95,9 @@ public partial class PatientIntakeAppService
                 .ToList();
         }
 
-        var resolvedUrgency = pathwayExecution.TriageIndicators.TryGetValue("urgencyLevel", out var urgency)
-            ? urgency
-            : "Routine";
-        var resolvedExplanation = pathwayExecution.TriageIndicators.TryGetValue("explanation", out var explanation)
-            ? explanation
-            : "Triage assessment completed.";
-        var resolvedPriorityScore = pathwayExecution.Score;
+        var resolvedUrgency = mergedTriage.UrgencyLevel;
+        var resolvedExplanation = mergedTriage.Explanation;
+        var resolvedPriorityScore = mergedTriage.PriorityScore;
 
         if (hasGlobalUrgent)
         {
@@ -124,8 +114,8 @@ public partial class PatientIntakeAppService
         };
 
         var assessedAt = DateTime.UtcNow;
-        intake.FollowUpAnswersJson = JsonConvert.SerializeObject(input.Answers ?? new Dictionary<string, object>());
-        intake.SubjectiveSummary = BuildSubjectiveSummary(visit.PathwayKey, intake, input.Answers ?? new Dictionary<string, object>());
+        intake.FollowUpAnswersJson = JsonConvert.SerializeObject(safeAnswers);
+        intake.SubjectiveSummary = BuildSubjectiveSummary(visit.PathwayKey, intake, safeAnswers);
         intake.SubmittedAt = assessedAt;
 
         var triageEntity = new TriageAssessment
@@ -156,7 +146,7 @@ public partial class PatientIntakeAppService
         await _triageAssessmentRepository.UpdateAsync(triageEntity);
         await CurrentUnitOfWork.SaveChangesAsync();
 
-        return BuildPatientQueueStatusOutput(triageEntity, queueTicket, pathwayExecution);
+        return BuildPatientQueueStatusOutput(triageEntity, queueTicket, mergedTriage.Execution);
     }
 
     /// <inheritdoc />

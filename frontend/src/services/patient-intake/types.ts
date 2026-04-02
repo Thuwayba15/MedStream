@@ -49,6 +49,13 @@ export interface IFollowUpPlan {
     fallbackSummaryIds: string[];
 }
 
+export interface IAssessTriageFollowUpPlan {
+    pathwayKey: string;
+    primarySymptom: string;
+    intakeMode: "approved_json" | "apc_fallback";
+    fallbackSummaryIds: string[];
+}
+
 export interface IPathwayClassificationCandidateSignal {
     signalType: string;
     matchedTerm: string;
@@ -77,6 +84,15 @@ export interface IIntakeQuestion {
     isRequired: boolean;
     answerOptions: IIntakeQuestionOption[];
     showWhenExpression: string | null;
+}
+
+export interface IAssessTriageFollowUpQuestion {
+    planKey: string;
+    pathwayKey: string;
+    intakeMode: "approved_json" | "apc_fallback";
+    questionKey: string;
+    questionText: string;
+    inputType: TIntakeQuestionInputType;
 }
 
 export interface IQuestionsResponse {
@@ -122,6 +138,8 @@ export interface ITriageAssessRequest {
     selectedSymptoms: string[];
     extractedPrimarySymptoms: string[];
     answers: Record<string, string | number | boolean | string[]>;
+    followUpPlans: IAssessTriageFollowUpPlan[];
+    followUpQuestions: IAssessTriageFollowUpQuestion[];
 }
 
 export interface ITriageResponse {

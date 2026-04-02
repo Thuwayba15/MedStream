@@ -206,6 +206,116 @@ public class PatientIntakeAppService_Tests : MedStreamTestBase
     }
 
     [Fact]
+    public async Task AssessTriage_Should_Use_Highest_Risk_Approved_FollowUp_Pathway()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await CheckInAsync();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "I have a cough and I injured my arm",
+            SelectedSymptoms = new List<string> { "Cough", "Injury" }
+        });
+
+        var output = await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "cough and arm injury",
+            SelectedSymptoms = new List<string> { "Cough", "Injury" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough", "Injury" },
+            FollowUpPlans = new List<AssessTriageFollowUpPlanInput>
+            {
+                new()
+                {
+                    PathwayKey = "cough_or_difficulty_breathing",
+                    PrimarySymptom = "Cough",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApprovedJson
+                },
+                new()
+                {
+                    PathwayKey = "hand_or_upper_limb_injury",
+                    PrimarySymptom = "Injury",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApprovedJson
+                }
+            },
+            Answers = new Dictionary<string, object>
+            {
+                { "coughDurationWeeks", 1 },
+                { "hasDifficultyBreathing", false },
+                { "hasChestPain", false },
+                { "injuryFromFall", true },
+                { "visibleDeformity", true },
+                { "cannotMoveFingers", "no" }
+            }
+        });
+
+        output.Triage.UrgencyLevel.ShouldBe("Urgent");
+        output.Triage.RedFlags.ShouldContain("possible_fracture");
+        output.Triage.Explanation.ShouldContain("Highest-risk follow-up pathway");
+        output.Execution.TriggeredRedFlags.ShouldContain("possible_fracture");
+    }
+
+    [Fact]
+    public async Task AssessTriage_Should_Allow_Apc_Fallback_FollowUp_To_Raise_Urgency()
+    {
+        await RegisterAndLoginPatientAsync();
+        var checkIn = await CheckInAsync();
+        await _patientIntakeAppService.ExtractSymptoms(new ExtractSymptomsInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "I have a cough and a wound",
+            SelectedSymptoms = new List<string> { "Cough" }
+        });
+
+        var output = await _patientIntakeAppService.AssessTriage(new AssessTriageInput
+        {
+            VisitId = checkIn.VisitId,
+            FreeText = "cough and bleeding wound",
+            SelectedSymptoms = new List<string> { "Cough" },
+            ExtractedPrimarySymptoms = new List<string> { "Cough" },
+            FollowUpPlans = new List<AssessTriageFollowUpPlanInput>
+            {
+                new()
+                {
+                    PathwayKey = "cough_or_difficulty_breathing",
+                    PrimarySymptom = "Cough",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApprovedJson
+                },
+                new()
+                {
+                    PathwayKey = PatientIntakeConstants.GeneralFallbackPathwayKey,
+                    PrimarySymptom = "Wound",
+                    IntakeMode = PatientIntakeConstants.IntakeModeApcFallback,
+                    FallbackSummaryIds = new List<string> { "hand_laceration" }
+                }
+            },
+            FollowUpQuestions = new List<AssessTriageFollowUpQuestionInput>
+            {
+                new()
+                {
+                    PlanKey = "apc_wound",
+                    PathwayKey = PatientIntakeConstants.GeneralFallbackPathwayKey,
+                    IntakeMode = PatientIntakeConstants.IntakeModeApcFallback,
+                    QuestionKey = "apc_bleeding",
+                    QuestionText = "Do you have heavy bleeding that is not stopping?",
+                    InputType = "Boolean"
+                }
+            },
+            Answers = new Dictionary<string, object>
+            {
+                { "coughDurationWeeks", 1 },
+                { "hasDifficultyBreathing", false },
+                { "hasChestPain", false },
+                { "apc_bleeding", true }
+            }
+        });
+
+        output.Triage.UrgencyLevel.ShouldBe("Urgent");
+        output.Triage.RedFlags.ShouldContain(item => item.StartsWith("apc_", StringComparison.OrdinalIgnoreCase));
+        output.Triage.Explanation.ShouldContain("Additional fallback concerns");
+    }
+
+    [Fact]
     public async Task AssessTriage_Should_Format_General_Complaint_Summary_Readably()
     {
         await RegisterAndLoginPatientAsync();

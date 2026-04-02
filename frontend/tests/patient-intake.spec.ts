@@ -123,7 +123,13 @@ test.describe("patient intake flow", () => {
     });
 
     test("walks through multiple follow-up pages for multiple extracted symptoms", async ({ page, context }) => {
-        await installPatientIntakeMocks(page, { mode: "multi-pathway" });
+        let triagePayload: Record<string, unknown> | null = null;
+        await installPatientIntakeMocks(page, {
+            mode: "multi-pathway",
+            onTriagePayload: (payload) => {
+                triagePayload = payload;
+            },
+        });
         await context.addCookies([{ name: "medstream_access_token", value: createPatientToken(), url: "http://localhost:3000" }]);
 
         await page.goto("/patient");
@@ -153,6 +159,14 @@ test.describe("patient intake flow", () => {
         await page.getByRole("button", { name: "Generate Status" }).click();
 
         await expect(page.getByText("Step 5 of 5")).toBeVisible();
+        expect(triagePayload).toMatchObject({
+            followUpPlans: [
+                { pathwayKey: "hand_or_upper_limb_injury", intakeMode: "approved_json" },
+                { pathwayKey: "general_unspecified_complaint", intakeMode: "apc_fallback" },
+            ],
+        });
+        const followUpQuestions = (triagePayload as { followUpQuestions?: Array<Record<string, unknown>> } | null)?.followUpQuestions ?? [];
+        expect(followUpQuestions.length).toBeGreaterThanOrEqual(4);
     });
 });
 
@@ -163,8 +177,15 @@ async function selectHospital(page: import("@playwright/test").Page): Promise<vo
     await page.getByTitle("Chris Hani Baragwanath Hospital").click();
 }
 
-async function installPatientIntakeMocks(page: import("@playwright/test").Page, options: { mode: TMockMode; onQuestionsPayload?: (payload: Record<string, unknown>) => void }): Promise<void> {
-    const { mode, onQuestionsPayload } = options;
+async function installPatientIntakeMocks(
+    page: import("@playwright/test").Page,
+    options: {
+        mode: TMockMode;
+        onQuestionsPayload?: (payload: Record<string, unknown>) => void;
+        onTriagePayload?: (payload: Record<string, unknown>) => void;
+    }
+): Promise<void> {
+    const { mode, onQuestionsPayload, onTriagePayload } = options;
     let checkInCounter = 0;
 
     await page.route("**/api/patient-intake/check-in", async (route) => {
@@ -342,6 +363,49 @@ async function installPatientIntakeMocks(page: import("@playwright/test").Page, 
             return;
         }
 
+        if (payload.pathwayKey === "hand_or_upper_limb_injury") {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    questionSet: [
+                        {
+                            questionKey: "injuryFromFall",
+                            questionText: "Did this start after a fall or direct injury?",
+                            inputType: "Boolean",
+                            displayOrder: 1,
+                            isRequired: true,
+                            answerOptions: [],
+                            showWhenExpression: null,
+                        },
+                        {
+                            questionKey: "visibleDeformity",
+                            questionText: "Do you see any deformity or severe swelling?",
+                            inputType: "Boolean",
+                            displayOrder: 2,
+                            isRequired: true,
+                            answerOptions: [],
+                            showWhenExpression: null,
+                        },
+                        {
+                            questionKey: "cannotMoveFingers",
+                            questionText: "Can you move your fingers normally?",
+                            inputType: "SingleSelect",
+                            displayOrder: 3,
+                            isRequired: true,
+                            answerOptions: [
+                                { value: "yes", label: "Yes" },
+                                { value: "limited", label: "Limited movement" },
+                                { value: "no", label: "No" },
+                            ],
+                            showWhenExpression: null,
+                        },
+                    ],
+                }),
+            });
+            return;
+        }
+
         await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -371,6 +435,8 @@ async function installPatientIntakeMocks(page: import("@playwright/test").Page, 
     });
 
     await page.route("**/api/patient-intake/triage", async (route) => {
+        const payload = JSON.parse(route.request().postData() || "{}") as Record<string, unknown>;
+        onTriagePayload?.(payload);
         const urgent = mode === "urgent-fast-track";
         await route.fulfill({
             status: 200,

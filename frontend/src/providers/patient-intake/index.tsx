@@ -37,12 +37,23 @@ import {
     triageSucceeded,
     urgentCheckSucceeded,
 } from "./actions";
-import type { IIntakeQuestion } from "@/services/patient-intake/types";
+import type { IAssessTriageFollowUpQuestion, IFollowUpPlan, IIntakeQuestion } from "@/services/patient-intake/types";
 import { INITIAL_STATE, IPatientIntakeActionContext, IPatientIntakeStateContext, PatientIntakeActionContext, PatientIntakeStateContext } from "./context";
 import { patientIntakeReducer } from "./reducer";
 
 export const PatientIntakeProvider = ({ children }: { children: React.ReactNode }) => {
     const [state, dispatch] = useReducer(patientIntakeReducer, INITIAL_STATE);
+
+    const buildFollowUpQuestionCatalog = useCallback((followUpPlan: IFollowUpPlan, questionSet: IIntakeQuestion[]): IAssessTriageFollowUpQuestion[] => {
+        return questionSet.map((question) => ({
+            planKey: followUpPlan.planKey,
+            pathwayKey: followUpPlan.pathwayKey,
+            intakeMode: followUpPlan.intakeMode,
+            questionKey: question.questionKey,
+            questionText: question.questionText,
+            inputType: question.inputType,
+        }));
+    }, []);
 
     const loadFollowUpQuestionsForPlan = useCallback(
         async (
@@ -168,17 +179,18 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                           },
                       ];
             const questionSet = await loadFollowUpQuestionsForPlan(visitId, followUpPlans[0], initialAnswers);
+            const askedFollowUpQuestions = buildFollowUpQuestionCatalog(followUpPlans[0], questionSet);
             logIntakeDebug("follow-up question set loaded", {
                 useApcFallback: followUpPlans[0].intakeMode === "apc_fallback",
                 planKey: followUpPlans[0].planKey,
                 questionCount: questionSet.length,
             });
-            dispatch(followUpQuestionsLoaded(questionSet));
+            dispatch(followUpQuestionsLoaded(questionSet, askedFollowUpQuestions));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unable to process symptom input.";
             dispatch(actionFailed(message));
         }
-    }, [state.answers, state.freeText, state.pathwayKey, state.selectedFacilityId, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
+    }, [buildFollowUpQuestionCatalog, loadFollowUpQuestionsForPlan, state.answers, state.freeText, state.pathwayKey, state.selectedFacilityId, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
 
     // Run Urgent Safety Check
     // POST /api/patient-intake/urgent-check + POST /api/patient-intake/triage
@@ -221,6 +233,8 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                     selectedSymptoms: state.selectedSymptoms,
                     extractedPrimarySymptoms: state.extractedPrimarySymptoms,
                     answers: state.answers,
+                    followUpPlans: [],
+                    followUpQuestions: [],
                 });
                 logIntakeDebug("triage completed in urgent fast-track mode", triageResult.triage);
                 dispatch(triageSucceeded(triageResult));
@@ -255,12 +269,16 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             if (nextPlanIndex < state.followUpPlans.length) {
                 const nextPlan = state.followUpPlans[nextPlanIndex];
                 const questionSet = await loadFollowUpQuestionsForPlan(state.visitId, nextPlan, state.answers);
+                const askedFollowUpQuestions = [
+                    ...state.askedFollowUpQuestions,
+                    ...buildFollowUpQuestionCatalog(nextPlan, questionSet),
+                ];
                 logIntakeDebug("follow-up question set loaded", {
                     useApcFallback: nextPlan.intakeMode === "apc_fallback",
                     planKey: nextPlan.planKey,
                     questionCount: questionSet.length,
                 });
-                dispatch(followUpPlanAdvanced(nextPlanIndex, questionSet));
+                dispatch(followUpPlanAdvanced(nextPlanIndex, questionSet, askedFollowUpQuestions));
                 return;
             }
 
@@ -270,6 +288,13 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                 selectedSymptoms: state.selectedSymptoms,
                 extractedPrimarySymptoms: state.extractedPrimarySymptoms,
                 answers: state.answers,
+                followUpPlans: state.followUpPlans.map((plan) => ({
+                    pathwayKey: plan.pathwayKey,
+                    primarySymptom: plan.primarySymptom,
+                    intakeMode: plan.intakeMode,
+                    fallbackSummaryIds: plan.fallbackSummaryIds ?? [],
+                })),
+                followUpQuestions: state.askedFollowUpQuestions,
             });
             logIntakeDebug("triage completed after follow-up", triageResult.triage);
 
@@ -280,6 +305,8 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
         }
     }, [
         loadFollowUpQuestionsForPlan,
+        buildFollowUpQuestionCatalog,
+        state.askedFollowUpQuestions,
         state.answers,
         state.currentFollowUpPlanIndex,
         state.extractedPrimarySymptoms,

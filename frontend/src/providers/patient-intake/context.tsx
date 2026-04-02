@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext } from "react";
-import type { IExtractSymptomsResponse, IFollowUpPlan, IIntakeQuestion, ITriageResponse } from "@/services/patient-intake/types";
+import type { IAssessTriageFollowUpQuestion, IExtractSymptomsResponse, IFollowUpPlan, IIntakeQuestion, ITriageResponse } from "@/services/patient-intake/types";
 
 export interface IPatientIntakeStateContext {
     currentStep: number;
@@ -24,6 +24,7 @@ export interface IPatientIntakeStateContext {
     urgentTriggered: boolean;
     followUpPlans: IFollowUpPlan[];
     currentFollowUpPlanIndex: number;
+    askedFollowUpQuestions: IAssessTriageFollowUpQuestion[];
     questionSet: IIntakeQuestion[];
     answers: Record<string, string | number | boolean | string[]>;
     triage: ITriageResponse["triage"] | null;
@@ -68,6 +69,7 @@ export const INITIAL_STATE: IPatientIntakeStateContext = {
     urgentTriggered: false,
     followUpPlans: [],
     currentFollowUpPlanIndex: 0,
+    askedFollowUpQuestions: [],
     questionSet: [],
     answers: {},
     triage: null,
