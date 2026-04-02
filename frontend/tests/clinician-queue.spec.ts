@@ -23,6 +23,15 @@ test.describe("clinician queue dashboard", () => {
         const requestUrls: string[] = [];
         let queueStatus: "waiting" | "called" | "in_consultation" = "waiting";
         let transcriptAttached = false;
+        const savedEncounterNoteDraftBodies: Array<{
+            subjective?: string;
+            objective?: string;
+            assessment?: string;
+            plan?: string;
+            clinicianTimelineSummary?: string;
+            patientTimelineSummary?: string;
+        }> = [];
+        let assessmentPlanDraftRequestCount = 0;
         let encounterNoteState = {
             id: 77,
             visitId: 3001,
@@ -271,6 +280,8 @@ test.describe("clinician queue dashboard", () => {
                 patientTimelineSummary?: string;
             };
 
+            savedEncounterNoteDraftBodies.push(body);
+
             encounterNoteState = {
                 ...encounterNoteState,
                 subjective: body.subjective ?? encounterNoteState.subjective,
@@ -285,6 +296,23 @@ test.describe("clinician queue dashboard", () => {
                 status: 200,
                 contentType: "application/json",
                 body: JSON.stringify(encounterNoteState),
+            });
+        });
+
+        await page.route("**/api/clinician/consultation/drafts/assessment-plan", async (route) => {
+            assessmentPlanDraftRequestCount += 1;
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    visitId: 3001,
+                    encounterNoteId: 77,
+                    source: "openai",
+                    generatedAt: new Date().toISOString(),
+                    assessment: "Concerning for acute coronary syndrome pending clinician confirmation.",
+                    plan: "Continue urgent cardiac monitoring, obtain ECG, and reassess pain response.",
+                    summary: "Assessment and plan draft generated from the latest subjective, objective findings, vitals, and transcript.",
+                }),
             });
         });
 
@@ -402,6 +430,14 @@ test.describe("clinician queue dashboard", () => {
         await expect(page.getByText("Transcript attached", { exact: true })).toBeVisible();
         await page.getByRole("tab", { name: "objective" }).click();
         await expect(page.getByText("Blood pressure")).toBeVisible();
+        await page.getByPlaceholder("Document examination findings, focused observations, and any additional objective notes.").fill(
+            "Chest wall tenderness absent. Patient diaphoretic and anxious on examination."
+        );
+        await page.getByRole("tab", { name: "assessment" }).click();
+        await page.getByRole("button", { name: "Generate A/P Draft" }).click();
+        await expect(page.getByText("Assessment and plan draft generated for review.")).toBeVisible();
+        expect(assessmentPlanDraftRequestCount).toBe(1);
+        expect(savedEncounterNoteDraftBodies.some((body) => body.objective?.includes("Patient diaphoretic and anxious on examination."))).toBeTruthy();
         await page.getByRole("tab", { name: "Timeline Summary" }).click();
         await expect(page.getByText("Ready to finalize")).toBeVisible();
         await expect(page.getByTestId("consultation-clinician-timeline-summary")).toHaveValue(
