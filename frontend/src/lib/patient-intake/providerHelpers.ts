@@ -1,7 +1,17 @@
 import axios from "axios";
 import { API } from "@/constants/api";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
-import type { ICheckInRequest, ICheckInResponse, IExtractSymptomsResponse, IGetQuestionsRequest, IIntakeQuestion, ISymptomCaptureRequest, ITriageAssessRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
+import type {
+    ICheckInRequest,
+    ICheckInResponse,
+    IExtractSymptomsResponse,
+    IGetQuestionsRequest,
+    IIntakeQuestion,
+    ISymptomCaptureRequest,
+    ITriageAssessRequest,
+    ITriageResponse,
+    IUrgentCheckResponse,
+} from "@/services/patient-intake/types";
 
 const PATIENT_QUEUE_STORAGE_KEY = "medstream.patient.queue";
 const PATIENT_QUEUE_STORAGE_EVENT = "medstream:patient-queue-changed";

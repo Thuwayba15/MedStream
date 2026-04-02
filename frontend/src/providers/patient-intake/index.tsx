@@ -139,10 +139,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                     throw new Error("Select your hospital before continuing.");
                 }
 
-                const [initialized, facilities] = await Promise.all([
-                    checkIn({ selectedFacilityId: state.selectedFacilityId }),
-                    getActiveFacilities(),
-                ]);
+                const [initialized, facilities] = await Promise.all([checkIn({ selectedFacilityId: state.selectedFacilityId }), getActiveFacilities()]);
                 dispatch(initializeSucceeded(initialized, facilities));
                 visitId = initialized.visitId;
                 pathwayKey = initialized.pathwayKey;
@@ -190,7 +187,17 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to process symptom input.";
             dispatch(actionFailed(message));
         }
-    }, [buildFollowUpQuestionCatalog, loadFollowUpQuestionsForPlan, state.answers, state.freeText, state.pathwayKey, state.selectedFacilityId, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
+    }, [
+        buildFollowUpQuestionCatalog,
+        loadFollowUpQuestionsForPlan,
+        state.answers,
+        state.freeText,
+        state.pathwayKey,
+        state.selectedFacilityId,
+        state.selectedSymptoms,
+        state.urgentQuestionSet,
+        state.visitId,
+    ]);
 
     // Run Urgent Safety Check
     // POST /api/patient-intake/urgent-check + POST /api/patient-intake/triage
@@ -269,10 +276,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             if (nextPlanIndex < state.followUpPlans.length) {
                 const nextPlan = state.followUpPlans[nextPlanIndex];
                 const questionSet = await loadFollowUpQuestionsForPlan(state.visitId, nextPlan, state.answers);
-                const askedFollowUpQuestions = [
-                    ...state.askedFollowUpQuestions,
-                    ...buildFollowUpQuestionCatalog(nextPlan, questionSet),
-                ];
+                const askedFollowUpQuestions = [...state.askedFollowUpQuestions, ...buildFollowUpQuestionCatalog(nextPlan, questionSet)];
                 logIntakeDebug("follow-up question set loaded", {
                     useApcFallback: nextPlan.intakeMode === "apc_fallback",
                     planKey: nextPlan.planKey,
@@ -330,10 +334,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             let visitId = state.visitId;
             let pathwayKey = state.pathwayKey;
             if (!visitId) {
-                const [initialized, facilities] = await Promise.all([
-                    checkIn({ selectedFacilityId: state.selectedFacilityId }),
-                    getActiveFacilities(),
-                ]);
+                const [initialized, facilities] = await Promise.all([checkIn({ selectedFacilityId: state.selectedFacilityId }), getActiveFacilities()]);
                 dispatch(initializeSucceeded(initialized, facilities));
                 visitId = initialized.visitId;
                 pathwayKey = initialized.pathwayKey;

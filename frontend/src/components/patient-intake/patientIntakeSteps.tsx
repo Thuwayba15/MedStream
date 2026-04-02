@@ -83,49 +83,63 @@ export const IntakeJourneyPanel = ({ currentStep, styles }: { currentStep: numbe
 
 export const SymptomsStep = ({ freeText, selectedSymptoms, styles, isListening, speechSupported, onChangeFreeText, onStartSpeech, onStopSpeech }: ISymptomsStepProps): React.JSX.Element => {
     return (
-        <Space orientation="vertical" size={18} className={styles.centeredBlock}>
-            <Space orientation="vertical" size={8} className={`${styles.panel} ${styles.centeredBlock}`}>
-                <Button
-                    aria-label="Tap to speak your symptoms"
-                    className={`${styles.disabledMicButton} ${isListening ? styles.listeningMicButton : ""}`}
-                    type={isListening ? "primary" : "default"}
-                    shape="round"
-                    onClick={isListening ? onStopSpeech : onStartSpeech}
-                    disabled={!speechSupported}
-                >
-                    <span className={styles.micButtonContent}>
-                        <span className={styles.micOrb}>
-                            {isListening ? <span className={styles.micPulse} /> : null}
-                            <AudioOutlined />
-                        </span>
-                        <span>{isListening ? "Listening... tap to stop" : speechSupported ? "Tap to speak your symptoms" : "Speech input not supported on this browser"}</span>
-                    </span>
-                </Button>
-                <Typography.Text className={styles.orDivider}>or describe in writing</Typography.Text>
-                <Input.TextArea
-                    value={freeText}
-                    onChange={(event) => onChangeFreeText(event.target.value)}
-                    placeholder="Describe your symptoms in your own words..."
-                    className={styles.symptomTextArea}
-                    autoSize={{ minRows: 5, maxRows: 8 }}
-                />
-            </Space>
-
-            {selectedSymptoms.length > 0 ? (
+        <div className={styles.symptomsStepShell}>
+            <div className={styles.symptomsIntroCard}>
                 <div>
-                    <Typography.Text strong className={styles.symptomChipTitle}>
-                        Selected symptoms
-                    </Typography.Text>
-                    <div className={`${styles.chipsWrap} ${styles.centeredWrap}`}>
-                        {selectedSymptoms.map((symptom) => (
-                            <Tag key={symptom} className={styles.extractedTag}>
-                                {symptom}
-                            </Tag>
-                        ))}
-                    </div>
+                    <Typography.Text className={styles.sectionEyebrow}>Describe Symptoms</Typography.Text>
+                    <Typography.Title level={4} className={styles.checkInCardTitle}>
+                        Tell us what is going on in your own words
+                    </Typography.Title>
                 </div>
-            ) : null}
-        </Space>
+                <Typography.Text className={styles.checkInCardText}>
+                    Start with the main problem, when it started, and anything that feels severe or unusual. You can speak or type, and we will use this to prepare the right follow-up questions.
+                </Typography.Text>
+            </div>
+
+            <Space orientation="vertical" size={18} className={styles.centeredBlock}>
+                <Space orientation="vertical" size={12} className={`${styles.panel} ${styles.centeredBlock} ${styles.symptomsComposerPanel}`}>
+                    <Button
+                        aria-label="Tap to speak your symptoms"
+                        className={`${styles.disabledMicButton} ${isListening ? styles.listeningMicButton : ""}`}
+                        type={isListening ? "primary" : "default"}
+                        shape="round"
+                        onClick={isListening ? onStopSpeech : onStartSpeech}
+                        disabled={!speechSupported}
+                    >
+                        <span className={styles.micButtonContent}>
+                            <span className={styles.micOrb}>
+                                {isListening ? <span className={styles.micPulse} /> : null}
+                                <AudioOutlined />
+                            </span>
+                            <span>{isListening ? "Listening... tap to stop" : speechSupported ? "Tap to speak your symptoms" : "Speech input not supported on this browser"}</span>
+                        </span>
+                    </Button>
+                    <Typography.Text className={styles.orDivider}>or describe in writing</Typography.Text>
+                    <Input.TextArea
+                        value={freeText}
+                        onChange={(event) => onChangeFreeText(event.target.value)}
+                        placeholder="Describe your symptoms in your own words..."
+                        className={styles.symptomTextArea}
+                        autoSize={{ minRows: 6, maxRows: 10 }}
+                    />
+                </Space>
+
+                {selectedSymptoms.length > 0 ? (
+                    <div>
+                        <Typography.Text strong className={styles.symptomChipTitle}>
+                            Selected symptoms
+                        </Typography.Text>
+                        <div className={`${styles.chipsWrap} ${styles.centeredWrap}`}>
+                            {selectedSymptoms.map((symptom) => (
+                                <Tag key={symptom} className={styles.extractedTag}>
+                                    {symptom}
+                                </Tag>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
+            </Space>
+        </div>
     );
 };
 

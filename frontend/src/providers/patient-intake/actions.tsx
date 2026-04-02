@@ -141,12 +141,13 @@ export const urgentCheckSucceeded = createAction<IPatientIntakeStatePayload, IUr
 export const followUpQuestionsLoaded = createAction<IPatientIntakeStatePayload, IIntakeQuestion[], IAssessTriageFollowUpQuestion[]>(
     PatientIntakeActionEnums.followUpQuestionsLoaded,
     (questionSet: IIntakeQuestion[], askedFollowUpQuestions: IAssessTriageFollowUpQuestion[]) => ({
-    isProcessing: false,
-    questionSet,
-    askedFollowUpQuestions,
-    currentStep: 3,
-    errorMessage: undefined,
-}));
+        isProcessing: false,
+        questionSet,
+        askedFollowUpQuestions,
+        currentStep: 3,
+        errorMessage: undefined,
+    })
+);
 
 export const followUpPlanAdvanced = createAction<IPatientIntakeStatePayload, number, IIntakeQuestion[], IAssessTriageFollowUpQuestion[]>(
     PatientIntakeActionEnums.followUpPlanAdvanced,

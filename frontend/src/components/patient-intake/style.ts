@@ -347,6 +347,15 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         }
     `,
 
+    intakeBodyGridFocused: css`
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.5fr);
+        align-items: start;
+
+        @media (max-width: 1120px) {
+            grid-template-columns: 1fr;
+        }
+    `,
+
     intakeMainColumn: css`
         min-width: 0;
         display: grid;
@@ -361,8 +370,44 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         }
     `,
 
+    intakeSideColumnTucked: css`
+        @media (max-width: 1120px) {
+            order: 2;
+        }
+    `,
+
+    symptomsStepShell: css`
+        display: grid;
+        gap: 18px;
+        width: 100%;
+        max-width: 980px;
+        margin: 0 auto;
+    `,
+
+    symptomsIntroCard: css`
+        display: grid;
+        gap: 10px;
+        padding: 20px 22px;
+        border-radius: ${radius.lg}px;
+        border: 1px solid rgba(13, 27, 46, 0.08);
+        background: linear-gradient(135deg, rgba(13, 27, 46, 0.04) 0%, rgba(240, 144, 64, 0.08) 100%);
+
+        @media (max-width: 768px) {
+            padding: 16px;
+            gap: 8px;
+        }
+    `,
+
+    symptomsComposerPanel: css`
+        gap: 14px !important;
+
+        @media (max-width: 768px) {
+            padding: 14px !important;
+        }
+    `,
+
     symptomTextArea: css`
-        min-height: 130px !important;
+        min-height: 180px !important;
         border-radius: ${radius.md}px;
         border-color: rgba(138, 154, 181, 0.25) !important;
         background: #fafcff;
@@ -370,6 +415,15 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         .ant-input {
             color: ${colors.navy} !important;
             font-size: 1.05rem;
+            line-height: 1.7;
+        }
+
+        @media (max-width: 768px) {
+            min-height: 160px !important;
+
+            .ant-input {
+                font-size: 1rem;
+            }
         }
     `,
 
@@ -652,12 +706,12 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
 
     disabledMicButton: css`
         width: 100%;
-        min-height: 210px;
+        min-height: 180px;
         border-radius: ${radius.lg}px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         background: radial-gradient(circle at 75% 0%, rgba(240, 144, 64, 0.2) 0%, rgba(240, 144, 64, 0) 42%), linear-gradient(135deg, ${colors.navy} 0%, ${colors.navyMid} 100%) !important;
         color: ${colors.white} !important;
-        font-size: 1.9rem;
+        font-size: 1.5rem;
         font-family: ${typography.fontDisplay};
         box-shadow: 0 20px 40px rgba(13, 27, 46, 0.2);
 
@@ -682,6 +736,12 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
             border-color: rgba(255, 255, 255, 0.18) !important;
             background: radial-gradient(circle at 75% 0%, rgba(240, 144, 64, 0.26) 0%, rgba(240, 144, 64, 0) 45%), linear-gradient(135deg, ${colors.navy} 0%, ${colors.navyMid} 100%) !important;
         }
+
+        @media (max-width: 768px) {
+            min-height: 144px;
+            padding: 16px !important;
+            font-size: 1rem;
+        }
     `,
 
     listeningMicButton: css`
@@ -695,7 +755,12 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         place-items: center;
         gap: 16px;
         width: 100%;
-        font-size: 2rem;
+        font-size: 1.4rem;
+
+        @media (max-width: 768px) {
+            gap: 12px;
+            font-size: 1rem;
+        }
     `,
 
     micOrb: css`
@@ -707,6 +772,11 @@ export const usePatientIntakeStyles = createStyles(({ css }) => ({
         position: relative;
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(240, 144, 64, 0.5);
+
+        @media (max-width: 768px) {
+            width: 64px;
+            height: 64px;
+        }
     `,
 
     micPulse: css`

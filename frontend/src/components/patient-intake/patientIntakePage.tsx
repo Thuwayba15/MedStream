@@ -117,7 +117,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
                 <Typography.Text className={styles.subtitleText}>{stepDescription(state.currentStep)}</Typography.Text>
             </div>
 
-            <div className={styles.intakeBodyGrid}>
+            <div className={`${styles.intakeBodyGrid} ${state.currentStep === 2 ? styles.intakeBodyGridFocused : ""}`}>
                 <div className={styles.intakeMainColumn}>
                     {state.currentStep === 0 ? (
                         <CheckInStep
@@ -176,7 +176,7 @@ export const PatientIntakePage = (): React.JSX.Element => {
                     ) : null}
                 </div>
 
-                <div className={styles.intakeSideColumn}>
+                <div className={`${styles.intakeSideColumn} ${state.currentStep === 2 ? styles.intakeSideColumnTucked : ""}`}>
                     <IntakeJourneyPanel currentStep={state.currentStep} styles={styles} />
                 </div>
             </div>

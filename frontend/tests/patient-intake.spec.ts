@@ -122,6 +122,28 @@ test.describe("patient intake flow", () => {
         await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
     });
 
+    test("keeps the describe symptoms step usable on mobile", async ({ page, context }) => {
+        await installPatientIntakeMocks(page, { mode: "approved-json" });
+        await page.setViewportSize({ width: 390, height: 844 });
+        await context.addCookies([{ name: "medstream_access_token", value: createPatientToken(), url: "http://localhost:3000" }]);
+
+        await page.goto("/patient");
+        await selectHospital(page);
+        await page.getByRole("button", { name: "Continue" }).click();
+        await page.getByRole("radiogroup", { name: "Are you struggling to breathe right now?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Do you have severe chest pain right now?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Do you have heavy bleeding that is not stopping?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Did you faint, collapse, or lose consciousness today?" }).getByLabel("No").check();
+        await page.getByRole("radiogroup", { name: "Are you currently confused, unusually sleepy, or difficult to wake?" }).getByLabel("No").check();
+        await page.getByRole("button", { name: "Continue" }).click();
+
+        await expect(page.getByText("Step 3 of 5")).toBeVisible();
+        await expect(page.getByText("Tell us what is going on in your own words")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Tap to speak your symptoms" })).toBeVisible();
+        await expect(page.getByPlaceholder("Describe your symptoms in your own words...")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
+    });
+
     test("walks through multiple follow-up pages for multiple extracted symptoms", async ({ page, context }) => {
         let triagePayload: Record<string, unknown> | null = null;
         await installPatientIntakeMocks(page, {
