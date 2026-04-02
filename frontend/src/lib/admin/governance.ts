@@ -1,4 +1,5 @@
 import type { IClinicianApplicant } from "@/providers/admin-governance/context";
+import { formatMedstreamDateTime } from "@/lib/time/medstreamTime";
 
 export type ApprovalStatusTone = "pending" | "approved" | "declined";
 
@@ -49,11 +50,7 @@ export const getApprovalStatusLabel = (status: string | null | undefined): strin
 };
 
 export const formatAuditDate = (value: string | null | undefined): string => {
-    if (!value) {
-        return "-";
-    }
-
-    return new Date(value).toLocaleString();
+    return formatMedstreamDateTime(value);
 };
 
 export const buildAdminGovernanceStats = (users: IClinicianApplicant[]): IAdminGovernanceStats => {

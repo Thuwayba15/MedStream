@@ -49,6 +49,7 @@ test.describe("patient intake flow", () => {
         await expect(page.getByText("Step 5 of 5")).toBeVisible();
         await expect(page.getByTestId("patient-nav-my-queue")).toBeEnabled();
         await expect(page.getByText("Queue", { exact: true })).toBeVisible();
+        await expect(page.getByText("Last updated: 14:00")).toBeVisible();
         await expect(page.getByText("Priority score:")).toHaveCount(0);
     });
 
@@ -125,14 +126,19 @@ async function selectHospital(page: import("@playwright/test").Page): Promise<vo
 
 async function installPatientIntakeMocks(page: import("@playwright/test").Page, options: { mode: TMockMode; onQuestionsPayload?: (payload: Record<string, unknown>) => void }): Promise<void> {
     const { mode, onQuestionsPayload } = options;
+    let checkInCounter = 0;
 
     await page.route("**/api/patient-intake/check-in", async (route) => {
+        const payload = JSON.parse(route.request().postData() || "{}") as { selectedFacilityId?: number };
+        checkInCounter += 1;
+        expect(payload.selectedFacilityId).toBe(11);
         await route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({
-                visitId: 101,
-                facilityName: "Assigned Facility",
+                visitId: 100 + checkInCounter,
+                facilityId: 11,
+                facilityName: "Chris Hani Baragwanath Hospital",
                 startedAt: new Date().toISOString(),
                 pathwayKey: "unassigned",
             }),
@@ -293,7 +299,7 @@ async function installPatientIntakeMocks(page: import("@playwright/test").Page, 
                     message: urgent
                         ? "You have been flagged for immediate clinical attention. Queue position will be assigned shortly."
                         : "You have been marked as priority. Queue position is being prepared.",
-                    lastUpdatedAt: new Date().toISOString(),
+                    lastUpdatedAt: "2026-04-02T12:00:00.000Z",
                 },
             }),
         });

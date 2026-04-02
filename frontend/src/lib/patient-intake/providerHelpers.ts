@@ -1,7 +1,7 @@
 import axios from "axios";
 import { API } from "@/constants/api";
 import { getVisibleQuestions } from "@/services/patient-intake/questionEngine";
-import type { ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ISymptomCaptureRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
+import type { ICheckInRequest, ICheckInResponse, IExtractSymptomsResponse, IIntakeQuestion, ISymptomCaptureRequest, ITriageResponse, IUrgentCheckResponse } from "@/services/patient-intake/types";
 
 const PATIENT_QUEUE_STORAGE_KEY = "medstream.patient.queue";
 const PATIENT_QUEUE_STORAGE_EVENT = "medstream:patient-queue-changed";
@@ -102,9 +102,11 @@ const parseRouteError = (error: unknown, fallbackMessage: string): Error => {
     return error instanceof Error ? error : new Error(fallbackMessage);
 };
 
-export const checkIn = async (): Promise<ICheckInResponse> => {
+export const checkIn = async (payload: ICheckInRequest): Promise<ICheckInResponse> => {
     try {
-        const response = await axios.post<ICheckInResponse>(API.PATIENT_INTAKE_CHECKIN_ROUTE);
+        const response = await axios.post<ICheckInResponse>(API.PATIENT_INTAKE_CHECKIN_ROUTE, payload, {
+            headers: { "Content-Type": "application/json" },
+        });
         return response.data;
     } catch (error) {
         throw parseRouteError(error, "Unable to start patient check-in.");

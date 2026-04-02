@@ -2,6 +2,7 @@
 
 import { AudioOutlined, ClockCircleOutlined, EnvironmentOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { Button, Card, Input, InputNumber, Radio, Select, Space, Tag, Typography } from "antd";
+import { formatMedstreamTime } from "@/lib/time/medstreamTime";
 import type { IIntakeQuestion } from "@/services/patient-intake/types";
 import {
     getIntakeJourneyItems,
@@ -283,7 +284,7 @@ export const StatusStep = ({ triage, queue, styles }: IStatusStepProps): React.J
                         {queue?.positionPending ? "Position pending" : "In queue"}
                     </Typography.Title>
                     <Typography.Text className={styles.statusCardBody}>{queue?.message ?? "We are preparing your queue placement now."}</Typography.Text>
-                    <Typography.Text className={styles.queueTimestamp}>Last updated: {queue?.lastUpdatedAt ? new Date(queue.lastUpdatedAt).toLocaleTimeString() : "-"}</Typography.Text>
+                    <Typography.Text className={styles.queueTimestamp}>Last updated: {formatMedstreamTime(queue?.lastUpdatedAt)}</Typography.Text>
                 </Card>
             </div>
         </div>

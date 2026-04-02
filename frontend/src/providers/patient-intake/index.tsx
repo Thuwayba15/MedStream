@@ -43,7 +43,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
     const [state, dispatch] = useReducer(patientIntakeReducer, INITIAL_STATE);
 
     // Initialize Patient Intake
-    // POST /api/patient-intake/check-in + GET /api/auth/facilities/active
+    // GET /api/auth/facilities/active
     const initializeFlow = useCallback(async (): Promise<void> => {
         dispatch(initializeStarted());
         try {
@@ -75,8 +75,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
                 }
             }
 
-            const payload = await checkIn();
-            dispatch(initializeSucceeded(payload, facilities));
+            dispatch(startNewVisitDraft(facilities));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unable to initialize patient intake.";
             dispatch(actionFailed(message));
@@ -97,7 +96,14 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             let pathwayKey = state.pathwayKey;
 
             if (!visitId) {
-                const [initialized, facilities] = await Promise.all([checkIn(), getActiveFacilities()]);
+                if (!state.selectedFacilityId) {
+                    throw new Error("Select your hospital before continuing.");
+                }
+
+                const [initialized, facilities] = await Promise.all([
+                    checkIn({ selectedFacilityId: state.selectedFacilityId }),
+                    getActiveFacilities(),
+                ]);
                 dispatch(initializeSucceeded(initialized, facilities));
                 visitId = initialized.visitId;
                 pathwayKey = initialized.pathwayKey;
@@ -140,7 +146,7 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             const message = error instanceof Error ? error.message : "Unable to process symptom input.";
             dispatch(actionFailed(message));
         }
-    }, [state.answers, state.freeText, state.pathwayKey, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
+    }, [state.answers, state.freeText, state.pathwayKey, state.selectedFacilityId, state.selectedSymptoms, state.urgentQuestionSet, state.visitId]);
 
     // Run Urgent Safety Check
     // POST /api/patient-intake/urgent-check + POST /api/patient-intake/triage
@@ -242,7 +248,10 @@ export const PatientIntakeProvider = ({ children }: { children: React.ReactNode 
             let visitId = state.visitId;
             let pathwayKey = state.pathwayKey;
             if (!visitId) {
-                const [initialized, facilities] = await Promise.all([checkIn(), getActiveFacilities()]);
+                const [initialized, facilities] = await Promise.all([
+                    checkIn({ selectedFacilityId: state.selectedFacilityId }),
+                    getActiveFacilities(),
+                ]);
                 dispatch(initializeSucceeded(initialized, facilities));
                 visitId = initialized.visitId;
                 pathwayKey = initialized.pathwayKey;

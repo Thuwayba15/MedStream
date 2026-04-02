@@ -57,7 +57,7 @@ export const initializeSucceeded = createAction<IPatientIntakeStatePayload, IChe
         visitId: payload.visitId,
         facilityName: payload.facilityName,
         availableFacilities: facilities,
-        selectedFacilityId: facilities.find((facility) => facility.name === payload.facilityName)?.id ?? null,
+        selectedFacilityId: payload.facilityId,
         startedAt: payload.startedAt,
         pathwayKey: payload.pathwayKey,
         errorMessage: undefined,

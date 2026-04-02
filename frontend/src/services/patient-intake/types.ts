@@ -4,9 +4,14 @@ export type TUrgencyLevel = "Routine" | "Priority" | "Urgent";
 
 export interface ICheckInResponse {
     visitId: number;
+    facilityId: number;
     facilityName: string;
     startedAt: string;
     pathwayKey: string;
+}
+
+export interface ICheckInRequest {
+    selectedFacilityId: number;
 }
 
 export interface ISymptomCaptureRequest {
